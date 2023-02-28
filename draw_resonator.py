@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common import extend_matrix, build_transform_matrix, unextended_matrix, transform_all, load_rezonator, draw_object_ext_coords
+from common import extend_matrix, build_transform_matrix, unextended_matrix, transform_all, load_rezonator, draw_polyline_ext_coords
 
 
 def draw_test():
@@ -23,15 +23,15 @@ def draw_test():
     forbidden_area = extend_matrix(rez['forbidden_area'])
     
     # рисуем базовую форму
-    draw_object_ext_coords(rezonator, color='black', format='--')
-    draw_object_ext_coords(target1, color='black')
-    draw_object_ext_coords(target2, color='black')
+    draw_polyline_ext_coords(rezonator, color='black', format='--')
+    draw_polyline_ext_coords(target1, color='black')
+    draw_polyline_ext_coords(target2, color='black')
 
     # рисуем рабочую область
-    draw_object_ext_coords(working_area, color='blue', format='-.')
+    draw_polyline_ext_coords(working_area, color='blue', format='-.')
 
     # рисуем запрещенную область
-    draw_object_ext_coords(forbidden_area, color='magenta', format='-')
+    draw_polyline_ext_coords(forbidden_area, color='magenta', format='-')
 
     #---------------------------
 
@@ -39,10 +39,10 @@ def draw_test():
 
     transformed = transform_all([rezonator, target1, target2, forbidden_area], matrix)
 
-    draw_object_ext_coords(transformed[0], color='red', format='--')
-    draw_object_ext_coords(transformed[1], color='red')
-    draw_object_ext_coords(transformed[2], color='red')
-    draw_object_ext_coords(transformed[3], color='red')
+    draw_polyline_ext_coords(transformed[0], color='red', format='--')
+    draw_polyline_ext_coords(transformed[1], color='red')
+    draw_polyline_ext_coords(transformed[2], color='red')
+    draw_polyline_ext_coords(transformed[3], color='red')
 
     #---------------------------
 
@@ -50,10 +50,10 @@ def draw_test():
 
     transformed = transform_all([rezonator, target1, target2, forbidden_area], matrix)
 
-    draw_object_ext_coords(transformed[0], color='green', format='--')
-    draw_object_ext_coords(transformed[1], color='green')
-    draw_object_ext_coords(transformed[2], color='green')
-    draw_object_ext_coords(transformed[3], color='green')
+    draw_polyline_ext_coords(transformed[0], color='green', format='--')
+    draw_polyline_ext_coords(transformed[1], color='green')
+    draw_polyline_ext_coords(transformed[2], color='green')
+    draw_polyline_ext_coords(transformed[3], color='green')
 
     #---------------------------
 

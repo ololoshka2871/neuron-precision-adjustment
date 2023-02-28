@@ -36,7 +36,7 @@ def generate_playground(offset=(0, 0), angle=0.0):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    from common import draw_object
+    from common import draw_polygon_ext_coords, draw_polyline
 
     while True:
         # Генерируем случайное смещение и случайный угол поворота
@@ -47,15 +47,15 @@ if __name__ == '__main__':
         playground = generate_playground(offset=offset, angle=angle)
 
         # рисуем базовую форму
-        draw_object(playground['rezonator'], color='black')
-        draw_object(playground['targets'][0], color='green')
-        draw_object(playground['targets'][1], color='green')
+        draw_polygon_ext_coords(playground['rezonator'], color='black')
+        draw_polygon_ext_coords(playground['targets'][0], color='green')
+        draw_polygon_ext_coords(playground['targets'][1], color='green')
 
         # рисуем запрещенную область
-        draw_object(playground['forbidden_area'], color='magenta', format='--')
+        draw_polygon_ext_coords(playground['forbidden_area'], color='magenta')
 
         # рисуем рабочую область
-        draw_object(playground['working_area'], color='blue', format='-.')
+        draw_polyline(playground['working_area'], format='-.', color='blue')
         
         # Установка одинакового масштаба по осям X и Y
         plt.axis('equal')

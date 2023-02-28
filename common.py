@@ -2,6 +2,7 @@ import numpy as np
 from json import JSONEncoder
 import json
 import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
 
 
 class NumpyArrayEncoder(JSONEncoder):
@@ -84,7 +85,7 @@ def transform_all(objects, matrix):
     return [np.dot(matrix, obj) for obj in objects]
 
 
-def draw_object(vertexes, format="-", color='black'):
+def draw_polyline(vertexes, format="-", color='black'):
     """
     Функция рисует объект по заданным вершинам
     :param vertexes: вершины объекта
@@ -94,7 +95,7 @@ def draw_object(vertexes, format="-", color='black'):
     return plt.plot(vertexes[:, 0], vertexes[:, 1], format, color=color)
 
 
-def draw_object_ext_coords(vertexes, format="-", color='black'):
+def draw_polyline_ext_coords(vertexes, format="-", color='black'):
     """
     Функция рисует объект по заданным вершинам
     :param vertexes: вершины объекта
@@ -102,4 +103,34 @@ def draw_object_ext_coords(vertexes, format="-", color='black'):
     :return: None
     """
     vertexes = unextended_matrix(vertexes)
-    return draw_object(vertexes, format, color)
+    return draw_polyline(vertexes, format, color)
+
+
+def draw_polygon(vertexes, color='black'):
+    """
+    Функция рисует объект по заданным вершинам
+    Внимание! Если среди объектов нет curve, то matplotlib не сможет определить лимиты по осям, следует задать их вручную
+    `ax.set_xlim([min_x, max_x])`
+    `ax.set_ylim([min_y, max_y])`
+
+    :param vertexes: вершины объекта
+    :param color: цвет
+    :return: None
+    """
+    polygon = Polygon(vertexes.T, closed=True, color=color)
+    plt.gca().add_patch(polygon)
+
+
+def draw_polygon_ext_coords(vertexes, color='black'):
+    """
+    Функция рисует объект по заданным вершинам
+    Внимание! Если среди объектов нет curve, то matplotlib не сможет определить лимиты по осям, следует задать их вручную
+    `ax.set_xlim([min_x, max_x])`
+    `ax.set_ylim([min_y, max_y])`
+
+    :param vertexes: вершины объекта
+    :param color: цвет
+    :return: None
+    """
+    vertexes = unextended_matrix(vertexes)
+    draw_polygon(vertexes[0:2], color=color)
