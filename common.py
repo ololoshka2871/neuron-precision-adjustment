@@ -106,7 +106,7 @@ def draw_polyline_ext_coords(vertexes, format="-", color='black'):
     return draw_polyline(vertexes, format, color)
 
 
-def draw_polygon(vertexes, color='black'):
+def draw_polygon(vertexes, **kwargs):
     """
     Функция рисует объект по заданным вершинам
     Внимание! Если среди объектов нет curve, то matplotlib не сможет определить лимиты по осям, следует задать их вручную
@@ -117,11 +117,11 @@ def draw_polygon(vertexes, color='black'):
     :param color: цвет
     :return: None
     """
-    polygon = Polygon(vertexes.T, closed=True, color=color)
+    polygon = Polygon(vertexes.T, closed=True, **kwargs)
     plt.gca().add_patch(polygon)
 
 
-def draw_polygon_ext_coords(vertexes, color='black'):
+def draw_polygon_ext_coords(vertexes, **kwargs):
     """
     Функция рисует объект по заданным вершинам
     Внимание! Если среди объектов нет curve, то matplotlib не сможет определить лимиты по осям, следует задать их вручную
@@ -133,4 +133,4 @@ def draw_polygon_ext_coords(vertexes, color='black'):
     :return: None
     """
     vertexes = unextended_matrix(vertexes)
-    draw_polygon(vertexes[0:2], color=color)
+    draw_polygon(vertexes[0:2], **kwargs)

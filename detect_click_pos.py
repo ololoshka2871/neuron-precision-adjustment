@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 from generate_playground import generate_playground
 from common import draw_polygon_ext_coords, draw_polyline, extend_matrix
@@ -32,6 +33,10 @@ def unmap_from_target(obj_base_pos, obj_size, pos, transform_matrix):
     return unwraped_point_relative / np.array(obj_size)
 
 
+def adj_weight_gradient(pos):
+    return pos[1]
+
+
 if __name__ == '__main__':
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
@@ -45,6 +50,8 @@ if __name__ == '__main__':
 
     # рисуем базовую форму
     draw_polygon_ext_coords(playground['rezonator'], color='black')
+
+    # рисуем цель
     draw_polygon_ext_coords(playground['targets'][0], color='green')
     draw_polygon_ext_coords(playground['targets'][1], color='green')
 
@@ -53,9 +60,10 @@ if __name__ == '__main__':
 
     # рисуем рабочую область
     draw_polyline(playground['working_area'], format='-.', color='blue')
-    
-    # Установка одинакового масштаба по осям X и Y
-    plt.axis('equal')
+
+    # Установка границ по осям X и Y чтобы видно было только рабочую область
+    plt.gca().set_xlim(playground['working_area'][0][0], playground['working_area'][1][0])
+    plt.gca().set_ylim(playground['working_area'][1][1], playground['working_area'][2][1])
 
     plt.draw()
 
@@ -75,10 +83,12 @@ if __name__ == '__main__':
                 print('<#> forbidden area')
             elif is_point_inside_polygon(click, playground['targets'][0]):
                 target_pos = unmap_from_target(playground['original']['targets'][0][0], original_target_size, click, playground['transform_matrix'])
-                print('<1> target 1 (original pos: {})'.format(target_pos))
+                adj_w = adj_weight_gradient(target_pos)
+                print(f'<1> target 1 (original pos: {target_pos}), adj={adj_w}')
             elif is_point_inside_polygon(click, playground['targets'][1]):
                 target_pos = unmap_from_target(playground['original']['targets'][1][0], original_target_size, click, playground['transform_matrix'])
-                print('<2> target 2 (original pos: {})'.format(target_pos))
+                adj_w = adj_weight_gradient(target_pos)
+                print(f'<2> target 2 (original pos: {target_pos}), adj={adj_w}')
             else:
                 print('<=> dummy rezonator area')
         else:
