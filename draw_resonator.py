@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common import extend_matrix, build_transform_matrix, remove_extended_matrix, transform_all
+from common import extend_matrix, build_transform_matrix, remove_extended_matrix, transform_all, load_rezonator
 
 import generate_rezonator 
 
@@ -18,21 +18,22 @@ def draw_object_ext_coords(vertexes, format="-", color='black'):
 
 
 def draw_test():
-    # нарисовать базовую форму резонатора
+    rez = load_rezonator()
+    
     # базовая точка - середина в месте крепления (0, 0)
-    rezonator = extend_matrix(generate_rezonator.rezonator)
+    rezonator = extend_matrix(rez['rezonator'])
     
     # первая ветка
-    target1 = extend_matrix(generate_rezonator.target1)
+    target1 = extend_matrix(rez['targets'][0])
 
     # вторая ветка
-    target2 = extend_matrix(generate_rezonator.target2)
+    target2 = extend_matrix(rez['targets'][1])
 
     # рабочая область
-    working_area = extend_matrix(generate_rezonator.working_area)
+    working_area = extend_matrix(rez['working_area'])
     
     # Запрещенная область
-    forbidden_area = extend_matrix(generate_rezonator.forbidden_area)
+    forbidden_area = extend_matrix(rez['forbidden_area'])
     
     # рисуем базовую форму
     draw_object_ext_coords(rezonator, color='black', format='--')
