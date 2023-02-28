@@ -30,7 +30,10 @@ def generate_playground(offset=(0, 0), angle=0.0):
         'rezonator': unextended_matrix(elements[0]),
         'targets': list(map(unextended_matrix, elements[1:3])),
         'forbidden_area': unextended_matrix(elements[3]),
-        'working_area': rezonator_cached['working_area']
+        'working_area': rezonator_cached['working_area'],
+
+        'original': rezonator_cached,
+        'transform_matrix': transformation_matrix,
     }
 
 if __name__ == '__main__':

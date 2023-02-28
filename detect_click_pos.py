@@ -6,8 +6,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from generate_playground import generate_playground
-from common import draw_polygon_ext_coords, draw_polyline
+from common import draw_polygon_ext_coords, draw_polyline, extend_matrix
 from inside_detector import is_point_inside_polygon
+
+def unmap_from_target(obj_base_pos, obj_size, pos, transform_matrix):
+    """
+    Функция преобразует координаты точки из системы координат резонатора в систему координат цели в пределах 0.0..1.0
+    :param obj_base_pos: координаты базовой точки объекта
+    :param obj_size: размер объекта
+    :param pos: координаты точки в глобальной системе координат
+    :param transform_matrix: матрица преобразования объекта цели
+    """
+
+    # обратная матрица преобразования
+    inv_transform_matrix = np.linalg.inv(transform_matrix)
+
+    # обратное преобразование точки
+    ext_pos = np.array([pos[0], pos[1], 1])
+    unwraped_point = np.dot(inv_transform_matrix, ext_pos)
+
+    # вычесть базовую точку объекта из позиции
+    unwraped_point_relative = unwraped_point[0:2] - np.array(obj_base_pos)
+
+    # нормализовать координаты
+    return unwraped_point_relative / np.array(obj_size)
 
 
 if __name__ == '__main__':
@@ -17,6 +39,9 @@ if __name__ == '__main__':
     print('offset: {}, angle: {}'.format(offset, angle))
 
     playground = generate_playground(offset=offset, angle=angle)
+
+    original_target = playground['original']['targets'][0]
+    original_target_size = original_target[2] - original_target[0]
 
     # рисуем базовую форму
     draw_polygon_ext_coords(playground['rezonator'], color='black')
@@ -48,10 +73,12 @@ if __name__ == '__main__':
         if is_point_inside_polygon(click, playground['rezonator']):
             if is_point_inside_polygon(click, playground['forbidden_area']):
                 print('<#> forbidden area')
-            elif  is_point_inside_polygon(click, playground['targets'][0]):
-                print('<1> target 1')
+            elif is_point_inside_polygon(click, playground['targets'][0]):
+                target_pos = unmap_from_target(playground['original']['targets'][0][0], original_target_size, click, playground['transform_matrix'])
+                print('<1> target 1 (original pos: {})'.format(target_pos))
             elif is_point_inside_polygon(click, playground['targets'][1]):
-                print('<2> target 2')
+                target_pos = unmap_from_target(playground['original']['targets'][1][0], original_target_size, click, playground['transform_matrix'])
+                print('<2> target 2 (original pos: {})'.format(target_pos))
             else:
                 print('<=> dummy rezonator area')
         else:
