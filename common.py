@@ -102,4 +102,4 @@ def draw_object_ext_coords(vertexes, format="-", color='black'):
     :return: None
     """
     vertexes = unextended_matrix(vertexes)
-    return plt.plot(vertexes[:, 0], vertexes[:, 1], format, color=color)
+    return draw_object(vertexes, format, color)

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 from common import load_rezonator, build_transform_matrix, transform_all, extend_matrix, unextended_matrix
 
@@ -41,9 +42,10 @@ if __name__ == '__main__':
         # Генерируем случайное смещение и случайный угол поворота
         offset = (np.random.random() * 0.3, np.random.random() * 0.5)
         angle = np.random.random() * 20 - 10
+        print('offset: {}, angle: {}'.format(offset, angle))
 
         playground = generate_playground(offset=offset, angle=angle)
-        
+
         # рисуем базовую форму
         draw_object(playground['rezonator'], color='black')
         draw_object(playground['targets'][0], color='green')
@@ -58,9 +60,11 @@ if __name__ == '__main__':
         # Установка одинакового масштаба по осям X и Y
         plt.axis('equal')
 
-        plt.show()
+        plt.draw()
 
-        click = plt.ginput()
+        r = plt.waitforbuttonpress(timeout=5)
+        if not r:
+            exit(0)
 
-        # clear plot
+        # Очищаем график
         plt.clf()
