@@ -62,9 +62,12 @@ if __name__ == '__main__':
 
         plt.draw()
 
-        r = plt.waitforbuttonpress(timeout=5)
-        if not r:
+        click = plt.ginput(timeout=5)
+        if not click:
             exit(0)
+
+        click = click[0]
+        print('point clicked: x:{}, y:{}'.format(click[0], click[1]))
 
         # Очищаем график
         plt.clf()
