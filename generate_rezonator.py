@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from common import extend_matrix, remove_extended_matrix, transform_all
+from common import extend_matrix, unextended_matrix, transform_all
 
 # Константы
 REZONATOR_LENGTH = 4.5

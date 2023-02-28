@@ -1,12 +1,15 @@
 import numpy as np
 from json import JSONEncoder
 import json
+import matplotlib.pyplot as plt
+
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
+
 
 def load_rezonator():
     with open('rezonator.json', 'r') as f:
@@ -17,6 +20,7 @@ def load_rezonator():
         data['forbidden_area'] = np.array(data['forbidden_area'])
 
     return data
+
 
 def extend_matrix(matrix):
     """
@@ -61,13 +65,14 @@ def build_transform_matrix(base_point=(0, 0), angle=0.0, offset=(0, 0)):
     return final_matrix
 
 
-def remove_extended_matrix(matrix):
+def unextended_matrix(matrix):
     """
     Функция убирает дополнительную размерность
     :param matrix: матрица
     :return: матрица без дополнительной размерности
     """
     return matrix.T
+
 
 def transform_all(objects, matrix):
     """
@@ -78,3 +83,23 @@ def transform_all(objects, matrix):
     """
     return [np.dot(matrix, obj) for obj in objects]
 
+
+def draw_object(vertexes, format="-", color='black'):
+    """
+    Функция рисует объект по заданным вершинам
+    :param vertexes: вершины объекта
+    :param color: цвет
+    :return: None
+    """
+    return plt.plot(vertexes[:, 0], vertexes[:, 1], format, color=color)
+
+
+def draw_object_ext_coords(vertexes, format="-", color='black'):
+    """
+    Функция рисует объект по заданным вершинам
+    :param vertexes: вершины объекта
+    :param color: цвет
+    :return: None
+    """
+    vertexes = unextended_matrix(vertexes)
+    return plt.plot(vertexes[:, 0], vertexes[:, 1], format, color=color)

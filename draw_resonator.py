@@ -1,20 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common import extend_matrix, build_transform_matrix, remove_extended_matrix, transform_all, load_rezonator
-
-import generate_rezonator 
-
-
-def draw_object_ext_coords(vertexes, format="-", color='black'):
-    """
-    Функция рисует объект по заданным вершинам
-    :param vertexes: вершины объекта
-    :param color: цвет
-    :return: None
-    """
-    vertexes = remove_extended_matrix(vertexes)
-    return plt.plot(vertexes[:, 0], vertexes[:, 1], format, color=color)
+from common import extend_matrix, build_transform_matrix, unextended_matrix, transform_all, load_rezonator, draw_object_ext_coords
 
 
 def draw_test():
