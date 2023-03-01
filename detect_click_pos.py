@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 from generate_playground import generate_playground
-from common import draw_polygon_ext_coords, draw_polyline, extend_matrix
+from common import draw_polygon
 from inside_detector import is_point_inside_polygon
 
 def unmap_from_target(obj_base_pos, obj_size, pos, transform_matrix):
@@ -38,6 +38,8 @@ def adj_weight_gradient(pos):
 
 
 if __name__ == '__main__':
+    f, ax = plt.subplots(1, 1)
+
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
     angle = np.random.random() * 20 - 10
@@ -49,26 +51,26 @@ if __name__ == '__main__':
     original_target_size = original_target[2] - original_target[0]
 
     # рисуем базовую форму
-    draw_polygon_ext_coords(playground['rezonator'], color='black')
+    draw_polygon(ax, playground['rezonator'], edgecolor='black', facecolor='none')
 
     # рисуем цель
-    draw_polygon_ext_coords(playground['targets'][0], color='green')
-    draw_polygon_ext_coords(playground['targets'][1], color='green')
+    draw_polygon(ax, playground['targets'][0], color='green')
+    draw_polygon(ax, playground['targets'][1], color='green')
 
     # рисуем запрещенную область
-    draw_polygon_ext_coords(playground['forbidden_area'], color='magenta')
+    draw_polygon(ax, playground['forbidden_area'], color='magenta')
 
     # рисуем рабочую область
-    draw_polyline(playground['working_area'], format='-.', color='blue')
+    draw_polygon(ax, playground['working_area'], edgecolor='blue', facecolor='none')
 
     # Установка границ по осям X и Y чтобы видно было только рабочую область
-    plt.gca().set_xlim(playground['working_area'][0][0], playground['working_area'][1][0])
-    plt.gca().set_ylim(playground['working_area'][1][1], playground['working_area'][2][1])
+    ax.set_xlim(playground['working_area'][0][0], playground['working_area'][1][0])
+    ax.set_ylim(playground['working_area'][1][1], playground['working_area'][2][1])
 
     plt.draw()
 
     while True:
-        click = plt.ginput(show_clicks=True)
+        click = f.ginput(show_clicks=True)
         if not click:
             exit(0)
 

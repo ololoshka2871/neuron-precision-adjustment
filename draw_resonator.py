@@ -1,37 +1,39 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common import extend_matrix, build_transform_matrix, unextended_matrix, transform_all, load_rezonator, draw_polyline_ext_coords
+from common import build_transform_matrix, transform_all, load_rezonator, draw_polygon
 
 
 def draw_test():
+    f, ax = plt.subplots(1, 1)
+
     rez = load_rezonator()
     
     # базовая точка - середина в месте крепления (0, 0)
-    rezonator = extend_matrix(rez['rezonator'])
+    rezonator = rez['rezonator']
     
     # первая ветка
-    target1 = extend_matrix(rez['targets'][0])
+    target1 = rez['targets'][0]
 
     # вторая ветка
-    target2 = extend_matrix(rez['targets'][1])
+    target2 = rez['targets'][1]
 
     # рабочая область
-    working_area = extend_matrix(rez['working_area'])
+    working_area = rez['working_area']
     
     # Запрещенная область
-    forbidden_area = extend_matrix(rez['forbidden_area'])
+    forbidden_area = rez['forbidden_area']
     
     # рисуем базовую форму
-    draw_polyline_ext_coords(rezonator, color='black', format='--')
-    draw_polyline_ext_coords(target1, color='black')
-    draw_polyline_ext_coords(target2, color='black')
+    draw_polygon(ax, rezonator, facecolor='none', edgecolor='black')
+    draw_polygon(ax, target1, color='black')
+    draw_polygon(ax, target2, color='black')
 
     # рисуем рабочую область
-    draw_polyline_ext_coords(working_area, color='blue', format='-.')
+    draw_polygon(ax, working_area, facecolor='none', edgecolor='blue')
 
     # рисуем запрещенную область
-    draw_polyline_ext_coords(forbidden_area, color='magenta', format='-')
+    draw_polygon(ax, forbidden_area, color='magenta')
 
     #---------------------------
 
@@ -39,10 +41,10 @@ def draw_test():
 
     transformed = transform_all([rezonator, target1, target2, forbidden_area], matrix)
 
-    draw_polyline_ext_coords(transformed[0], color='red', format='--')
-    draw_polyline_ext_coords(transformed[1], color='red')
-    draw_polyline_ext_coords(transformed[2], color='red')
-    draw_polyline_ext_coords(transformed[3], color='red')
+    draw_polygon(ax, transformed[0], edgecolor='red', facecolor='none')
+    draw_polygon(ax, transformed[1], color='red')
+    draw_polygon(ax, transformed[2], color='red')
+    draw_polygon(ax, transformed[3], color='darkred')
 
     #---------------------------
 
@@ -50,10 +52,10 @@ def draw_test():
 
     transformed = transform_all([rezonator, target1, target2, forbidden_area], matrix)
 
-    draw_polyline_ext_coords(transformed[0], color='green', format='--')
-    draw_polyline_ext_coords(transformed[1], color='green')
-    draw_polyline_ext_coords(transformed[2], color='green')
-    draw_polyline_ext_coords(transformed[3], color='green')
+    draw_polygon(ax, transformed[0], edgecolor='green', facecolor='none')
+    draw_polygon(ax, transformed[1], color='green')
+    draw_polygon(ax, transformed[2], color='green')
+    draw_polygon(ax, transformed[3], color='darkgreen')
 
     #---------------------------
 

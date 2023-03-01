@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from common import extend_matrix, unextended_matrix, transform_all
+from common import transform_all
 
 # Константы
 REZONATOR_LENGTH = 4.5
@@ -57,7 +57,7 @@ def rezonator_as_object():
                                 [0, 1, 0],
                                 [0, 0, 1]])
     # вторая ветка
-    target2 = (np.dot(target_move_matrix, extend_matrix(target1))[0:2, :]).T
+    target2 = np.dot(target_move_matrix, target1)
 
     # рабочая область
     working_area = np.array([[-WORKING_AREA_WIDTH_HALF, WORKING_AREA_Y_OFFSET],
