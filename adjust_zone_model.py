@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import math
+
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -10,14 +12,37 @@ from generate_playground import generate_playground
 
 
 class AdjustZoneModel:
-    def __init__(self, divizion: tuple, initial_weight=1.0,
-                 weigth_multiplicator=lambda pos: 1.0,
-                 minimal_power_threshold=lambda pos: 0.0, energy_consume_rate=lambda pos: 1.0):
-        self.initial_weight = initial_weight
-        self.field = np.array([[initial_weight * weigth_multiplicator((x/divizion[0], y/divizion[1]))
-                              for y in range(divizion[1])] for x in range(divizion[0])])
-        self.minimal_power_threshold = minimal_power_threshold
+    METAL_DENSITY = 10.49 / math.pow(1e1, 3)  # g/sm^3 -> g/mm^3
+    SENSIVITY_BASE = 3e-9 # g/Hz
+
+    def __init__(self,
+                 size: tuple,
+                 divizion: tuple,
+                 layer_thiknes=0.5e-6 * 1e3,
+                 sensitivity_multiplicator=lambda pos: 1.0,
+                 power_threshold=0.0,
+                 energy_consume_rate=lambda value: 1.0):
+        """
+        Создать новый экземпляр модели мишени
+        :param size: физический размер мишени в милиметрах
+        :param divizion: количество чанков по ширине и высоте на  которое разбивается вся мишень
+        :param layer_thiknes: толщина слоя серебра на мишени, мм
+        :param sensitivity_multiplicator: функция, которая возвращает коэффициент чувствительности в зависимости от позиции, позиция в пределах 0.0..1.0
+        :param power_threshold: минимальная мощность лазера, необходимая для начала испарения серебра в пределах 0.0..1.0
+        :param energy_consume_rate: функция, которая возвращает коэффициент поглащения энергии в зависимости количества серебра в данном месте, количество серебра в пределах 0.0..1.0
+        """
+
+        full_mass = size[0] * size[1] * \
+            layer_thiknes * AdjustZoneModel.METAL_DENSITY
+        
+        self.chank_freq_offset_max = full_mass / AdjustZoneModel.SENSIVITY_BASE / (divizion[0] * divizion[1])
+        self.field = np.array([[1.0 for y in range(divizion[1])]
+                              for x in range(divizion[0])])
+        self.sensitivity_multiplicator = sensitivity_multiplicator
+        self.power_threshold = power_threshold
         self.energy_consume_rate = energy_consume_rate
+
+        self.full_freq_offset = self._current_freq_offset()
 
     def to_grid(self, base_pos=(0.0, 0.0), size=(1.0, 1.0)):
         w, h = self.field.shape
@@ -25,13 +50,14 @@ class AdjustZoneModel:
         size = (size[0] / w, size[1] / h)
 
         def color(x, y):
-            c = self.field[x][y] / self.initial_weight
-            return (c, c, c)
+            c = self.field[x][y]
+            s = self.sensitivity_multiplicator((x / w, y / h))
+            return (c, 0.5, s)
 
         return [[patches.Rectangle((base_pos[0] + x * size[0], base_pos[1] + y * size[1]), size[0], size[1],
                                    linewidth=1, edgecolor=(0, 0, 0), facecolor=color(x, y))
                 for y in range(h)] for x in range(w)]
-    
+
     def find_chank(self, pos):
         """
         Функция возвращает чанк, в котором находится точка
@@ -45,13 +71,23 @@ class AdjustZoneModel:
         chank_pos = self.find_chank(pos)
         current_value = self.field[chank_pos[0]][chank_pos[1]]
 
-        if current_value > 0 and power > self.minimal_power_threshold(pos):
-            current_value = max(0, current_value - self.energy_consume_rate(pos) * time * power)
-            if current_value == 0:
-                print(f'chank {chank_pos} deepleted')
-            else:
-                print(f'chank {chank_pos} updated to {current_value}')
+        if current_value > 0 and power > self.power_threshold:
+            current_value = max(0, current_value -
+                                self.energy_consume_rate(pos) * time * power)
             self.field[chank_pos[0]][chank_pos[1]] = current_value
+
+    def _current_freq_offset(self):
+        size = self.field.shape
+
+        summ = 0
+        for x, row in enumerate(self.field):
+            for y, chank_mass in enumerate(row):
+                multiplicator = self.sensitivity_multiplicator((x / size[0], y / size[1]))
+                summ += chank_mass * self.chank_freq_offset_max * multiplicator
+        return summ
+
+    def freq_change(self) -> float:
+        return self.full_freq_offset - self._current_freq_offset()
 
 
 def draw_model(axis: plt.Axes, rects) -> list[patches.Patch]:
@@ -72,6 +108,18 @@ def update_target(position: tuple, target_polygon_real, target_polygon_original,
         patches[:] = draw_model(untr_pg, rects)
         return True
     return False
+
+
+def create_linear_sensivity_multiplicator(min, max):
+    def sensivity(pos):
+        pos = pos[1]
+        if pos < 0:
+            return min
+        elif pos > max:
+            return max
+        else:
+            return (max - min) * pos + min
+    return sensivity
 
 
 if __name__ == '__main__':
@@ -118,7 +166,8 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
 
     # точность разбиения цели на чанки
-    CHANK_GRID_PRECISION = 10
+    CHANK_GRID_PRECISION_X = 3
+    CHANK_GRID_PRECISION_Y = 20
 
     original_target = playground['original']['targets'][0]
     original_target_size = original_target[2] - original_target[0]
@@ -139,17 +188,16 @@ if __name__ == '__main__':
     draw_polygon(untr_pg, un_transformed_work_zone,
                  edgecolor='blue', facecolor='none')
 
-    def weigth_modificator(pos):
-        return pos[1]
+    f_sensivity = create_linear_sensivity_multiplicator(0.5, 1.0)
 
-    zone1 = AdjustZoneModel((int(CHANK_GRID_PRECISION * target_size_ratio),
-                            CHANK_GRID_PRECISION), weigth_multiplicator=weigth_modificator)
+    zone1 = AdjustZoneModel(size=original_target_size, divizion=(
+        CHANK_GRID_PRECISION_X, CHANK_GRID_PRECISION_Y), sensitivity_multiplicator=f_sensivity)
     rects = zone1.to_grid(
         playground['original']['targets'][0][0], original_target_size)
     patches1 = draw_model(untr_pg, rects)
 
-    zone2 = AdjustZoneModel((int(CHANK_GRID_PRECISION * target_size_ratio),
-                            CHANK_GRID_PRECISION), weigth_multiplicator=weigth_modificator)
+    zone2 = AdjustZoneModel(size=original_target_size, divizion=(
+        CHANK_GRID_PRECISION_X, CHANK_GRID_PRECISION_Y), sensitivity_multiplicator=f_sensivity)
     rects = zone2.to_grid(
         playground['original']['targets'][1][0], original_target_size)
     patches2 = draw_model(untr_pg, rects)
@@ -188,5 +236,10 @@ if __name__ == '__main__':
                                  transformed_pos, original_target_size, time=time):
                 plt.draw()
                 continue
+
+        ch = [zone1.freq_change(), zone2.freq_change()]
+        total_change = sum(ch)
+        diff = (ch[0] - ch[1]) / total_change
+        print('freq_changed: {} ({} + {}), diff: {}%'.format(total_change, ch[0], ch[1], diff * 100))
 
         plt.draw()
