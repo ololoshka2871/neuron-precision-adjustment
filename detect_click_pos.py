@@ -4,30 +4,26 @@ import time
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.transforms import Affine2D
 
 from generate_playground import generate_playground
 from common import draw_polygon
 from inside_detector import is_point_inside_polygon
 
-def unmap_from_target(obj_base_pos, obj_size, pos, transform_matrix):
+def unmap_from_target(obj_base_pos, obj_size, pos, inv_transform_matrix: Affine2D):
     """
     Функция преобразует координаты точки из системы координат резонатора в систему координат цели в пределах 0.0..1.0
     :param obj_base_pos: координаты базовой точки объекта
     :param obj_size: размер объекта
     :param pos: координаты точки в глобальной системе координат
-    :param transform_matrix: матрица преобразования объекта цели
+    :param inv_transform_matrix: обратная матрица преобразования
     """
 
-    # обратная матрица преобразования
-    inv_transform_matrix = np.linalg.inv(transform_matrix)
-
     # обратное преобразование точки
-    ext_pos = np.array([pos[0], pos[1], 1])
-    unwraped_point = np.dot(inv_transform_matrix, ext_pos)
+    unwraped_point = inv_transform_matrix.transform(pos)
 
     # вычесть базовую точку объекта из позиции
-    unwraped_point_relative = unwraped_point[0:2] - np.array(obj_base_pos)
+    unwraped_point_relative = unwraped_point - np.array(obj_base_pos)
 
     # нормализовать координаты
     return unwraped_point_relative / np.array(obj_size)
@@ -67,6 +63,8 @@ if __name__ == '__main__':
     ax.set_xlim(playground['working_area'][0][0], playground['working_area'][1][0])
     ax.set_ylim(playground['working_area'][1][1], playground['working_area'][2][1])
 
+    inverted_transform_matrix = playground['transform_matrix'].inverted()
+
     plt.draw()
 
     while True:
@@ -84,11 +82,11 @@ if __name__ == '__main__':
             if is_point_inside_polygon(click, playground['forbidden_area']):
                 print('<#> forbidden area')
             elif is_point_inside_polygon(click, playground['targets'][0]):
-                target_pos = unmap_from_target(playground['original']['targets'][0][0], original_target_size, click, playground['transform_matrix'])
+                target_pos = unmap_from_target(playground['original']['targets'][0][0], original_target_size, click, inverted_transform_matrix)
                 adj_w = adj_weight_gradient(target_pos)
                 print(f'<1> target 1 (original pos: {target_pos}), adj={adj_w}')
             elif is_point_inside_polygon(click, playground['targets'][1]):
-                target_pos = unmap_from_target(playground['original']['targets'][1][0], original_target_size, click, playground['transform_matrix'])
+                target_pos = unmap_from_target(playground['original']['targets'][1][0], original_target_size, click, inverted_transform_matrix)
                 adj_w = adj_weight_gradient(target_pos)
                 print(f'<2> target 2 (original pos: {target_pos}), adj={adj_w}')
             else:
