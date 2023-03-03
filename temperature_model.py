@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+QUARTZ_HEAT_CAPACITY = 750.0  # [J / (kg * K)]
+QUARTZ_DESTENSITY = 2650.0  # [kg / m^3]
 
 class TemperatureModel:
     """
@@ -10,24 +12,24 @@ class TemperatureModel:
 
     def __init__(self, heat_capacity: float, heat_dissipation_rate: float,
                  ambient_temperature=273.0, temperature: float | None = None,
-                 strike_dissipation: float = 0.95):
+                 consume_rate=lambda current_temperature, **kwargs: 1.0):
         """
         :param heat_capacity: Теплоёмкость объекта [J / K]
         :param heat_dissipation_rate: Скорость рассеяние энергии в окружающую стреду [0..1]
         :param ambient_temperature: Температура окружающей среды [K]
         :param temperature: Текущая температура объекта, если не указана, то равна температуре окружающей среды [K]
-        :param strike_dissipation: Доля энергии рассеиваемая непосредственно при ударе лазера [0..1]
+        :param consume_rate: Функция, возвращающая долю поглощенной энергии непосредственно при ударе лазера [0..1]: 
+            def consume_rate(current_temperature, **kwargs) -> float
         """
         assert (heat_dissipation_rate <=
                 1.0 and heat_dissipation_rate >= 0.0)
-        assert (strike_dissipation <= 1.0 and strike_dissipation >= 0.0)
         assert (ambient_temperature >= 0.0)
 
         self._heat_dissipation_rate = heat_dissipation_rate
         self._heat_capacity = heat_capacity  # [K]
         current_temperature = temperature if temperature is not None else ambient_temperature
         self._current_energy = current_temperature * heat_capacity  # [xJ]
-        self._consume_rate = 1.0 - strike_dissipation
+        self._strike_dissipation = consume_rate
         self._ambient_temperature = ambient_temperature
 
         self._minimal_energy = self._ambient_temperature * self._heat_capacity
@@ -38,16 +40,19 @@ class TemperatureModel:
         """
         return self._current_energy / self._heat_capacity
 
-    def tick(self, power: float = 0.0, dt: float = 1.0):
+    def tick(self, power: float = 0.0, dt: float = 1.0, **kwargs):
         """
         Производит шаг моделирования во времени.
         :param power: Мощность, которую объект получил за шаг [W]
         :param dt: Время шага [s]
         """
 
-        consumed_energy = power * self._consume_rate * dt # [J]
+        consumed_energy = power * \
+            self._strike_dissipation(
+                self.current_temperature(), **kwargs) * dt  # [J]
         self._current_energy += consumed_energy
-        energy_dispersed = (self._current_energy - self._minimal_energy) * self._heat_dissipation_rate * dt
+        energy_dispersed = (
+            self._current_energy - self._minimal_energy) * self._heat_dissipation_rate * dt
         self._current_energy -= energy_dispersed
 
     @property
@@ -58,8 +63,6 @@ class TemperatureModel:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    QUARTZ_HEAT_CAPACITY = 750.0  # [J / (kg * K)]
-    QUARTZ_DESTENSITY = 2650.0  # [kg / m^3]
     REZONATOR_VOLUME = 0.9 * pow(1e-3, 3)  # [mm^3] -> [m^3]
     MODEL_TICK_TIME = 0.01  # [s]
 
@@ -71,12 +74,13 @@ if __name__ == "__main__":
 
     rezonator_mass = QUARTZ_DESTENSITY * REZONATOR_VOLUME
     m = TemperatureModel(heat_capacity=rezonator_mass * QUARTZ_HEAT_CAPACITY,
-                         heat_dissipation_rate=HEAT_DISSIPATION_SPEED)
+                         heat_dissipation_rate=HEAT_DISSIPATION_SPEED, 
+                         consume_rate=lambda current_temperature, **kwargs: 0.05)
 
     data_x = [0.0]
     data_y = [m.current_temperature()]
 
-    curve, = ax.plot(data_x, 'ro-')
+    curve, = ax.plot(data_x, 'r-')
 
     plt.show(block=False)
 

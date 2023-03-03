@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common import build_transform_matrix, transform_all, load_rezonator, draw_polygon
+from common import build_transform_matrix, transform_all, draw_polygon, Rezonator
 
 
 def draw_test():
     f, ax = plt.subplots(1, 1)
 
-    rez = load_rezonator()
+    rez = Rezonator.load()
     
     # базовая точка - середина в месте крепления (0, 0)
     rezonator = rez['rezonator']

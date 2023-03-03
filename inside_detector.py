@@ -1,6 +1,6 @@
 import numpy as np
 
-def is_point_inside_polygon(point, polygon):
+def is_point_inside_polygon(point: tuple[float, float], polygon):
     """
     Функция проверяет, находится ли точка внутри многоугольника
     :param point: точка

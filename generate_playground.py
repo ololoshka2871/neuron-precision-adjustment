@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from common import load_rezonator, build_transform_matrix, transform_all
+from common import build_transform_matrix, transform_all, Rezonator
 
 rezonator_cached = None
 
@@ -12,7 +12,7 @@ def generate_playground(offset=(0, 0), angle=0.0):
     """
     global rezonator_cached
     if not rezonator_cached:
-        rezonator_cached = load_rezonator()
+        rezonator_cached = Rezonator.load()
 
     transformation_matrix = build_transform_matrix(angle=angle, offset=offset)
 

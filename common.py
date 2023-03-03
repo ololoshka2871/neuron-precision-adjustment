@@ -13,15 +13,66 @@ class NumpyArrayEncoder(JSONEncoder):
         return JSONEncoder.default(self, obj)
 
 
-def load_rezonator():
-    with open('rezonator.json', 'r') as f:
-        data = json.load(f)
-        data['rezonator'] = np.array(data['rezonator'])
-        data['targets'] = [np.array(target) for target in data['targets']]
-        data['working_area'] = np.array(data['working_area'])
-        data['forbidden_area'] = np.array(data['forbidden_area'])
+class Rezonator(dict):
+    """
+    Размеры частей резонатора в миллиметрах
+    - rezonator - полигон тела резонатора
+    - targets - полигоны целей
+    - working_area - полигоны рабочей области
+    - forbidden_area - полигоны запрещенной области
+    """
 
-    return data
+    def __init__(self, rezonator, targets, working_area, forbidden_area):
+        self['rezonator'] = rezonator
+        self['targets'] = targets
+        self['working_area'] = working_area
+        self['forbidden_area'] = forbidden_area
+
+    @staticmethod
+    def load():
+        with open('rezonator.json', 'r') as f:
+            data = json.load(f)
+            return Rezonator(rezonator=np.array(data['rezonator']),
+                             targets=[np.array(target)
+                                      for target in data['targets']],
+                             working_area=np.array(data['working_area']),
+                             forbidden_area=np.array(data['forbidden_area']))
+
+    @property
+    def body_square(self) -> float:
+        """
+        Функция вычисляет площадь тела резонатора в мм^2
+        """
+        return polygon_area(self['rezonator'])
+
+    def body_volume(self, thikness: float) -> float:
+        """
+        Функция вычисляет объем тела резонатора с заданной толщиной
+        """
+        return self.body_square * thikness
+
+    @property
+    def target_zone_size(self) -> tuple[float, float]:
+        """
+        Функция возвращает размеры зоны целей
+        """
+        tgt = self['targets'][0]
+        return tgt[2] - tgt[0]
+    
+    def get_target_base_point(self, target_index: int) -> tuple[float, float]:
+        """
+        Функция возвращает базовую точку для заданной цели
+        """
+        tgt = self['targets'][target_index]
+        return tgt[0]
+
+
+def polygon_area(vertices) -> float:
+    """
+    Для вычисления площади многоугольника можно воспользоваться формулой Гаусса
+    """
+    x, y = vertices.T
+    return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
 
 
 def build_transform_matrix(base_point=(0, 0), angle=0.0, offset=(0, 0)) -> Affine2D:

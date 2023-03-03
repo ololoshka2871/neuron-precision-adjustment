@@ -13,15 +13,15 @@ from generate_playground import generate_playground
 
 class AdjustZoneModel:
     METAL_DENSITY = 10.49 / math.pow(1e1, 3)  # g/sm^3 -> g/mm^3
-    SENSIVITY_BASE = 3e-9 # g/Hz
+    SENSIVITY_BASE = 3e-9  # g/Hz
 
     def __init__(self,
-                 size: tuple,
-                 divizion: tuple,
+                 size: tuple[float, float],
+                 divizion: tuple[int, int],
                  layer_thiknes=0.5e-6 * 1e3,
                  sensitivity_multiplicator=lambda pos: 1.0,
                  power_threshold=0.0,
-                 energy_consume_rate=lambda value: 1.0):
+                 energy_consume_rate=lambda pos: 1.0):
         """
         Создать новый экземпляр модели мишени
         :param size: физический размер мишени в милиметрах
@@ -34,8 +34,9 @@ class AdjustZoneModel:
 
         full_mass = size[0] * size[1] * \
             layer_thiknes * AdjustZoneModel.METAL_DENSITY
-        
-        self.chank_freq_offset_max = full_mass / AdjustZoneModel.SENSIVITY_BASE / (divizion[0] * divizion[1])
+
+        self.chank_freq_offset_max = full_mass / \
+            AdjustZoneModel.SENSIVITY_BASE / (divizion[0] * divizion[1])
         self.field = np.array([[1.0 for y in range(divizion[1])]
                               for x in range(divizion[0])])
         self.sensitivity_multiplicator = sensitivity_multiplicator
@@ -44,19 +45,23 @@ class AdjustZoneModel:
 
         self.full_freq_offset = self._current_freq_offset()
 
+    def _color(self, x, y) -> tuple[float, float, float]:
+        w, h = self.field.shape
+        c = float(self.field[x][y])
+        s = self.sensitivity_multiplicator((x / w, y / h))
+        return (c, 0.5, s)
+
     def to_grid(self, base_pos=(0.0, 0.0), size=(1.0, 1.0)):
         w, h = self.field.shape
-
         size = (size[0] / w, size[1] / h)
 
-        def color(x, y):
-            c = self.field[x][y]
-            s = self.sensitivity_multiplicator((x / w, y / h))
-            return (c, 0.5, s)
-
         return [[patches.Rectangle((base_pos[0] + x * size[0], base_pos[1] + y * size[1]), size[0], size[1],
-                                   linewidth=1, edgecolor=(0, 0, 0), facecolor=color(x, y))
+                                   linewidth=1, edgecolor=(0, 0, 0), facecolor=self._color(x, y))
                 for y in range(h)] for x in range(w)]
+    
+    def to_color_map(self) -> list[list[tuple[float, float, float]]]:
+        w, h = self.field.shape
+        return [[self._color(x, y) for y in range(h)] for x in range(w)]
 
     def find_chank(self, pos):
         """
@@ -67,14 +72,24 @@ class AdjustZoneModel:
         w, h = self.field.shape
         return (int(pos[0] * w), int(pos[1] * h))
 
-    def update(self, pos, time, power=1.0):
+    def update(self, pos, time: float, power=1.0) -> bool:
+        """
+        Обновить состояние мишени
+        :param pos: координаты точки в пределах 0.0..1.0
+        :param time: время в секундах
+        :param power: мощность лазера [W]
+        :return: True, если мишень еще не испарилась полностью
+        """
         chank_pos = self.find_chank(pos)
-        current_value = self.field[chank_pos[0]][chank_pos[1]]
+        current_value = self.field[chank_pos]
 
         if current_value > 0 and power > self.power_threshold:
             current_value = max(0, current_value -
                                 self.energy_consume_rate(pos) * time * power)
-            self.field[chank_pos[0]][chank_pos[1]] = current_value
+            self.field[chank_pos] = current_value
+            return current_value > 0
+        
+        return False
 
     def _current_freq_offset(self):
         size = self.field.shape
@@ -82,7 +97,8 @@ class AdjustZoneModel:
         summ = 0
         for x, row in enumerate(self.field):
             for y, chank_mass in enumerate(row):
-                multiplicator = self.sensitivity_multiplicator((x / size[0], y / size[1]))
+                multiplicator = self.sensitivity_multiplicator(
+                    (x / size[0], y / size[1]))
                 summ += chank_mass * self.chank_freq_offset_max * multiplicator
         return summ
 
@@ -90,19 +106,20 @@ class AdjustZoneModel:
         return self.full_freq_offset - self._current_freq_offset()
 
 
-def draw_model(axis: plt.Axes, rects) -> list[patches.Patch]:
-    return [axis.add_patch(rect) for row in rects for rect in row]
+def draw_model(axis: plt.Axes, rects: list[list]) -> list[list[patches.Patch]]:
+    return [[axis.add_patch(rect) for rect in row] for row in rects]
 
 
 def update_target(position: tuple, target_polygon_real, target_polygon_original, zone: AdjustZoneModel,
-                  patches: list[patches.Patch], untransformed_pos, target_size, **update_args) -> bool:
+                  patches: list[list[patches.Patch]], untransformed_pos, target_size, **update_args) -> bool:
     if is_point_inside_polygon(position, target_polygon_real):
         original_base_pos = target_polygon_original[0]
         target_pos = (untransformed_pos - original_base_pos) / target_size
         zone.update(target_pos, **update_args)
 
-        for patch in patches:
-            patch.remove()
+        for row in patches:
+            for patch in row:
+                patch.remove()
 
         rects = zone.to_grid(original_base_pos, original_target_size)
         patches[:] = draw_model(untr_pg, rects)
@@ -240,6 +257,7 @@ if __name__ == '__main__':
         ch = [zone1.freq_change(), zone2.freq_change()]
         total_change = sum(ch)
         diff = (ch[0] - ch[1]) / total_change
-        print('freq_changed: {} ({} + {}), diff: {}%'.format(total_change, ch[0], ch[1], diff * 100))
+        print('freq_changed: {} ({} + {}), diff: {}%'.format(total_change,
+              ch[0], ch[1], diff * 100))
 
         plt.draw()
