@@ -104,6 +104,12 @@ class AdjustZoneModel:
 
     def freq_change(self) -> float:
         return self.full_freq_offset - self._current_freq_offset()
+    
+    def max_adjustment(self) -> float:
+        """
+        Возвращает таксимально-возможное изменение частоты резонатора если испарить все серебро.
+        """
+        return self.full_freq_offset
 
 
 def draw_model(axis: plt.Axes, rects: list[list]) -> list[list[patches.Patch]]:

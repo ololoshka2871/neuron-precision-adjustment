@@ -44,11 +44,19 @@ class MovingInterpolator:
         self._current_s = 0.0
         self._current_duration = 0.0
 
-    def begin(self):
-        self.current_from_x = 0.0
-        self.current_from_y = 0.0
-        self.current_to_x = 0.0
-        self.current_to_y = 0.0
+    def begin(self, initial_pos: tuple[float, float], initial_time: float):
+        """
+        Начальная инициализация интерполятора
+        :param initial_pos: Начальная позиция лазера
+        :param initial_time: Начальное время
+        """
+        self._current_from_x = initial_pos[0]
+        self._current_from_y = initial_pos[1]
+        self._current_to_x = initial_pos[0]
+        self._current_to_y = initial_pos[1]
+        self._current_cmd_x = initial_pos[0]
+        self._current_cmd_y = initial_pos[1]
+        self._now = int(initial_time * 1_000_000_000.0)
 
     def is_busy(self):
         """
@@ -56,15 +64,16 @@ class MovingInterpolator:
         """
         return self._status == MotionStatus.INTERPOLATING
 
-    def process(self, command: Command):
+    def process(self, command: Command) -> bool:
         if self._status == MotionStatus.IDLE:
             self._current_s = command.S
             self._current_f = command.F
             self._current_to_x, self._current_to_y = command.destinanton
 
             self._status = MotionStatus.INTERPOLATING
+            return True
         else:
-            raise RuntimeError("Cannot process command while interpolating.")
+            return False
 
     def tick(self, now: float) -> MotionStatus:
         """
@@ -138,11 +147,19 @@ class MovingInterpolator:
         """
         return self._current_to_x, self._current_to_y
     
+    @property
     def current_s(self) -> float:
         """
         :return: The current S value of the interpolator.
         """
         return self._current_s
+
+    @property
+    def current_f(self) -> float:
+        """
+        :return: The current F value of the interpolator.
+        """
+        return self._current_f
         
 
 if __name__ == "__main__":

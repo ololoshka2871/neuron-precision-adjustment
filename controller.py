@@ -13,18 +13,13 @@ class RandomController:
     def __init__(self) -> None:
         pass
 
-    @property
-    def target(self):
-        return np.random.normal(-1.0, 1.0, 2)
-
-    @property
-    def speed(self):
-        return np.random.normal(0.0, 1.0)
-
-    @property
-    def power(self):
-        return np.random.normal(0.0, 1.0)
-
-    @property
-    def self_evaluation(self):
-        return np.random.normal(-1.0, 1.0)
+    def update(self):
+        """
+        Функция обновляет состояние контроллера
+        """
+        return {
+            'destination': np.random.normal(-1.0, 1.0, 2),
+            'power': np.random.normal(0.0, 1.0),
+            'speed': np.random.normal(0.0, 1.0),
+            'self_evaluation': np.random.normal(-1.0, 1.0)
+        }

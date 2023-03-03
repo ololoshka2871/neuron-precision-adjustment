@@ -59,12 +59,34 @@ class Rezonator(dict):
         tgt = self['targets'][0]
         return tgt[2] - tgt[0]
     
+    @property
+    def work_zone_size(self) -> tuple[float, float]:
+        """
+        Функция возвращает размеры рабочей зоны
+        """
+        return self['working_area'][2] - self['working_area'][0]
+
+    @property
+    def work_zone_base(self) -> tuple[float, float]:
+        """
+        Функция возвращает базовую точку рабочей зоны
+        """
+        return self['working_area'][0]
+
     def get_target_base_point(self, target_index: int) -> tuple[float, float]:
         """
         Функция возвращает базовую точку для заданной цели
         """
         tgt = self['targets'][target_index]
         return tgt[0]
+
+    @property
+    def work_zone_center_pos(self) -> tuple[float, float]:
+        """
+        Функция возвращает центральную точку рабочей зоны
+        """
+        return self.work_zone_base[0] + self.work_zone_size[0] / 2, \
+               self.work_zone_base[1] + self.work_zone_size[1] / 2
 
 
 def polygon_area(vertices) -> float:

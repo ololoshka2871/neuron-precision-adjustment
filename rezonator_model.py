@@ -174,7 +174,7 @@ class Metrics(dict):
 
     def __getitem__(self, key: str):
         if key == "static_freq_change":
-            return sum(self["freq_change_branches"]) # type: ignore
+            return sum(self["freq_change_branches"])  # type: ignore
         elif key == "freq_change":
             return self["static_freq_change"] * self['temperature'] * self._tfk
         elif key == "disbalance":
@@ -301,6 +301,29 @@ class RezonatorModel:
         Резонатор остывает время time.
         """
         self._temperature_model.tick(0.0, time)
+
+    @staticmethod
+    def get_working_zone(offset=(0.0, 0.0)) -> tuple[tuple[float, float], tuple[float, float]]:
+        """
+        Возвращает рабочую зону резонатора.
+        """
+        return offset, RezonatorModel.REZONATOR.target_zone_size
+
+    @property
+    def possible_freq_adjust(self) -> float:
+        """
+        Возвращает таксимально-возможное изменение частоты резонатора если испарить все серебро.
+        """
+        return sum(map(AdjustZoneModel.max_adjustment, self._adj_zones))
+    
+    def map_local_to_global(self, wz_pos: tuple[float, float]) -> tuple[float, float]:
+        """
+        Преобразует локальные координаты внутри рабочей зоны в глобальные.
+        :param wz_pos: локальные координаты относитеьно центра рабочей зоны
+        """
+        wz_center_pos = RezonatorModel.REZONATOR.work_zone_center_pos
+
+        return (wz_pos[0] + wz_center_pos[0], wz_pos[1] + wz_center_pos[1])
 
 
 if __name__ == '__main__':
@@ -479,7 +502,8 @@ if __name__ == '__main__':
         mp.relim()
         mp.autoscale_view()
 
-        print(f"Static freq change: {m['static_freq_change']:.2f} Hz, disbalance: {m['disbalance'] * 100:.2f} %")
+        print(
+            f"Static freq change: {m['static_freq_change']:.2f} Hz, disbalance: {m['disbalance'] * 100:.2f} %")
 
         # ----------------------------------------
 
