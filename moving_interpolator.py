@@ -44,7 +44,7 @@ class MovingInterpolator:
         self._current_s = 0.0
         self._current_duration = 0.0
 
-    def begin(self, initial_pos: tuple[float, float], initial_time: float):
+    def begin(self, initial_pos: tuple[float, float]):
         """
         Начальная инициализация интерполятора
         :param initial_pos: Начальная позиция лазера
@@ -56,7 +56,6 @@ class MovingInterpolator:
         self._current_to_y = initial_pos[1]
         self._current_cmd_x = initial_pos[0]
         self._current_cmd_y = initial_pos[1]
-        self._now = int(initial_time * 1_000_000_000.0)
 
     def is_busy(self):
         """
@@ -75,11 +74,11 @@ class MovingInterpolator:
         else:
             return False
 
-    def tick(self, now: float) -> MotionStatus:
+    def tick(self, cycle_time: float) -> MotionStatus:
         """
         Update the interpolator with the current time.
         """
-        self._now = int(now * 1_000_000_000.0)
+        self._now += int(cycle_time * 1_000_000_000.0)
 
         if self._status == MotionStatus.INTERPOLATING:
             self._interpolate_move()
@@ -129,6 +128,7 @@ class MovingInterpolator:
         length_of_move = math.sqrt(xdist * xdist + ydist * ydist)
         return 1_000_000_000.0 * length_of_move / (move_velocity / 60.0)
     
+    @property
     def current_position(self) -> tuple[float, float]:
         """
         :return: The current position of the interpolator.
@@ -191,11 +191,10 @@ if __name__ == "__main__":
 
         from_pos = interpolator.from_pos()
         dest_pos = interpolator.to_pos()
-        cur_pos = interpolator.current_position()
 
         move_src.set_data(from_pos)
         move_dst.set_data(dest_pos)
-        current_pos.set_data(cur_pos)
+        current_pos.set_data(interpolator.current_position)
 
         move_trace.set_data([from_pos[0], dest_pos[0]], [from_pos[1], dest_pos[1]])
 

@@ -15,7 +15,7 @@ class Rect:
     
     @staticmethod
     def from_rezonator(rezonator: Rezonator, center: tuple[float, float]):
-        return Rect.base_size(center, rezonator.target_zone_size)
+        return Rect.base_size(center, rezonator.work_zone_size)
 
     def __str__(self):
         return f"Rect({self.x0}, {self.y0}, {self.x1}, {self.y1})"
@@ -49,7 +49,8 @@ class WorkZone:
         :param pos: Координаты в локальной системе координат [-1..1]
         :return: Координаты в глобальной системе координат [мм]
         """
-        return self._center[0] + pos[0] * self._size[0], self._center[1] + pos[1] * self._size[1]
+        return self._center[0] + pos[0] * self._size[0] / 2.0, \
+               self._center[1] + pos[1] * self._size[1] / 2.0
 
     def map_from_global(self, pos: tuple[float, float]) -> tuple[float, float]:
         """
@@ -57,7 +58,8 @@ class WorkZone:
         :param pos: Координаты в глобальной системе координат [мм]
         :return: Координаты в локальной системе координат [-1..1]
         """
-        return (pos[0] - self._center[0]) / self._size[0], (pos[1] - self._center[1]) / self._size[1]
+        return (pos[0] - self._center[0]) * 2.0 / self._size[0], \
+               (pos[1] - self._center[1]) * 2.0 / self._size[1]
 
     def map_s_to_global(self, s: float) -> float:
         """
@@ -95,6 +97,6 @@ class WorkZone:
         """
         Преобразование координат из локальной системы координат в локальную
         :param relative_pos: Координаты в локальной системе координат [-1..1]
-        :return: Координаты в локальной системе координат [мм]
+        :return: Координаты в локальной системе координат (относительно центра) [мм]
         """
-        return relative_pos[0] * self._size[0], relative_pos[1] * self._size[1]
+        return relative_pos[0] * self._size[0] / 2.0, relative_pos[1] * self._size[1] / 2.0

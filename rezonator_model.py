@@ -102,7 +102,8 @@ class ModelView:
                 RezonatorModel.REZONATOR['working_area'])
         return self._working_area
 
-    def detect_zone(self, position) -> Zone:
+    @staticmethod
+    def detect_zone(position) -> Zone:
         """
         Функция определяет зону резонатора в которой находится точка
         :param position: координаты точки
@@ -142,7 +143,8 @@ class ModelView:
     def target_color_map(self, index: int):
         return self._zones[index].to_color_map()
 
-    def map_to_zone(self, zone: Zone, model_pos) -> tuple[float, float]:
+    @staticmethod
+    def map_to_zone(zone: Zone, model_pos) -> tuple[float, float]:
         match zone:
             case Zone.TARGET1:
                 base = RezonatorModel.REZONATOR.get_target_base_point(0)
@@ -449,7 +451,7 @@ if __name__ == '__main__':
             model_pos = playground.map_to_model(click)
             current_pos_transformed.set_data(model_pos[0], model_pos[1])
 
-            match model_view.detect_zone(model_pos):
+            match ModelView.detect_zone(model_pos):
                 case Zone.BODY:
                     # just heat up
                     rezonator.heat_body(LASER_POWER, cycle_time)
@@ -458,7 +460,7 @@ if __name__ == '__main__':
                     rezonator.heat_forbidden(LASER_POWER, cycle_time)
                 case Zone.TARGET1 | Zone.TARGET2 as zone:
                     # Обработка мишеней
-                    pos = model_view.map_to_zone(zone, model_pos)
+                    pos = ModelView.map_to_zone(zone, model_pos)
                     rezonator.target(zone, pos, LASER_POWER, cycle_time)
 
                     # Обновление цвета мишеней
