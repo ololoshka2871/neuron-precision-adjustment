@@ -4,6 +4,7 @@ import math
 
 from enum import Enum
 
+
 class MotionStatus(Enum):
     IDLE = 0
     INTERPOLATING = 1
@@ -20,6 +21,9 @@ class Command:
         self.destinanton = destinanton
         self.F = F
         self.S = S
+
+    def __str__(self) -> str:
+        return "Connad: move to: {}, witn F={}, S={}".format(self.destinanton, self.F, self.S)
 
 
 class MovingInterpolator:
@@ -82,9 +86,9 @@ class MovingInterpolator:
 
         if self._status == MotionStatus.INTERPOLATING:
             self._interpolate_move()
-        
+
         return self._status
-    
+
     def _interpolate_move(self) -> bool:
         if self._is_move_first_interpolation:
             self._current_distance_x = self._current_to_x - self._current_from_x
@@ -111,11 +115,14 @@ class MovingInterpolator:
             self._is_move_first_interpolation = True
             return self._now == self._current_endnanos
         else:
-            fraction_of_move = (self._now - self._current_startnanos) / self._current_duration
-            self._current_cmd_x = self._current_from_x + (self._current_distance_x * fraction_of_move);
-            self._current_cmd_y = self._current_from_y + (self._current_distance_y * fraction_of_move);
+            fraction_of_move = (
+                self._now - self._current_startnanos) / self._current_duration
+            self._current_cmd_x = self._current_from_x + \
+                (self._current_distance_x * fraction_of_move)
+            self._current_cmd_y = self._current_from_y + \
+                (self._current_distance_y * fraction_of_move)
             return True
-        
+
     @staticmethod
     def calculate_move_length_nanos(xdist: float, ydist: float, move_velocity: float) -> float:
         """
@@ -127,26 +134,26 @@ class MovingInterpolator:
         """
         length_of_move = math.sqrt(xdist * xdist + ydist * ydist)
         return 1_000_000_000.0 * length_of_move / (move_velocity / 60.0)
-    
+
     @property
     def current_position(self) -> tuple[float, float]:
         """
         :return: The current position of the interpolator.
         """
         return self._current_cmd_x, self._current_cmd_y
-    
+
     def from_pos(self) -> tuple[float, float]:
         """
         :return: The starting position of the interpolator.
         """
         return self._current_from_x, self._current_from_y
-    
+
     def to_pos(self) -> tuple[float, float]:
         """
         :return: The ending position of the interpolator.
         """
         return self._current_to_x, self._current_to_y
-    
+
     @property
     def current_s(self) -> float:
         """
@@ -160,7 +167,7 @@ class MovingInterpolator:
         :return: The current F value of the interpolator.
         """
         return self._current_f
-        
+
 
 if __name__ == "__main__":
     import time
@@ -196,9 +203,8 @@ if __name__ == "__main__":
         move_dst.set_data(dest_pos)
         current_pos.set_data(interpolator.current_position)
 
-        move_trace.set_data([from_pos[0], dest_pos[0]], [from_pos[1], dest_pos[1]])
+        move_trace.set_data([from_pos[0], dest_pos[0]],
+                            [from_pos[1], dest_pos[1]])
 
         f.canvas.draw()
         f.canvas.flush_events()
-
-        

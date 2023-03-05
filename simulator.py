@@ -5,7 +5,7 @@ import time
 from rezonator_model import RezonatorModel, Zone, ModelView
 from moving_interpolator import MovingInterpolator, Command
 from work_zone import WorkZone, Rect
-from controller import RandomController
+from controller import RandomController, NNController
 
 
 class Simulator:
@@ -17,14 +17,13 @@ class Simulator:
     - Контроллер получает информацию о резонаторе и станке и выдает новые команды станку
     """
 
-    FREQ_DIFF_HISTORY_SIZE = 10
-
     def __init__(self, rezonator_model: RezonatorModel, controller,
                  global_center: tuple[float, float],
                  initial_freq_diff=0.5,
                  max_f=1000.0,
                  freqmeter_period=0.4,
-                 laser_power_max=255.0):
+                 laser_power_max=255.0,
+                 freq_history_size=10):
         """
         :param rezonator: Резонатор
         :param controller: Контроллер
@@ -50,7 +49,7 @@ class Simulator:
 
         self._initial_freq_diff = initial_freq_diff
         self._measure_diff_history = [
-            initial_freq_diff for _ in range(Simulator.FREQ_DIFF_HISTORY_SIZE)]
+            initial_freq_diff for _ in range(freq_history_size)]
 
     def _map_adj_to_relatie(self, adj: float) -> float:
         """
@@ -67,13 +66,6 @@ class Simulator:
         """
         self._moving_interpolator.tick(cycle_time)
 
-        current_pos = self._work_zone.map_from_global(
-            self._moving_interpolator.current_position)
-        current_s = self._work_zone.map_s_from_global(
-            self._moving_interpolator.current_s)
-        current_f = self._work_zone.map_f_from_global(
-            self._moving_interpolator.current_f)
-
         self._period_accum += cycle_time
         if self._period_accum > self._freqmeter_period:
             self._period_accum -= self._freqmeter_period
@@ -83,33 +75,43 @@ class Simulator:
                 self._map_adj_to_relatie(current_freq))
             self._measure_diff_history.pop(0)
 
-        result = self._controller.update({
-            'current_pos': current_pos,
-            'current_s': current_s,
-            'current_f': current_f,
-            'freq_history': self._measure_diff_history,
-        })
+            current_pos = self._work_zone.map_from_global(
+                self._moving_interpolator.current_position)
+            current_s = self._work_zone.map_s_from_global(
+                self._moving_interpolator.current_s)
+            current_f = self._work_zone.map_f_from_global(
+                self._moving_interpolator.current_f)
 
-        match ModelView.detect_zone(model_pos):
-            case Zone.BODY:
-                # just heat up
-                self._rezonator_model.heat_body(current_s, cycle_time)
-            case Zone.FORBIDDEN:
-                # heat up and add energy to forbidden zone
-                self._rezonator_model.heat_forbidden(current_s, cycle_time)
-            case Zone.TARGET1 | Zone.TARGET2 as zone:
-                # Обработка мишеней
-                pos = ModelView.map_to_zone(zone, model_pos)
-                self._rezonator_model.target(zone, pos, current_s, cycle_time)
-            case _:
-                self._rezonator_model.idle(cycle_time)
+            result = self._controller.update({
+                'current_pos': current_pos,
+                'current_s': current_s,
+                'current_f': current_f,
+                'freq_history': self._measure_diff_history,
+            })
 
-        # try send new command
-        self._moving_interpolator.process(Command(
-            destinanton=self._work_zone.map_to_global(result['destination']),
-            F=self._work_zone.map_f_to_global(result['speed']),
-            S=self._work_zone.map_s_to_global(result['power']))
-        )
+            match ModelView.detect_zone(model_pos):
+                case Zone.BODY:
+                    # just heat up
+                    self._rezonator_model.heat_body(current_s, cycle_time)
+                case Zone.FORBIDDEN:
+                    # heat up and add energy to forbidden zone
+                    self._rezonator_model.heat_forbidden(current_s, cycle_time)
+                case Zone.TARGET1 | Zone.TARGET2 as zone:
+                    # Обработка мишеней
+                    pos = ModelView.map_to_zone(zone, model_pos)
+                    self._rezonator_model.target(
+                        zone, pos, current_s, cycle_time)
+                case _:
+                    self._rezonator_model.idle(cycle_time)
+
+            # try send new command
+            cmd = Command(
+                destinanton=self._work_zone.map_to_global(
+                    result['destination']),
+                F=self._work_zone.map_f_to_global(result['speed']),
+                S=self._work_zone.map_s_to_global(result['power']))
+            # print(cmd)
+            self._moving_interpolator.process(cmd)
 
     def use_rezonator(self, f, *args, **kwargs):
         """
@@ -161,11 +163,15 @@ if __name__ == "__main__":
     from adjust_zone_model import draw_model
 
     LASER_POWER = 30.0  # [W]
+    HISTORY_SIZE = 10
 
     f, ax = plt.subplots(1, 3)
 
+    NNController.init_model(HISTORY_SIZE)
+
     sim = Simulator(RezonatorModel(),
-                    RandomController(), (-100, 15))
+                    NNController(), (-100, 15), 
+                    freq_history_size=HISTORY_SIZE)
 
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
@@ -278,7 +284,8 @@ if __name__ == "__main__":
         model_pos = playground.map_to_model(pos)
         model_power = sim.laser_rel_power()
         current_pos_transformed.set_data(model_pos)
-        current_pos_transformed.set_markerfacecolor((1.0, 0.0, 0.0, model_power)) # type: ignore
+        current_pos_transformed.set_markerfacecolor(
+            (1.0, 0.0, 0.0, model_power))  # type: ignore
 
         sim.tick(cycle_time, model_pos)
 
