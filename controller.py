@@ -62,7 +62,7 @@ class NNController:
     _mean_layers = 0
 
     @staticmethod
-    def init_model(history_size: int, mean_layers=2, preend_layer_neurons=10):
+    def init_model(history_size: int, mean_layers=2, preend_layer_neurons=10) -> int:
         model = Sequential()
 
         # входы
@@ -92,18 +92,41 @@ class NNController:
         NNController._mean_layers = mean_layers
         NNController._preend_neurons = preend_layer_neurons
 
+        weights = model.get_weights()
+        flat_weights = NNController._convert_weights_from_model(weights)
+        return len(flat_weights)  # type: ignore
+
     @staticmethod
     def _convert_weights_to_model(weigths: list[float]):
-        mean_layers_len = NNController._history_len + NNController.INPUT_COUNT
-        return np.array([
-            *[weigths[mean_layers_len * i:mean_layers_len *
-                      (i + 1)] for i in range(NNController._mean_layers)],
-            weigths[mean_layers_len * NNController._mean_layers:],
-        ])
+        # должен получиться список следующего вида
+        # Слой 0 - все веса от нейронов входа
+        # Слой 0 - все веса смещенией
+        # Слой 1...
+        ws = NNController._model.get_weights() # type: ignore
+        rp = 0
+        for ln in range(len(ws)):
+            orig_shape = ws[ln].shape
+            if len(orig_shape) > 1:
+                sz = orig_shape[0] * orig_shape[1]
+                nd = np.reshape(weigths[rp:rp + sz], newshape=orig_shape)
+            else:
+                sz = orig_shape[0]
+                nd = np.array(weigths[rp:rp + sz])
+            ws[ln] = nd
+            rp += sz
+        return ws
 
     @staticmethod
     def _convert_weights_from_model(weigths) -> list[float]:
-        return weigths.ravel().tolist()
+        all_weights = []
+        for l in weigths:
+            orig_shape = l.shape
+            if len(orig_shape) > 1:
+                rs = l.reshape(orig_shape[0] * orig_shape[1],)
+                all_weights.extend(rs)
+            else:
+                all_weights.extend(l)
+        return all_weights
 
     @staticmethod
     def map_zero_one(v: float) -> float:
