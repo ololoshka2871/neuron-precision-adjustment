@@ -5,7 +5,8 @@ import time
 from rezonator_model import RezonatorModel, Zone, ModelView
 from moving_interpolator import MovingInterpolator, Command
 from work_zone import WorkZone, Rect
-from controller import RandomController, NNController
+from controller import NNController
+from sim_stop_detector import SimStopDetector, StopCondition
 
 
 class Simulator:
@@ -59,50 +60,51 @@ class Simulator:
         """
         return adj / self._rezonator_model.possible_freq_adjust
 
-    def tick(self, cycle_time: float, model_pos):
+    def tick(self, cycle_time: float, model_pos) -> dict:
         """
         Шаг симуляции
         :param time: Время шага
         """
         self._moving_interpolator.tick(cycle_time)
 
+        current_pos = self._work_zone.map_from_global(
+            self._moving_interpolator.current_position)
+        current_s = self._work_zone.map_s_from_global(
+            self._moving_interpolator.current_s)
+        current_f = self._work_zone.map_f_from_global(
+            self._moving_interpolator.current_f)
+
+        match ModelView.detect_zone(model_pos):
+            case Zone.BODY:
+                # just heat up
+                self._rezonator_model.heat_body(current_s, cycle_time)
+            case Zone.FORBIDDEN:
+                # heat up and add energy to forbidden zone
+                self._rezonator_model.heat_forbidden(current_s, cycle_time)
+            case Zone.TARGET1 | Zone.TARGET2 as zone:
+                # Обработка мишеней
+                pos = ModelView.map_to_zone(zone, model_pos)
+                self._rezonator_model.target(
+                    zone, pos, current_s, cycle_time)
+            case _:
+                self._rezonator_model.idle(cycle_time)
+
+        current_freq = self._rezonator_model.get_metrics()['freq_change']
+
+        self._measure_diff_history.append(
+            self._map_adj_to_relatie(current_freq))
+        self._measure_diff_history.pop(0)
+
+        result = self._controller.update({
+            'current_pos': current_pos,
+            'current_s': current_s,
+            'current_f': current_f,
+            'freq_history': self._measure_diff_history,
+        })
+
         self._period_accum += cycle_time
         if self._period_accum > self._freqmeter_period:
             self._period_accum -= self._freqmeter_period
-            current_freq = self._rezonator_model.get_metrics()['freq_change']
-
-            self._measure_diff_history.append(
-                self._map_adj_to_relatie(current_freq))
-            self._measure_diff_history.pop(0)
-
-            current_pos = self._work_zone.map_from_global(
-                self._moving_interpolator.current_position)
-            current_s = self._work_zone.map_s_from_global(
-                self._moving_interpolator.current_s)
-            current_f = self._work_zone.map_f_from_global(
-                self._moving_interpolator.current_f)
-
-            result = self._controller.update({
-                'current_pos': current_pos,
-                'current_s': current_s,
-                'current_f': current_f,
-                'freq_history': self._measure_diff_history,
-            })
-
-            match ModelView.detect_zone(model_pos):
-                case Zone.BODY:
-                    # just heat up
-                    self._rezonator_model.heat_body(current_s, cycle_time)
-                case Zone.FORBIDDEN:
-                    # heat up and add energy to forbidden zone
-                    self._rezonator_model.heat_forbidden(current_s, cycle_time)
-                case Zone.TARGET1 | Zone.TARGET2 as zone:
-                    # Обработка мишеней
-                    pos = ModelView.map_to_zone(zone, model_pos)
-                    self._rezonator_model.target(
-                        zone, pos, current_s, cycle_time)
-                case _:
-                    self._rezonator_model.idle(cycle_time)
 
             # try send new command
             cmd = Command(
@@ -112,6 +114,13 @@ class Simulator:
                 S=self._work_zone.map_s_to_global(result['power']))
             # print(cmd)
             self._moving_interpolator.process(cmd)
+
+        return {
+            'F': current_f,
+            'S': current_s,
+            'T': self._rezonator_model.current_temperature_K(),
+            'self_grade': result['self_grade']
+        }
 
     def use_rezonator(self, f, *args, **kwargs):
         """
@@ -164,14 +173,21 @@ if __name__ == "__main__":
 
     LASER_POWER = 30.0  # [W]
     HISTORY_SIZE = 10
+    POWER_THRESHOLD = 0.05
 
     f, ax = plt.subplots(1, 3)
 
     NNController.init_model(HISTORY_SIZE)
 
-    sim = Simulator(RezonatorModel(),
-                    NNController(), (-100, 15), 
+    sim = Simulator(RezonatorModel(power_threshold=POWER_THRESHOLD),
+                    NNController(), (-100, 15),
                     freq_history_size=HISTORY_SIZE)
+
+    sim_stop_detector = SimStopDetector(timeout=10.0,
+                                        history_len_s=5.0,
+                                        min_avg_speed=0.05,
+                                        min_laser_power=POWER_THRESHOLD * 0.5,
+                                        max_temperature=100.0)
 
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
@@ -276,8 +292,6 @@ if __name__ == "__main__":
     cycle_time = 0
 
     while True:
-        click = f.ginput(show_clicks=False, timeout=0.01)
-
         pos = sim.laser_pos()
         current_pos.set_data(pos)
 
@@ -287,7 +301,7 @@ if __name__ == "__main__":
         current_pos_transformed.set_markerfacecolor(
             (1.0, 0.0, 0.0, model_power))  # type: ignore
 
-        sim.tick(cycle_time, model_pos)
+        mmetrics = sim.tick(cycle_time, model_pos)
 
         model_view = sim.use_rezonator(
             RezonatorModel.get_model_view, offset, angle)
@@ -298,7 +312,19 @@ if __name__ == "__main__":
                 for patch, color in zip(*row):
                     patch.set_facecolor(color)
 
+        # ------------ Условие останова ----------
+
+        stop_condition = sim_stop_detector.tick(cycle_time, mmetrics)
+
+        if stop_condition != StopCondition.NONE:
+            print(f"Simulation stop detected: {stop_condition}")
+            sf, ax = plt.subplots(1, 1)
+            sim_stop_detector.plot_summary(ax)
+            plt.show(block=True)
+            break
+
         # ------------ Метрики -------------------
+
         m = sim.use_rezonator(RezonatorModel.get_metrics)
 
         d = tc.get_data(orig=True)
@@ -335,3 +361,4 @@ if __name__ == "__main__":
         start = time.time()
 
         plt.draw()
+        plt.pause(0.0001)

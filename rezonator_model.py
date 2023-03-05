@@ -310,6 +310,12 @@ class RezonatorModel:
         Возвращает рабочую зону резонатора.
         """
         return offset, RezonatorModel.REZONATOR.target_zone_size
+    
+    def current_temperature_K(self) -> float:
+        """
+        Возвращает текущую температуру резонатора [K]
+        """
+        return self._temperature_model.current_temperature()
 
     @property
     def possible_freq_adjust(self) -> float:

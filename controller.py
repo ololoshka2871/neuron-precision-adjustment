@@ -85,7 +85,7 @@ class NNController:
         model.compile(loss='mean_squared_error',
                       optimizer=optimizers.Adam(0.1))
         
-        model.summary()
+        #model.summary()
         NNController._model = model
 
         NNController._history_size = history_size
@@ -132,7 +132,7 @@ class NNController:
             'destination': output[:2],
             'power': NNController.map_zero_one(output[2]),
             'speed': NNController.map_zero_one(output[3]),
-            'self_evaluation': NNController.map_zero_one(output[4])
+            'self_grade': NNController.map_zero_one(output[4])
         }
 
     def get_weights(self):
