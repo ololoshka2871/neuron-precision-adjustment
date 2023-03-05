@@ -3,7 +3,6 @@
 import array
 import multiprocessing
 import random
-import sys
 import time
 
 import numpy as np
@@ -30,17 +29,15 @@ from simulator import Simulator
 FITNES_WEIGHTS = (-0.5, -0.25, -1.0, -0.1, 0.2, -0.05, 0.3, 0.5)
 
 HISTORY_SIZE = 10
-POPULATION_SIZE = 10
+POPULATION_SIZE = 100
 N_GEN = 100
 LASER_POWER = 30.0  # [W]
-HISTORY_SIZE = 10
+HISTORY_SIZE = 15
 POWER_THRESHOLD = 0.05
 DEST_FREQ_CH = 50.0
 MAX_T = 100.0
 
 total_parameters = NNController.init_model(HISTORY_SIZE)
-
-processed_count = 0
 
 creator.create("FitnessMax", base.Fitness, weights=FITNES_WEIGHTS)
 creator.create("Individual", array.array, typecode='f',
@@ -112,21 +109,19 @@ def eval_rezonator_adjust(individual):
         stop_condition = sim_stop_detector.tick(SIM_CYCLE_TIME, mmetrics)
 
         if stop_condition != StopCondition.NONE:
-            processed_count += 1
-            print(f"Simulations done: {processed_count}")
             return grader.get_grade(
                 rmetrics, sim_stop_detector.summary(), stop_condition)
 
 
 toolbox.register("evaluate", eval_rezonator_adjust)
 toolbox.register("mate", tools.cxBlend, alpha=0.5)
-toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0)
+toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0, indpb=0.5)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
 if __name__ == "__main__":
     # Process Pool of all cores
-    #pool = multiprocessing.Pool()
-    #toolbox.register("map", pool.map)
+    pool = multiprocessing.Pool()
+    toolbox.register("map", pool.map)
 
     pop = toolbox.population(n=POPULATION_SIZE)  # type: ignore
     hof = tools.HallOfFame(2)
@@ -139,4 +134,4 @@ if __name__ == "__main__":
     algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=N_GEN,
                         stats=stats, halloffame=hof)
 
-    #pool.close()
+    pool.close()

@@ -151,10 +151,11 @@ class NNController:
         input = tf.constant([v])  # type: ignore
         output, = self._model.predict(input, verbose=None)  # type: ignore
 
+        speed = NNController.map_zero_one(output[3])
         return {
             'destination': output[:2],
             'power': NNController.map_zero_one(output[2]),
-            'speed': NNController.map_zero_one(output[3]),
+            'speed': speed if speed > 0 else 0.01,
             'self_grade': NNController.map_zero_one(output[4])
         }
 
