@@ -37,6 +37,8 @@ POWER_THRESHOLD = 0.05
 DEST_FREQ_CH = 50.0
 MAX_T = 100.0
 
+SIM_TIMEOUT=5.0
+
 total_parameters = NNController.init_model(HISTORY_SIZE)
 
 creator.create("FitnessMax", base.Fitness, weights=FITNES_WEIGHTS)
@@ -79,10 +81,10 @@ def eval_rezonator_adjust(individual):
                     NNController(individual), (-100, 15),
                     freq_history_size=HISTORY_SIZE)
 
-    sim_stop_detector = SimStopDetector(timeout=10.0,
-                                        history_len_s=5.0,
+    sim_stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
+                                        history_len_s=2.5,
                                         min_avg_speed=0.05,
-                                        min_laser_power=POWER_THRESHOLD * 0.5,
+                                        min_laser_power=POWER_THRESHOLD * 0.8,
                                         max_temperature=MAX_T)
 
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
@@ -109,6 +111,7 @@ def eval_rezonator_adjust(individual):
         stop_condition = sim_stop_detector.tick(SIM_CYCLE_TIME, mmetrics)
 
         if stop_condition != StopCondition.NONE:
+            print(f"Done with condition: {stop_condition}")
             return grader.get_grade(
                 rmetrics, sim_stop_detector.summary(), stop_condition)
 
@@ -120,11 +123,11 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 
 if __name__ == "__main__":
     # Process Pool of all cores
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=8)
     toolbox.register("map", pool.map)
 
     pop = toolbox.population(n=POPULATION_SIZE)  # type: ignore
-    hof = tools.HallOfFame(2)
+    hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)  # type: ignore
     stats.register("avg", np.mean)
     stats.register("std", np.std)
