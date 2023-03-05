@@ -58,7 +58,7 @@ class Rezonator(dict):
         """
         tgt = self['targets'][0]
         return tgt[2] - tgt[0]
-    
+
     @property
     def work_zone_size(self) -> tuple[float, float]:
         """
@@ -86,7 +86,13 @@ class Rezonator(dict):
         Функция возвращает центральную точку рабочей зоны
         """
         return self.work_zone_base[0] + self.work_zone_size[0] / 2, \
-               self.work_zone_base[1] + self.work_zone_size[1] / 2
+            self.work_zone_base[1] + self.work_zone_size[1] / 2
+
+
+def gen_sigmoid(A=1.0, k=1.0, x_offset=0.0):
+    def sigmoid(x: float) -> float:
+        return A / (1.0 + np.exp(-k * (x - x_offset)))
+    return sigmoid
 
 
 def polygon_area(vertices) -> float:

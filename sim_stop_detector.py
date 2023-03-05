@@ -31,7 +31,7 @@ class SimStopDetector:
                  min_laser_power: float,
                  max_temperature: float,
                  self_grade_epsilon=0.01,
-                 strart_timestamp=time.time()) -> None:
+                 strart_timestamp=time.time()):
         """
         :param timeout: Безусловный таймаут [s]
         :param history_len_s: Длина истории метрик [s]
@@ -46,14 +46,17 @@ class SimStopDetector:
         self._min_laser_power = min_laser_power
         self._max_temperature = max_temperature
 
-        self._strart_timestamp = strart_timestamp
+        self._start_timestamp = strart_timestamp
 
         self._timestamps = np.array([], dtype=float)
         self._speed_history = np.array([], dtype=float)
         self._laser_power_history = np.array([], dtype=float)
         self._temperature_history = np.array([], dtype=float)
         self._self_grade_history = np.array([], dtype=float)
+
         self._self_grade_epsilon = self_grade_epsilon
+
+        self._max_temperature = 0
 
     def _trimm_history_if_too_long(self, step_time: float) -> bool:
         if len(self._timestamps) > 0 and (self._timestamps[-1] + step_time > self._timestamps[0] + self._history_len_s):
@@ -71,15 +74,18 @@ class SimStopDetector:
                 self._timestamps, self._timestamps[-1] + step_time)
         else:
             self._timestamps = np.append(
-                self._timestamps, self._strart_timestamp + step_time)
+                self._timestamps, self._start_timestamp + step_time)
 
         self._speed_history = np.append(self._speed_history, m['F'])
         self._laser_power_history = np.append(
             self._laser_power_history, m['S'])
-        self._temperature_history = np.append(
-            self._temperature_history, m['T'])
+        T = m['T']
+        self._temperature_history = np.append(self._temperature_history, T)
         self._self_grade_history = np.append(
             self._self_grade_history, m['self_grade'])
+
+        if T > self._max_temperature:
+            self._max_temperature = T
 
     def tick(self, step_time: float, m: dict) -> StopCondition:
         """
@@ -98,7 +104,7 @@ class SimStopDetector:
         if len(self._timestamps) < 2:
             return StopCondition.NONE
 
-        passed = self._timestamps[-1] - self._strart_timestamp
+        passed = self._timestamps[-1] - self._start_timestamp
         if passed > self._timeout:
             return StopCondition.TIMEOUT
         if trimmed and self._speed_history.mean() < self._min_avg_speed:
@@ -112,8 +118,16 @@ class SimStopDetector:
 
         return StopCondition.NONE
 
+    def summary(self) -> dict:
+        return {
+            'total_duration_rel': (self._timestamps[-1] - self._start_timestamp) / self._timeout,
+            'self_grade': self._self_grade_history[-1],
+            'max_temperature': self._max_temperature,
+            'avg_speed': self._speed_history.mean(),
+        }
+
     def plot_summary(self, ax: Axes):
-        t = self._timestamps - self._strart_timestamp
+        t = self._timestamps - self._start_timestamp
         ax.plot(t, self._speed_history, 'bo-', label='speed_history')
         ax.plot(t, self._laser_power_history,
                 'go-', label='laser_power_history')

@@ -7,6 +7,7 @@ from moving_interpolator import MovingInterpolator, Command
 from work_zone import WorkZone, Rect
 from controller import NNController
 from sim_stop_detector import SimStopDetector, StopCondition
+from controller_grader import ControllerGrager
 
 
 class Simulator:
@@ -168,12 +169,29 @@ if __name__ == "__main__":
     import datetime as dt
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
-    from common import draw_polygon
+    from common import draw_polygon, gen_sigmoid
     from adjust_zone_model import draw_model
 
     LASER_POWER = 30.0  # [W]
     HISTORY_SIZE = 10
     POWER_THRESHOLD = 0.05
+    DEST_FREQ_CH = 50.0
+    MAX_T = 100.0
+
+    def grade_stop_condition(sc: StopCondition) -> float:
+        match sc:
+            case StopCondition.TIMEOUT:
+                return -0.5
+            case  StopCondition.STALL:
+                return -0.7
+            case  StopCondition.LOW_POWER:
+                return -0.6
+            case  StopCondition.OVERHEAT:
+                return -0.2
+            case  StopCondition.SELF_STOP:
+                return 0.2
+            case _:
+                return 0.0
 
     f, ax = plt.subplots(1, 3)
 
@@ -187,7 +205,13 @@ if __name__ == "__main__":
                                         history_len_s=5.0,
                                         min_avg_speed=0.05,
                                         min_laser_power=POWER_THRESHOLD * 0.5,
-                                        max_temperature=100.0)
+                                        max_temperature=MAX_T)
+
+    grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
+                              f_penalty=gen_sigmoid(
+                                  k=1.0 / LASER_POWER, x_offset=-6),
+                              max_temperature=MAX_T,
+                              grade_stop_condition=grade_stop_condition)
 
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
@@ -264,18 +288,21 @@ if __name__ == "__main__":
 
     # ----------------------------------------
 
-    m = sim.use_rezonator(RezonatorModel.get_metrics)
+    rmetrics = sim.use_rezonator(RezonatorModel.get_metrics)
 
     mp = ax[2]
 
     # рисуем температуру
-    tc, = mp.plot(dt.datetime.fromtimestamp(start), m['temperature'], 'r-')
+    tc, = mp.plot(dt.datetime.fromtimestamp(
+        start), rmetrics['temperature'], 'r-')
 
     # рисуем изменение частоты
-    fс, = mp.plot(dt.datetime.fromtimestamp(start), m['freq_change'], 'b-')
+    fс, = mp.plot(dt.datetime.fromtimestamp(
+        start), rmetrics['freq_change'], 'b-')
 
     # Рисуем диссбаланс
-    dc, = mp.plot(dt.datetime.fromtimestamp(start), m['disbalance'], ':')
+    dc, = mp.plot(dt.datetime.fromtimestamp(
+        start), rmetrics['disbalance'], ':')
 
     # форматирование оси X
     # устанавливаем интервал в 1 секунду
@@ -302,6 +329,7 @@ if __name__ == "__main__":
             (1.0, 0.0, 0.0, model_power))  # type: ignore
 
         mmetrics = sim.tick(cycle_time, model_pos)
+        rmetrics = sim.use_rezonator(RezonatorModel.get_metrics)
 
         model_view = sim.use_rezonator(
             RezonatorModel.get_model_view, offset, angle)
@@ -317,15 +345,16 @@ if __name__ == "__main__":
         stop_condition = sim_stop_detector.tick(cycle_time, mmetrics)
 
         if stop_condition != StopCondition.NONE:
-            print(f"Simulation stop detected: {stop_condition}")
+            g = grader.get_grade(
+                rmetrics, sim_stop_detector.summary(), stop_condition)
+            print(
+                f"Simulation stop detected: {stop_condition}, sim_result = {g}")
             sf, ax = plt.subplots(1, 1)
             sim_stop_detector.plot_summary(ax)
             plt.show(block=True)
             break
 
         # ------------ Метрики -------------------
-
-        m = sim.use_rezonator(RezonatorModel.get_metrics)
 
         d = tc.get_data(orig=True)
 
@@ -334,26 +363,26 @@ if __name__ == "__main__":
 
         d = [list(d[0][-points:]), list(d[1][-points:])]
         d[0].append(ts)  # type: ignore
-        d[1].append(m['temperature'])
+        d[1].append(rmetrics['temperature'])
         tc.set_data(d)
 
         d = fс.get_data(orig=True)
         d = [list(d[0][-points:]), list(d[1][-points:])]
         d[0].append(ts)  # type: ignore
-        d[1].append(m['freq_change'])
+        d[1].append(rmetrics['freq_change'])
         fс.set_data(d)
 
         d = dc.get_data(orig=True)
         d = [list(d[0][-points:]), list(d[1][-points:])]
         d[0].append(ts)  # type: ignore
-        d[1].append(m['disbalance'] * 100)
+        d[1].append(rmetrics['disbalance'] * 100)
         dc.set_data(d)
 
         mp.relim()
         mp.autoscale_view()
 
         print(
-            f"Static freq change: {m['static_freq_change']:.2f} Hz, disbalance: {m['disbalance'] * 100:.2f} %")
+            f"Static freq change: {rmetrics['static_freq_change']:.2f} Hz, disbalance: {rmetrics['disbalance'] * 100:.2f} %")
 
         # ----------------------------------------
 

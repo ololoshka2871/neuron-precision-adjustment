@@ -180,7 +180,11 @@ class Metrics(dict):
         elif key == "freq_change":
             return self["static_freq_change"] * self['temperature'] * self._tfk
         elif key == "disbalance":
-            return (self["freq_change_branches"][1] - self["freq_change_branches"][0]) / self["static_freq_change"]
+            total_change = self["static_freq_change"]
+            if total_change == 0.0:
+                return 0.0
+            else:
+                return (self["freq_change_branches"][1] - self["freq_change_branches"][0]) / self["static_freq_change"]
 
         return super().__getitem__(key)
 
