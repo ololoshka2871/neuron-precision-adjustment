@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import time
-
 import numpy as np
 
 import datetime as dt

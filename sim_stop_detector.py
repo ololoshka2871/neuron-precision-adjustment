@@ -3,7 +3,6 @@ import time
 from enum import Enum
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from matplotlib.pyplot import Axes
 

@@ -3,9 +3,6 @@ import time
 from rezonator_model import RezonatorModel, Zone, ModelView
 from moving_interpolator import MovingInterpolator, Command
 from work_zone import WorkZone, Rect
-from controller import NNController
-from sim_stop_detector import SimStopDetector, StopCondition
-from controller_grader import ControllerGrager
 
 
 class Simulator:
@@ -100,8 +97,7 @@ class Simulator:
         })
 
         destination = result['destination']
-        print(
-            "({}, {}) -> ({}, {})".format(current_pos[0], current_pos[1], destination[0], destination[1]))
+        #print("({}, {}) -> ({}, {})".format(current_pos[0], current_pos[1], destination[0], destination[1]))
 
         self._period_accum += cycle_time
         if self._period_accum > self._freqmeter_period:
