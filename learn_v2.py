@@ -24,12 +24,7 @@ from simulator import Simulator
 #    - Максимальная достигнутая температура - меньше - лучше
 #    - Средняя скорость движения - больше - лучше
 #    - Оценка за причину остановки - больше - лучше
-# Дополнительно: (Нельзя ставить 0)
-#    - Смещение резонатора по X [mm]
-#    - Смещение резонатора по Y [mm]
-#    - Угол наклона резонатора [*]
-#    - Цель измнения частоты [Hz]
-FITNES_WEIGHTS = (-3.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5, 1e-10, 1e-10, 1e-10, 1e-10)
+FITNES_WEIGHTS = (-3.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5)
 
 F_HISTORY_SIZE = 10
 LASER_POWER = 30.0  # [W]
@@ -49,7 +44,10 @@ creator.create("FitnessMax", base.Fitness, weights=FITNES_WEIGHTS)
 # и typecode, который будет 'f
 creator.create("Individual", array.array, 
                typecode='f',
-               fitness=creator.FitnessMax) # type: ignore
+               fitness=creator.FitnessMax,  # type: ignore
+               rezonator_offset=(0.0, 0.0),
+               rezonator_angle=0.0,
+               adjust_freq=0.0) 
 
 toolbox = base.Toolbox()
 
@@ -159,7 +157,9 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
         fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit['grade']
-            # TODO: params of sim
+            ind.rezonator_offset = fit['sim_offset']
+            ind.rezonator_angle = fit['sim_angle']
+            ind.adjust_freq = fit['sim_def_freq']
 
         hof.update(population)
         record = stats.compile(population)
@@ -171,7 +171,7 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
         population = algorithms.varAnd(population, toolbox, cxpb=cxpb, mutpb=mutpb)
 
         if gen % gens_for_checkpoint == 0:
-            print("Save state...")
+            print(f"Save state >>> {checkpoint_file}")
             
             # Fill the dictionary using the dict(key=value[, ...]) constructor
             cp = dict(population=population, generation=gen, halloffame=hof,
@@ -186,7 +186,7 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
     return population, stats, hof
 
 if __name__ == '__main__':
-    POPULATION_SIZE = 5
+    POPULATION_SIZE = 100
     N_GEN = 100
 
     learn_main(POPULATION_SIZE, N_GEN, checkpoint_file='learn_v2.ckl', gens_for_checkpoint=1)
