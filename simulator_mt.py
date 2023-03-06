@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
                               f_penalty=gen_sigmoid(
-                                  k=1.0 / LASER_POWER, x_offset=-6),
+                                  k=1.0 / LASER_POWER, x_offset_to_right=-6),
                               max_temperature=MAX_T)
 
     # Генерируем случайное смещение и случайный угол поворота

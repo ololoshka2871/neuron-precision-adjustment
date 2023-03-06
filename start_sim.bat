@@ -1,2 +1,2 @@
 
-python leart_v1.py
+python learn_v2.py

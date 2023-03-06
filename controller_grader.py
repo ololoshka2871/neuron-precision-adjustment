@@ -48,9 +48,11 @@ class ControllerGrager:
         # относительная дистанция от текущей частоты до желаемой
         freq_target_distance_rel = (
             self._dest_freq_ch - rezonator_metrics['static_freq_change']) / (2.0 * self._dest_freq_ch)
+        
+        db = abs(rezonator_metrics['disbalance'])
 
         return (freq_target_distance_rel,
-                abs(rezonator_metrics['disbalance']),
+                db if db > 0 else 1.0, # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
                 self._f_penalty(rezonator_metrics['penalty_energy']),
                 sim_metrics['total_duration_rel'],
                 1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel),
