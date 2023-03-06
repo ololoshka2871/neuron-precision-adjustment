@@ -47,7 +47,7 @@ class ControllerGrager:
 
         # относительная дистанция от текущей частоты до желаемой
         freq_target_distance_rel = (
-            self._dest_freq_ch - rezonator_metrics['static_freq_change']) / (2.0 * self._dest_freq_ch)
+            self._dest_freq_ch - rezonator_metrics['static_freq_change']) / self._dest_freq_ch
         
         db = abs(rezonator_metrics['disbalance'])
 
