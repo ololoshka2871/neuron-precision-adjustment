@@ -132,6 +132,23 @@ class NNController:
     @staticmethod
     def map_zero_one(v: float) -> float:
         return (1.0 + v) / 2.0
+    
+    @staticmethod
+    def shuffled_weights() -> list[float]:
+        """
+        Возвращает случайно сгенерированные веса нейронной сети
+        """
+        weights = NNController._model.get_weights()  # type: ignore
+        all_weights = []
+        for l in weights:
+            orig_shape = l.shape
+            if len(orig_shape) > 1:
+                rs = l.reshape(orig_shape[0] * orig_shape[1],)
+                np.random.shuffle(rs)
+                all_weights.extend(rs)
+            else:
+                all_weights.extend(l)
+        return all_weights
 
     def __init__(self, wieghts: list | None = None):
         """

@@ -36,7 +36,7 @@ class ControllerGrager:
         """
         Оценка:
             - Относительная дистанция до целевой частоты - меньше - лучше
-            - Относителдьный диссбаланс - меньше - лучше
+            - Относителдьный диссбаланс - меньше (по модулю) - лучше
             - Относительный штраф за попадание куда не надо - меньше - лучше
             - Относительное время симуляции - меньше - лучше
             - Точность самоошенки - больше - лучше
@@ -50,7 +50,7 @@ class ControllerGrager:
             self._dest_freq_ch - rezonator_metrics['static_freq_change']) / (2.0 * self._dest_freq_ch)
 
         return (freq_target_distance_rel,
-                rezonator_metrics['disbalance'],
+                abs(rezonator_metrics['disbalance']),
                 self._f_penalty(rezonator_metrics['penalty_energy']),
                 sim_metrics['total_duration_rel'],
                 1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel),

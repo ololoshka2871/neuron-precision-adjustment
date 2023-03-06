@@ -40,7 +40,12 @@ SIM_TIMEOUT = 10.0
 total_parameters = NNController.init_model(HISTORY_SIZE)
 
 creator.create("FitnessMax", base.Fitness, weights=FITNES_WEIGHTS)
-creator.create("Individual", array.array, typecode='f',
+
+# Создать класс Individual, наследованный от array.array, но содержащий поля
+# fitness, которое будет содержать объект класса FitnessMax определенного выше
+# и typecode, который будет 'f
+creator.create("Individual", array.array, 
+               typecode='f',
                fitness=creator.FitnessMax)  # type: ignore
 
 toolbox = base.Toolbox()
@@ -49,15 +54,12 @@ toolbox = base.Toolbox()
 toolbox.register("attr_float", random.random)
 
 # Structure initializers
-toolbox.register("individual", tools.initRepeat, creator.Individual,  # type: ignore
-                 toolbox.attr_float, total_parameters)  # type: ignore
+toolbox.register("individual", lambda: creator.Individual(NNController.shuffled_weights()))  # type: ignore
 toolbox.register("population", tools.initRepeat, list,
                  toolbox.individual)  # type: ignore
 
 
-def eval_rezonator_adjust(individual):
-    global processed_count
-
+def eval_rezonator_adjust(individual): # individual: Individual
     SIM_CYCLE_TIME = 0.05
 
     sim = Simulator(RezonatorModel(power_threshold=POWER_THRESHOLD),

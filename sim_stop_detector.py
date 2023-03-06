@@ -135,7 +135,7 @@ class SimStopDetector:
         return {
             'total_duration_rel': (self._timestamps[-1] - self._start_timestamp) / self._timeout,
             'self_grade': self._self_grade_history[-1],
-            'max_temperature': self._max_temperature,
+            'max_temperature': self._max_temperature - RezonatorModel.CELSUSS_TO_KELVIN,
             'avg_speed': self._speed_history.mean(),
         }
 
