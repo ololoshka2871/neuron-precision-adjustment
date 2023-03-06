@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 import array
-import multiprocessing
 import random
-import time
 
 import numpy as np
 
@@ -17,7 +15,7 @@ from sim_stop_detector import SimStopDetector, StopCondition
 from simulator import Simulator
 
 # Веса оценок работы симуляции
-#Оценка:
+# Оценка:
 #    - Относительная дистанция до целевой частоты - меньше - лучше
 #    - Относителдьный диссбаланс - меньше - лучше
 #    - Относительный штраф за попадание куда не надо - меньше - лучше
@@ -37,7 +35,7 @@ POWER_THRESHOLD = 0.05
 DEST_FREQ_CH = 50.0
 MAX_T = 100.0
 
-SIM_TIMEOUT=5.0
+SIM_TIMEOUT = 10.0
 
 total_parameters = NNController.init_model(HISTORY_SIZE)
 
@@ -62,36 +60,23 @@ def eval_rezonator_adjust(individual):
 
     SIM_CYCLE_TIME = 0.05
 
-    def grade_stop_condition(sc: StopCondition) -> float:
-        match sc:
-            case StopCondition.TIMEOUT:
-                return -0.5
-            case  StopCondition.STALL:
-                return -0.7
-            case  StopCondition.LOW_POWER:
-                return -0.6
-            case  StopCondition.OVERHEAT:
-                return -0.2
-            case  StopCondition.SELF_STOP:
-                return 0.2
-            case _:
-                return 0.0
-
     sim = Simulator(RezonatorModel(power_threshold=POWER_THRESHOLD),
                     NNController(individual), (-100, 15),
                     freq_history_size=HISTORY_SIZE)
 
     sim_stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
-                                        history_len_s=2.5,
+                                        history_len_s=1.0,
+                                        min_path=0.1,
                                         min_avg_speed=0.05,
                                         min_laser_power=POWER_THRESHOLD * 0.8,
                                         max_temperature=MAX_T)
 
-    grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
+    # Случайнное смещение целевой частоты
+    def_freq = np.random.normal(DEST_FREQ_CH, 10.0)
+    grader = ControllerGrager(dest_freq_ch=def_freq,
                               f_penalty=gen_sigmoid(
                                   k=1.0 / LASER_POWER, x_offset=-6),
-                              max_temperature=MAX_T,
-                              grade_stop_condition=grade_stop_condition)
+                              max_temperature=MAX_T)
 
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
@@ -108,12 +93,13 @@ def eval_rezonator_adjust(individual):
 
         # ------------ Условие останова ----------
 
-        stop_condition = sim_stop_detector.tick(SIM_CYCLE_TIME, mmetrics)
+        stop_condition = sim_stop_detector.tick(SIM_CYCLE_TIME, mmetrics, rmetrics)
 
         if stop_condition != StopCondition.NONE:
-            print(f"Done with condition: {stop_condition}")
-            return grader.get_grade(
+            grade = grader.get_grade(
                 rmetrics, sim_stop_detector.summary(), stop_condition)
+            print(f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
+            return grade
 
 
 toolbox.register("evaluate", eval_rezonator_adjust)
@@ -121,12 +107,9 @@ toolbox.register("mate", tools.cxBlend, alpha=0.5)
 toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0, indpb=0.5)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
-if __name__ == "__main__":
-    # Process Pool of all cores
-    pool = multiprocessing.Pool(processes=8)
-    toolbox.register("map", pool.map)
 
-    pop = toolbox.population(n=POPULATION_SIZE)  # type: ignore
+def main(polulation_size: int, n_gen: int):
+    pop = toolbox.population(n=polulation_size)  # type: ignore
     hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)  # type: ignore
     stats.register("avg", np.mean)
@@ -134,7 +117,11 @@ if __name__ == "__main__":
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=N_GEN,
-                        stats=stats, halloffame=hof)
+    return algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
+                               ngen=n_gen, stats=stats, halloffame=hof)
 
-    pool.close()
+
+if __name__ == "__main__":
+    import cProfile
+    cProfile.run('main({}, {})'.format(5, 2),
+                 sort='cumtime', filename='profile.out')

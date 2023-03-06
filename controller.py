@@ -42,6 +42,7 @@ class NNController:
     Контроллер - нейронная сеть
     Входы:
         - freq_history - История измерений
+        - target_pos - Цкль движения
         - current_pos - относительная текущая позиция 
         - current_s - текущая мощность лазера
         - current_f - текущая скорость
@@ -53,8 +54,8 @@ class NNController:
         - Самооценка: -1.0..1.0
     """
 
-    INPUT_COUNT = 4
-    OUTUT_COUNT = 5
+    INPUT_COUNT = 2 + 2 + 1 + 1
+    OUTUT_COUNT = 2 + 1 + 1 + 1
 
     _model = None
     _history_len = 0
@@ -84,8 +85,8 @@ class NNController:
         model.add(layers.Dense(units=NNController.OUTUT_COUNT, activation='tanh'))
         model.compile(loss='mean_squared_error',
                       optimizer=optimizers.Adam(0.1))
-        
-        #model.summary()
+
+        # model.summary()
         NNController._model = model
 
         NNController._history_size = history_size
@@ -102,7 +103,7 @@ class NNController:
         # Слой 0 - все веса от нейронов входа
         # Слой 0 - все веса смещенией
         # Слой 1...
-        ws = NNController._model.get_weights() # type: ignore
+        ws = NNController._model.get_weights()  # type: ignore
         rp = 0
         for ln in range(len(ws)):
             orig_shape = ws[ln].shape
@@ -147,7 +148,7 @@ class NNController:
         """
 
         v = [*input['freq_history'], *input['current_pos'],
-             input['current_s'], input['current_f']]
+             *input['target_pos'], input['current_s'], input['current_f']]
         input = tf.constant([v])  # type: ignore
         output, = self._model.predict(input, verbose=None)  # type: ignore
 

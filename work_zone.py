@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+import math
+
 from rezonator_model import Rezonator
+
 
 class Rect:
     def __init__(self, x0: float, y0: float, x1: float, y1: float):
@@ -42,6 +45,7 @@ class WorkZone:
 
         self._center = self._global_rect.center()
         self._size = self._global_rect.size()
+        self._doganal_size = math.sqrt(self._size[0] ** 2.0 + self._size[1] ** 2.0)
 
     def map_to_global(self, pos: tuple[float, float]) -> tuple[float, float]:
         """
@@ -60,6 +64,14 @@ class WorkZone:
         """
         return (pos[0] - self._center[0]) * 2.0 / self._size[0], \
                (pos[1] - self._center[1]) * 2.0 / self._size[1]
+    
+    def map_path_len_from_global(self, path_len: float) -> float:
+        """
+        Преобразование длины пути из глобальной системы координат в локальную
+        :param path_len: Длина пути в глобальной системе координат [мм]
+        :return: Относительная длина пути в локальной системе координат в единицах длины диогонали рабочей зоны
+        """
+        return path_len / self._doganal_size
 
     def map_s_to_global(self, s: float) -> float:
         """

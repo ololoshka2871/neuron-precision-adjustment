@@ -10,9 +10,17 @@ class ControllerGrager:
 
     def __init__(self,
                  dest_freq_ch: float,
+                 grade_stop_condition: dict[StopCondition, float] = {
+                     StopCondition.TIMEOUT: -0.5,
+                     StopCondition.STALL_SPEED: -0.3,
+                     StopCondition.STALL_MOVE: -0.7,
+                     StopCondition.LOW_POWER: -0.6,
+                     StopCondition.OVERHEAT: -0.2,
+                     StopCondition.SELF_STOP: 0.2,
+                     StopCondition.NONE: 0.0
+                 },
                  f_penalty=lambda x: x,
-                 max_temperature=1000.0,
-                 grade_stop_condition=lambda sc: 0.0):
+                 max_temperature=1000.0):
         """
         :param dest_freq_ch: Зелаемое изменение частоты [Hz]
         :param f_penalty: Функция, преобразующая накопленную штрафную энергию в значение [0..1]
@@ -48,4 +56,4 @@ class ControllerGrager:
                 1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel),
                 sim_metrics['max_temperature'] / self._max_temperature,
                 sim_metrics['avg_speed'],
-                self._grade_stop_condition(stop_condition))
+                self._grade_stop_condition[stop_condition])

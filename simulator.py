@@ -66,10 +66,11 @@ class Simulator:
         Шаг симуляции
         :param time: Время шага
         """
-        self._moving_interpolator.tick(cycle_time)
 
         current_pos = self._work_zone.map_from_global(
             self._moving_interpolator.current_position)
+        current_target = self._work_zone.map_from_global(
+            self._moving_interpolator.move_target)
         current_s = self._work_zone.map_s_from_global(
             self._moving_interpolator.current_s)
         current_f = self._work_zone.map_f_from_global(
@@ -90,14 +91,11 @@ class Simulator:
             case _:
                 self._rezonator_model.idle(cycle_time)
 
-        current_freq = self._rezonator_model.get_metrics()['freq_change']
-
-        self._measure_diff_history.append(
-            self._map_adj_to_relatie(current_freq))
-        self._measure_diff_history.pop(0)
+        passed_path_len = self._moving_interpolator.tick(cycle_time)
 
         result = self._controller.update({
             'current_pos': current_pos,
+            'target_pos': current_target,
             'current_s': current_s,
             'current_f': current_f,
             'freq_history': self._measure_diff_history,
@@ -107,20 +105,25 @@ class Simulator:
         if self._period_accum > self._freqmeter_period:
             self._period_accum -= self._freqmeter_period
 
-            # try send new command
-            cmd = Command(
-                destinanton=self._work_zone.map_to_global(
-                    result['destination']),
-                F=self._work_zone.map_f_to_global(result['speed']),
-                S=self._work_zone.map_s_to_global(result['power']))
-            # print(cmd)
-            self._moving_interpolator.process(cmd)
+            current_freq = self._rezonator_model.get_metrics()['freq_change']
+            self._measure_diff_history.append(
+                self._initial_freq_diff - self._map_adj_to_relatie(current_freq))
+            self._measure_diff_history.pop(0)
+
+        # try send new command
+        cmd = Command(
+            destinanton=self._work_zone.map_to_global(
+                result['destination']),
+            F=self._work_zone.map_f_to_global(result['speed']),
+            S=self._work_zone.map_s_to_global(result['power']))
+        # print(cmd)
+        self._moving_interpolator.process(cmd)
 
         return {
             'F': current_f,
             'S': current_s,
-            'T': self._rezonator_model.current_temperature_K(),
-            'self_grade': result['self_grade']
+            'self_grade': result['self_grade'],
+            'Passed': self._work_zone.map_path_len_from_global(passed_path_len),
         }
 
     def use_rezonator(self, f, *args, **kwargs):
@@ -178,21 +181,6 @@ if __name__ == "__main__":
     DEST_FREQ_CH = 50.0
     MAX_T = 100.0
 
-    def grade_stop_condition(sc: StopCondition) -> float:
-        match sc:
-            case StopCondition.TIMEOUT:
-                return -0.5
-            case  StopCondition.STALL:
-                return -0.7
-            case  StopCondition.LOW_POWER:
-                return -0.6
-            case  StopCondition.OVERHEAT:
-                return -0.2
-            case  StopCondition.SELF_STOP:
-                return 0.2
-            case _:
-                return 0.0
-
     f, ax = plt.subplots(1, 3)
 
     NNController.init_model(HISTORY_SIZE)
@@ -202,7 +190,8 @@ if __name__ == "__main__":
                     freq_history_size=HISTORY_SIZE)
 
     sim_stop_detector = SimStopDetector(timeout=10.0,
-                                        history_len_s=5.0,
+                                        history_len_s=1.0,
+                                        min_path=0.01,
                                         min_avg_speed=0.05,
                                         min_laser_power=POWER_THRESHOLD * 0.5,
                                         max_temperature=MAX_T)
@@ -210,8 +199,7 @@ if __name__ == "__main__":
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
                               f_penalty=gen_sigmoid(
                                   k=1.0 / LASER_POWER, x_offset=-6),
-                              max_temperature=MAX_T,
-                              grade_stop_condition=grade_stop_condition)
+                              max_temperature=MAX_T)
 
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
@@ -342,7 +330,7 @@ if __name__ == "__main__":
 
         # ------------ Условие останова ----------
 
-        stop_condition = sim_stop_detector.tick(cycle_time, mmetrics)
+        stop_condition = sim_stop_detector.tick(cycle_time, mmetrics, rmetrics)
 
         if stop_condition != StopCondition.NONE:
             g = grader.get_grade(

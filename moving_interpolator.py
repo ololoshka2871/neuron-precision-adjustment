@@ -78,18 +78,19 @@ class MovingInterpolator:
         else:
             return False
 
-    def tick(self, cycle_time: float) -> MotionStatus:
+    def tick(self, cycle_time: float) -> float:
         """
         Update the interpolator with the current time.
         """
         self._now += int(cycle_time * 1_000_000_000.0)
 
         if self._status == MotionStatus.INTERPOLATING:
-            self._interpolate_move()
+            return self._interpolate_move()
+        else:
+            return 0.0
 
-        return self._status
-
-    def _interpolate_move(self) -> bool:
+    def _interpolate_move(self) -> float:
+        # First interpolation
         if self._is_move_first_interpolation:
             self._current_distance_x = self._current_to_x - self._current_from_x
             self._current_distance_y = self._current_to_y - self._current_from_y
@@ -109,19 +110,31 @@ class MovingInterpolator:
             # done interpolating
             self._current_from_x = self._current_to_x
             self._current_from_y = self._current_to_y
+
+            disatnce = math.sqrt((self._current_to_x - self._current_cmd_x) ** 2 +
+                                 (self._current_to_y - self._current_cmd_y) ** 2)
+
             self._current_cmd_x = self._current_to_x
             self._current_cmd_y = self._current_to_y
             self._status = MotionStatus.IDLE
             self._is_move_first_interpolation = True
-            return self._now == self._current_endnanos
         else:
+            # доля сколько прошло времени от начала движения [0..1]
             fraction_of_move = (
                 self._now - self._current_startnanos) / self._current_duration
+
+            was_cmd_x = self._current_cmd_x
+            was_cmd_y = self._current_cmd_y
+
             self._current_cmd_x = self._current_from_x + \
                 (self._current_distance_x * fraction_of_move)
             self._current_cmd_y = self._current_from_y + \
                 (self._current_distance_y * fraction_of_move)
-            return True
+
+            disatnce = math.sqrt((self._current_cmd_x - was_cmd_x) ** 2 +
+                                 (self._current_cmd_y - was_cmd_y) ** 2)
+
+        return disatnce
 
     @staticmethod
     def calculate_move_length_nanos(xdist: float, ydist: float, move_velocity: float) -> float:
@@ -141,6 +154,13 @@ class MovingInterpolator:
         :return: The current position of the interpolator.
         """
         return self._current_cmd_x, self._current_cmd_y
+    
+    @property
+    def move_target(self) -> tuple[float, float]:
+        """
+        :return: The target position of the interpolator.
+        """
+        return self._current_to_x, self._current_to_y
 
     def from_pos(self) -> tuple[float, float]:
         """
