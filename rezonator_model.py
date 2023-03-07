@@ -5,9 +5,9 @@ from enum import Enum
 import numpy as np
 
 from adjust_zone_model import AdjustZoneModel, create_linear_sensivity_multiplicator
-from common import Rezonator, build_transform_matrix
-from temperature_model import TemperatureModel, QUARTZ_DESTENSITY, QUARTZ_HEAT_CAPACITY
-from inside_detector import is_point_inside_polygon
+from misc.common import Rezonator, build_transform_matrix
+from models.temperature_model import TemperatureModel, QUARTZ_DESTENSITY, QUARTZ_HEAT_CAPACITY
+from misc.inside_detector import is_point_inside_polygon
 
 
 class Zone(Enum):
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     import datetime as dt
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
-    from common import draw_polygon
+    from misc.common import draw_polygon
     from adjust_zone_model import draw_model
 
     LASER_POWER = 30.0  # [W]

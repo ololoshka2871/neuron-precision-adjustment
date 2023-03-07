@@ -6,13 +6,13 @@ import random
 import numpy as np
 
 from deap import algorithms, base, creator, tools
-from common import gen_sigmoid
+from misc.common import gen_sigmoid
 
 from controllers.controller_v1 import NNController
 from controller_grader import ControllerGrager
 from rezonator_model import RezonatorModel
 from sim_stop_detector import SimStopDetector, StopCondition
-from simulator import Simulator
+from simulators.simulator_v1 import Simulator
 
 # Веса оценок работы симуляции
 # Оценка:

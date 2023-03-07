@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib.transforms import Affine2D
 
 from generate_playground import generate_playground
-from common import draw_polygon
-from inside_detector import is_point_inside_polygon
+from misc.common import draw_polygon
+from misc.inside_detector import is_point_inside_polygon
 
 def unmap_from_target(obj_base_pos, obj_size, pos, inv_transform_matrix: Affine2D):
     """

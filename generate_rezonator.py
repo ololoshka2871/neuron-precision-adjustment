@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from common import transform_all
+from misc.common import transform_all
 
 # Константы
 REZONATOR_LENGTH = 4.5
@@ -101,6 +101,6 @@ if __name__ == '__main__':
     
     # output as JSON to stdout
     import json
-    from common import NumpyArrayEncoder
+    from misc.common import NumpyArrayEncoder
 
     print(json.dumps(rezonator, cls=NumpyArrayEncoder))

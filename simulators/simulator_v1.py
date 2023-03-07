@@ -1,8 +1,6 @@
-import time
-
 from rezonator_model import RezonatorModel, Zone, ModelView
 from moving_interpolator import MovingInterpolator, Command
-from work_zone import WorkZone, Rect
+from misc.work_zone import WorkZone, Rect
 
 
 class Simulator:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from common import build_transform_matrix, transform_all, Rezonator
+from misc.common import build_transform_matrix, transform_all, Rezonator
 
 rezonator_cached = None
 
@@ -39,7 +39,7 @@ def generate_playground(offset=(0, 0), angle=0.0):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    from common import draw_polygon
+    from misc.common import draw_polygon
 
     f, ax = plt.subplots(1, 1)
 

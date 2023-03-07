@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common import build_transform_matrix, transform_all, draw_polygon, Rezonator
+from misc.common import build_transform_matrix, transform_all, draw_polygon, Rezonator
 
 
 def draw_test():
