@@ -8,7 +8,7 @@ from movement import Movment
 
 if __name__ == '__main__':
     INITILA_POSITION = (0, 1)
-    MODEL_TIME_STEP = 0.1
+    MODEL_TIME_STEP = 0.01
     TAIL_LEN = 10
     
     gen_speed = lambda: np.random.normal(100, 30)
