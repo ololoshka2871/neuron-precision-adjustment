@@ -1,5 +1,5 @@
 
-from rezonator_model import Metrics
+from models.rezonator_model import Metrics
 from sim_stop_detector import StopCondition
 
 

@@ -1,5 +1,6 @@
 import numpy as np
 
+from misc.common import limit
 
 class RandomController:
     """
@@ -18,16 +19,12 @@ class RandomController:
         Функция обновляет состояние контроллера
         """
 
-        def limitmp(x): return RandomController._limit(x, -1.0, 1.0)
-        def limitzp(x): return RandomController._limit(x, 0.0, 1.0)
+        def limitmp(x): return limit(x, -1.0, 1.0)
+        def limitzp(x): return limit(x, 0.0, 1.0)
 
         return {
             'destination': list(map(limitmp, np.random.normal(0, 1.0, 2))),
             'power': limitzp(np.random.normal(0.5, 0.5)),
-            'speed': RandomController._limit(np.random.normal(0.5, 0.5), 0.05, 1.0),
+            'speed': limit(np.random.normal(0.5, 0.5), 0.05, 1.0),
             'self_evaluation': limitmp(np.random.normal(0, 1.0))
         }
-
-    @staticmethod
-    def _limit(v: float, _min: float, _max: float) -> float:
-        return max(_min, min(v, _max))

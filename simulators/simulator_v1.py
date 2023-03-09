@@ -1,5 +1,5 @@
-from rezonator_model import RezonatorModel, Zone, ModelView
-from moving_interpolator import MovingInterpolator, Command
+from models.rezonator_model import RezonatorModel, Zone, ModelView
+from models.moving_interpolator import MovingInterpolator, Command
 from misc.work_zone import WorkZone, Rect
 
 

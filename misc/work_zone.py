@@ -2,7 +2,7 @@
 
 import math
 
-from rezonator_model import Rezonator
+from models.rezonator_model import Rezonator
 
 
 class Rect:
@@ -49,17 +49,17 @@ class WorkZone:
 
     def map_to_global(self, pos: tuple[float, float]) -> tuple[float, float]:
         """
-        Преобразование координат из локальной системы координат в глобальную
+        Преобразование координат из локальной относительной системы координат в глобальную
         :param pos: Координаты в локальной системе координат [-1..1]
-        :return: Координаты в глобальной системе координат [мм]
+        :return: Координаты в глобальной системе координат [мм] относительно центра
         """
         return self._center[0] + pos[0] * self._size[0] / 2.0, \
                self._center[1] + pos[1] * self._size[1] / 2.0
 
     def map_from_global(self, pos: tuple[float, float]) -> tuple[float, float]:
         """
-        Преобразование координат из глобальной системы координат в локальную
-        :param pos: Координаты в глобальной системе координат [мм]
+        Преобразование координат из глобальной системы координат в локальную относительную
+        :param pos: Координаты в глобальной системе координат [мм] относительно центра
         :return: Координаты в локальной системе координат [-1..1]
         """
         return (pos[0] - self._center[0]) * 2.0 / self._size[0], \
@@ -107,8 +107,8 @@ class WorkZone:
     
     def map_relative_to_local(self, relative_pos: tuple[float, float]) -> tuple[float, float]:
         """
-        Преобразование координат из локальной системы координат в локальную
-        :param relative_pos: Координаты в локальной системе координат [-1..1]
+        Преобразование координат из локальной относительной системы координат в локальную абсолютную
+        :param relative_pos: Относительные координаты в локальной системе координат [-1..1]
         :return: Координаты в локальной системе координат (относительно центра) [мм]
         """
         return relative_pos[0] * self._size[0] / 2.0, relative_pos[1] * self._size[1] / 2.0

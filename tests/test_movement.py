@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from movement import Movment
+from models.movement import Movment
 
 # Создать тесты для проверки методов класс Movment
 class TestMovement:

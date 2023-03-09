@@ -10,7 +10,7 @@ from misc.common import gen_sigmoid
 
 from controllers.controller_v1 import NNController
 from controller_grader import ControllerGrager
-from rezonator_model import RezonatorModel
+from models.rezonator_model import RezonatorModel
 from sim_stop_detector import SimStopDetector, StopCondition
 from simulators.simulator_v1 import Simulator
 

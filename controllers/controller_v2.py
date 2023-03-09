@@ -9,17 +9,15 @@ class NNController:
     """
     Контроллер - нейронная сеть
     Входы:
-        - freq_history - История измерений
-        - target_pos - Цель движения
-        - current_pos_history - история изменения относительной текущая позиция 
-        - current_s - история изменения текущей мощности лазера
-        - current_f - история изменений текущей скорость
+        - freq_history - История измерений freq_history_size
+        - move_history - История перемещений вида (dest_pos, S, F) длиной move_history_size
+        - time - Относительное время до таймаута (0.0..1.0)
 
     Выходы:
         - Желаемая цель движения: tuple[x, y]: -1.0..1.0
         - Желаемая скорость перемещения: 0.0..1.0
         - Желаемая выходная мощность лазера: 0.0..1.0
-        - Самооценка: -1.0..1.0
+        - Самооценка: 0.0..1.0
     """
 
     INPUT_COUNT = 2 + 2 + 1 + 1
@@ -31,19 +29,19 @@ class NNController:
     _mean_layers = 0
 
     @staticmethod
-    def init_model(history_size: int, mean_layers=2, preend_layer_neurons=10) -> int:
+    def init_model(freq_history_size: int, mean_layers=2, preend_layer_neurons=10) -> int:
         model = Sequential()
 
         # входы
         model.add(layers.Input(batch_size=1, shape=(
-            history_size + NNController.INPUT_COUNT,)))
+            freq_history_size + NNController.INPUT_COUNT,)))
         # первый скрытый слой
-        model.add(layers.Dense(units=history_size +
+        model.add(layers.Dense(units=freq_history_size +
                   NNController.INPUT_COUNT, activation='tanh'))
 
         # средние скрытые слои
         for _ in range(mean_layers - 1):
-            model.add(layers.Dense(units=history_size +
+            model.add(layers.Dense(units=freq_history_size +
                                    NNController.INPUT_COUNT, activation='elu'))
 
         # последний слой
@@ -57,7 +55,7 @@ class NNController:
         # model.summary()
         NNController._model = model
 
-        NNController._history_size = history_size
+        NNController._history_size = freq_history_size
         NNController._mean_layers = mean_layers
         NNController._preend_neurons = preend_layer_neurons
 

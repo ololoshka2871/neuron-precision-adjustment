@@ -6,7 +6,7 @@ import numpy as np
 
 from matplotlib.pyplot import Axes
 
-from rezonator_model import Metrics, RezonatorModel
+from models.rezonator_model import Metrics, RezonatorModel
 
 
 class StopCondition(Enum):

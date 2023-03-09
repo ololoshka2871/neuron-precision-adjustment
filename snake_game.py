@@ -4,7 +4,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from movement import Movment
+from models.movement import Movment
 
 if __name__ == '__main__':
     INITILA_POSITION = (0, 1)

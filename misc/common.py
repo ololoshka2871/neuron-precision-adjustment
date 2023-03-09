@@ -132,3 +132,6 @@ def draw_polygon(axis: plt.Axes, vertexes, **kwargs):
     :return: object
     """
     return axis.add_patch(Polygon(vertexes, closed=True, **kwargs))
+
+def limit(v: float, _min: float, _max: float) -> float:
+    return max(_min, min(v, _max))
