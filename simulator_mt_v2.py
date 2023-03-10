@@ -9,41 +9,90 @@ from misc.common import draw_polygon, gen_sigmoid
 from adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 #from controller_grader import ControllerGrager
-from models.rezonator_model import RezonatorModel
+from models.rezonator_model import RezonatorModel, Playground, ModelView
 #from sim_stop_detector import SimStopDetector, StopCondition
 from simulators.simulator_v2 import Simulator
 
 
 class ControllerInputDisplay:
-    def __init__(self, playground: Axes, info: Axes, move_history_size: int):
-        """
-        Создет ручной контроллер
-        """
-        pass
-        playground.set_xlim(-1, 1)
-        playground.set_ylim(-1, 1)
-        self._tail = [playground.plot([0], [0], 'o-')[0]
-                      for _ in range(move_history_size)]
+    def __init__(self, pg_ax: Axes, model_ax: Axes, info_ax: Axes, 
+                 playground: Playground, model_view: ModelView, move_history_size: int):
 
-        self._freq_history, = info.plot([0], [0], '-g')
-        info.set_xlim(0, 1)
-        info.set_ylim(0, 1)
-        self._info = info
+        # рисуем базовую форму
+        draw_polygon(pg_ax, playground.rezonator,
+                    edgecolor='black', facecolor='none')
+
+        # рисуем цели
+        draw_polygon(pg_ax, playground.target(0), color='green')
+        draw_polygon(pg_ax, playground.target(1), color='green')
+
+        # рисуем запрещенную область
+        draw_polygon(pg_ax, playground.forbidden_area, color='magenta')
+
+        # рисуем рабочую область
+        draw_polygon(pg_ax, playground.working_area,
+                    edgecolor='blue', facecolor='none')
+
+        # текущая точка
+        self.current_pos_pg = pg_ax.plot([0], [0], 'ro')
+
+        # ----------------------------------------
+
+        # рисуем базовую форму
+        draw_polygon(model_ax, model_view.rezonator,
+                    edgecolor='black', facecolor='none')
+
+        # рисуем цели
+        self_patches = [draw_model(model_ax, model_view.target(i)) for i in range(2)]
+
+        # рисуем запрещенную область
+        draw_polygon(model_ax, model_view.forbidden_area, color='magenta')
+
+        # рисуем рабочую область
+        draw_polygon(model_ax, model_view.working_area,
+                    edgecolor='blue', facecolor='none')
+
+        # текущая точка
+        #model_pos = playground.map_to_model(current_pos_global)
+        #current_pos_transformed, = mv.plot(*model_pos, 'ro')
+
+        # Установка границ по осям X и Y чтобы видно было только рабочую область
+        limits = model_view.working_area_limits(0.1)
+        model_ax.set_xlim(*limits[0])
+        model_ax.set_ylim(*limits[1])
+
+        # ----------------------------------------
+
+        # Установка границ по осям X и Y чтобы видно было только рабочую область
+        #limits = playground.working_area_limits(0.1)
+        #pg.set_xlim(*limits[0])
+        #pg.set_ylim(*limits[1])
+#
+        #playground.set_xlim(-1, 1)
+        #playground.set_ylim(-1, 1)
+        #self._tail = [playground.plot([0], [0], 'o-')[0]
+        #              for _ in range(move_history_size)]
+#
+        #self._freq_history, = info.plot([0], [0], '-g')
+        #info.set_xlim(0, 1)
+        #info.set_ylim(0, 1)
+        #self._info = info
 
     def __call__(self, input: dict) -> None:
-        start: tuple[float, float] = input['move_history'][0][:2]
-
-        for curve, move_history_item in zip(self._tail, input['move_history']):
-            dest_x, dest_y, S, F = move_history_item
-            curve.set_data([start[0], dest_x], [start[1], dest_y])
-            curve.set_color((F, 0, 0, S))  # type: ignore
-            start = move_history_item[:2]
-
-        freq_history = input['freq_history']
-
-        x = np.linspace(0.0, 1.0, len(freq_history))
-        self._freq_history.set_data(x, freq_history)
-        self._info.relim()
+        #start: tuple[float, float] = input['move_history'][0][:2]
+#
+        #for curve, move_history_item in zip(self._tail, input['move_history']):
+        #    dest_x, dest_y, S, F = move_history_item
+        #    curve.set_data([start[0], dest_x], [start[1], dest_y])
+        #    curve.set_color((F, 0, 0, S))  # type: ignore
+        #    start = move_history_item[:2]
+#
+        #freq_history = input['freq_history']
+#
+        #x = np.linspace(0.0, 1.0, len(freq_history))
+        #self._freq_history.set_data(x, freq_history)
+        #self._info.relim()
+        pass
 
 
 if __name__ == "__main__":
@@ -59,109 +108,35 @@ if __name__ == "__main__":
 
     f, ax = plt.subplots(1, 3)
 
-    input_display = ControllerInputDisplay(ax[1], ax[2], MOVE_HISTORY_SIZE)
+    rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD)
 
-    controller = ManualController()
+    # Генерируем случайное смещение и случайный угол поворота
+    offset = (np.random.random() * 0.3, np.random.random() * 0.5)
+    angle = np.random.random() * 20 - 10
+    print('offset: {}, angle: {}'.format(offset, angle))
 
-    sim = Simulator(RezonatorModel(power_threshold=POWER_THRESHOLD),
-                    controller, (0, 0),
+    playground = rezonator.get_playground(offset, angle)
+    model_view = rezonator.get_model_view(offset, angle)
+
+    # NNController.init_model(F_HISTORY_SIZE)
+
+    # weights = NNController.shuffled_weights()
+
+    sim = Simulator(rezonator, ManualController(), (0, 0),
                     freq_history_size=F_HISTORY_SIZE)
 
-    plt.show(block=False)
-
-    sim.perform_modeling(0, input_display)
-
-    #f, ax = plt.subplots(1, 3)
-#
-    # NNController.init_model(F_HISTORY_SIZE)
-#
-    #weights = NNController.shuffled_weights()
-#
-    # sim = Simulator(RezonatorModel(power_threshold=POWER_THRESHOLD),
-    #                NNController(weights), (0, 0),
-    #                freq_history_size=F_HISTORY_SIZE)
-#
     # sim_stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
     #                                    history_len_s=1.0,
     #                                    min_path=0.01,
     #                                    min_avg_speed=0.05,
     #                                    min_laser_power=POWER_THRESHOLD * 0.5,
     #                                    max_temperature=MAX_T)
-#
+
     # grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
     #                          f_penalty=gen_sigmoid(
     #                              k=1.0 / LASER_POWER, x_offset_to_right=-6),
     #                          max_temperature=MAX_T)
-#
-    # Генерируем случайное смещение и случайный угол поворота
-    #offset = (np.random.random() * 0.3, np.random.random() * 0.5)
-    #angle = np.random.random() * 20 - 10
-    #print('offset: {}, angle: {}'.format(offset, angle))
-#
-    # ----------------------------------------
-#
-    #pg = ax[0]
-#
-    # playground = sim.use_rezonator(
-    #    RezonatorModel.get_playground, offset, angle)
-#
-    # рисуем базовую форму
-    # draw_polygon(pg, playground.rezonator,
-    #             edgecolor='black', facecolor='none')
-#
-    # рисуем цели
-    #draw_polygon(pg, playground.target(0), color='green')
-    #draw_polygon(pg, playground.target(1), color='green')
-#
-    # рисуем запрещенную область
-    #draw_polygon(pg, playground.forbidden_area, color='magenta')
-#
-    # рисуем рабочую область
-    # draw_polygon(pg, playground.working_area,
-    #             edgecolor='blue', facecolor='none')
-#
-    # test field
-    ## pg.add_patch(Polygon(sim.generate_test_polygon_local(), facecolor=(0,0,0,0.3)))
-#
-    # текущая точка
-    #current_pos_global = sim.laser_pos()
-    #current_pos, = pg.plot(*current_pos_global, 'ro')
-#
-    # Установка границ по осям X и Y чтобы видно было только рабочую область
-    #limits = playground.working_area_limits(0.1)
-    # pg.set_xlim(*limits[0])
-    # pg.set_ylim(*limits[1])
-#
-    # ----------------------------------------
-#
-    #mv = ax[1]
-#
-    # model_view = sim.use_rezonator(
-    #    RezonatorModel.get_model_view, offset, angle)
-#
-    # рисуем базовую форму
-    # draw_polygon(mv, model_view.rezonator,
-    #             edgecolor='black', facecolor='none')
-#
-    # рисуем цели
-    #patches = [draw_model(mv, model_view.target(i)) for i in range(2)]
-#
-    # рисуем запрещенную область
-    #draw_polygon(mv, model_view.forbidden_area, color='magenta')
-#
-    # рисуем рабочую область
-    # draw_polygon(mv, model_view.working_area,
-    #             edgecolor='blue', facecolor='none')
-#
-    # текущая точка
-    #model_pos = playground.map_to_model(current_pos_global)
-    #current_pos_transformed, = mv.plot(*model_pos, 'ro')
-#
-    # Установка границ по осям X и Y чтобы видно было только рабочую область
-    #limits = model_view.working_area_limits(0.1)
-    # mv.set_xlim(*limits[0])
-    # mv.set_ylim(*limits[1])
-#
+
     # ----------------------------------------
 #
     #now = 0
@@ -193,9 +168,15 @@ if __name__ == "__main__":
     # mp.xaxis.set_major_formatter(time_format)
 #
     # ----------------------------------------
-#
-    # plt.show(block=False)
-#
+
+    input_display = ControllerInputDisplay(
+        *ax, playground, model_view, MOVE_HISTORY_SIZE  # type: ignore
+    )
+
+    plt.show(block=False)
+
+    sim.perform_modeling(playground, 0, input_display)
+
     # while True:
     #    pos = sim.laser_pos()
     #    current_pos.set_data(pos)

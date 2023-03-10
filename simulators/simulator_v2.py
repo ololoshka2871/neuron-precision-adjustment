@@ -1,7 +1,7 @@
 import numpy as np
 
 from misc.queue import Queue
-from models.rezonator_model import RezonatorModel, Zone, ModelView
+from models.rezonator_model import RezonatorModel, Zone, ModelView, Playground
 from models.movement import Movment
 from misc.work_zone import WorkZone, Rect
 
@@ -73,7 +73,7 @@ class Simulator:
                     np.array([0.0, 1.0, 0.0, 0.0]), move_history_len),
                 newshape=(4, move_history_len)).T)
 
-    def perform_modeling(self, stop_detector, input_display=lambda input: None):
+    def perform_modeling(self, playground: Playground, stop_detector, input_display=lambda input: None):
         """
         Выполнение симуляции
         :param stop_detector: Детектор условия остановки симуляции
@@ -214,11 +214,11 @@ class Simulator:
     #        'Passed': self._work_zone.map_path_len_from_global(passed_path_len),
     #    }
 
-    # def use_rezonator(self, f, *args, **kwargs):
-    #    """
-    #    Применить функцию к резонатору, сохраняя его состояние
-    #    """
-    #    return f(self._rezonator_model, *args, **kwargs)
+    def use_rezonator(self, f, *args, **kwargs):
+        """
+        Применить функцию к резонатору, сохраняя его состояние
+        """
+        return f(self._rezonator_model, *args, **kwargs)
 
     # def laser_pos(self) -> tuple[float, float]:
     #    """
