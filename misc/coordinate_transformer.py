@@ -28,6 +28,9 @@ class RealCoordinates(Coordinates):
     @staticmethod
     def from_ndarray(arr: np.ndarray):
         return RealCoordinates(arr[0], arr[1])
+    
+    def __str__(self):
+        return f"RealCoordinates({self.point[0]}, {self.point[1]})"
 
 class ModelCoordinates(Coordinates):
     """
@@ -38,6 +41,9 @@ class ModelCoordinates(Coordinates):
     @staticmethod
     def from_ndarray(arr: np.ndarray):
         return ModelCoordinates(arr[0], arr[1])
+    
+    def __str__(self):
+        return f"ModelCoordinates({self.point[0]}, {self.point[1]})"
   
 
 class WorkzoneRelativeCoordinates(Coordinates):
@@ -49,6 +55,9 @@ class WorkzoneRelativeCoordinates(Coordinates):
     @staticmethod
     def from_ndarray(arr: np.ndarray):
         return WorkzoneRelativeCoordinates(arr[0], arr[1])
+    
+    def __str__(self):
+        return f"WorkzoneRelativeCoordinates({self.point[0]}, {self.point[1]})"
 
 
 class CoordinateTransformer:
