@@ -87,7 +87,7 @@ class Rezonator(dict):
         """
         return self.work_zone_base[0] + self.work_zone_size[0] / 2, \
             self.work_zone_base[1] + self.work_zone_size[1] / 2
-
+              
 
 def gen_sigmoid(A=1.0, k=1.0, x_offset_to_right=0.0):
     def sigmoid(x: float) -> float:
