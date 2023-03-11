@@ -102,7 +102,7 @@ class CoordinateTransformer:
             .scale(2.0 / resonator.work_zone_size[0], 2.0 / resonator.work_zone_size[1])
 
         self._model2workzone_relative_transform = Affine2D() \
-            .rotate_deg_around(0, 0, -angle) \
+            .rotate_deg_around(0, 0, angle) \
             .translate(-workzone_center[0] + offset[0] + self._model_base_point[0], -workzone_center[1] + offset[1] + self._model_base_point[1]) \
             .scale(2.0 / resonator.work_zone_size[0], 2.0 / resonator.work_zone_size[1])
 

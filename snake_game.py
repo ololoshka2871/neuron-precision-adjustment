@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from models.movement import Movment
 
 if __name__ == '__main__':
-    INITILA_POSITION = (0, 1)
+    INITILE_POSITION = (0, 1)
     MODEL_TIME_STEP = 0.01
     TAIL_LEN = 10
     
@@ -16,9 +16,9 @@ if __name__ == '__main__':
     movment = Movment()
     f, ax = plt.subplots()
         
-    tail = [ax.plot(INITILA_POSITION[0], INITILA_POSITION[1], 'o-')[0] for _ in range(TAIL_LEN)]
+    tail = [ax.plot(INITILE_POSITION[0], INITILE_POSITION[1], 'o-')[0] for _ in range(TAIL_LEN)]
     
-    current_pos = INITILA_POSITION
+    current_pos = INITILE_POSITION
     
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)
@@ -35,7 +35,7 @@ if __name__ == '__main__':
         path = movment.interpolate_move(current_pos, new_position, gen_speed(), MODEL_TIME_STEP)
         current_pos = new_position
         
-        head, = ax.plot(*path, 'o-', color=(1.0, 0.0, 0.0))
+        head, = ax.plot(*path[:2], 'o-', color=(1.0, 0.0, 0.0))
         tail.append(head)
         l = tail.pop(0)
         l.remove()

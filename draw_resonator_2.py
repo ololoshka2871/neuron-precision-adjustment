@@ -12,8 +12,8 @@ if __name__ == "__main__":
 
     rez = Rezonator.load()
     
-    offset = (0, 0)  # (np.random.random() * 0.3, np.random.random() * 0.5)
-    angle = 10  # np.random.random() * 20 - 10
+    offset = (np.random.random() * 0.3, np.random.random() * 0.5)
+    angle = np.random.random() * 20 - 10
     print('offset: {}, angle: {}'.format(offset, angle))
     
     ct = CoordinateTransformer(rez, workzone_center=(24, 8), offset=offset, angle=angle)

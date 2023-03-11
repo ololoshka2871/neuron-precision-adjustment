@@ -61,6 +61,14 @@ class TestCoordinateTransformer:
         wz = transformer.wrap_from_model_to_workzone_relative(model)
         rb = transformer.wrap_from_workzone_relative_to_real(wz)
         assert real == rb
+        
+    def test_chain_transform2(self,
+                             transformer: CoordinateTransformer):
+        wz = WorkzoneRelativeCoordinates(0, 1)
+        model = transformer.wrap_from_workzone_relative_to_model(wz)
+        real = transformer.wrap_from_model_to_real(model)
+        wz_r = transformer.wrap_from_real_to_workzone_relative(real)
+        assert wz == wz_r
 
 
 class TestAffine2D:
