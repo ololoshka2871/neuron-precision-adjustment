@@ -14,6 +14,7 @@ from controller_grader import ControllerGrager
 from models.rezonator_model import RezonatorModel, ModelView
 from models.sim_stop_detector_v2 import SimStopDetector
 from simulators.simulator_v2 import Simulator
+from controllers.controller_v2 import NNController
 
 
 class ControllerInputDisplay:
@@ -158,8 +159,12 @@ class ControllerInputDisplay:
         self._info_ax.relim()
         self._info_ax.autoscale_view()
 
+        plt.pause(0.001)
+
 
 if __name__ == "__main__":
+    import sys
+
     LASER_POWER = 30.0  # [W]
     F_HISTORY_SIZE = 10
     MOVE_HISTORY_SIZE = 10
@@ -170,6 +175,8 @@ if __name__ == "__main__":
 
     SIM_CYCLE_TIME = 0.01
     SIM_TIMEOUT = 10.0
+
+    manual = len(sys.argv) > 1
 
     f, ax = plt.subplots(1, 3)
 
@@ -184,12 +191,15 @@ if __name__ == "__main__":
     rez = Rezonator.load()
     coord_transformer = CoordinateTransformer(rez, (0, 0), offset, angle)
 
-    # NNController.init_model(F_HISTORY_SIZE)
-
-    # weights = NNController.shuffled_weights()
+    if manual:
+        controller = ManualController()
+    else:
+        NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
+        weights = NNController.shuffled_weights()
+        controller = NNController(weights)
 
     sim = Simulator(rezonator_model=rezonator,
-                    controller_v2=ManualController(),
+                    controller_v2=controller,
                     coord_transformer=coord_transformer,
                     fs_transformer=FSTransformer(255.0, MAX_F),
                     laser_power=LASER_POWER,
@@ -197,8 +207,8 @@ if __name__ == "__main__":
                     freq_history_size=F_HISTORY_SIZE,
                     initial_wz_pos=initial_pos)
 
-    stop_detector = SimStopDetector(timeout=SIM_TIMEOUT, 
-                                    history_len_s=SIM_TIMEOUT / 2.0,
+    stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
+                                    history_len_s=0.5,
                                     min_path=0.01, min_avg_speed=0.05,
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
@@ -216,12 +226,12 @@ if __name__ == "__main__":
         move_history_size=MOVE_HISTORY_SIZE, initial_pos=initial_pos
     )
 
-
     plt.show(block=False)
 
     stop_condition = sim.perform_modeling(stop_detector, input_display)
 
-    grade = grader.get_grade(rezonator.get_metrics(), stop_detector.summary(), stop_condition)
+    grade = grader.get_grade(rezonator.get_metrics(),
+                             stop_detector.summary(), stop_condition)
     print(
         f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
     sf, ax = plt.subplots(1, 1)

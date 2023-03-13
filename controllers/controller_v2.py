@@ -20,7 +20,7 @@ class NNController:
         - Самооценка: 0.0..1.0
     """
 
-    INPUT_COUNT = 2 + 2 + 1 + 1
+    INPUT_COUNT_CONST = 1
     OUTUT_COUNT = 2 + 1 + 1 + 1
 
     _model = None
@@ -29,23 +29,24 @@ class NNController:
     _mean_layers = 0
 
     @staticmethod
-    def init_model(freq_history_size: int, mean_layers=2, preend_layer_neurons=10) -> int:
+    def init_model(freq_history_size: int, move_history_size: int,
+                   mean_layers=2, pre_end_layer_neurons=10) -> int:
         model = Sequential()
 
+        input_cout = freq_history_size + \
+            (move_history_size * 4) + NNController.INPUT_COUNT_CONST
+
         # входы
-        model.add(layers.Input(batch_size=1, shape=(
-            freq_history_size + NNController.INPUT_COUNT,)))
+        model.add(layers.Input(batch_size=1, shape=(input_cout,)))
         # первый скрытый слой
-        model.add(layers.Dense(units=freq_history_size +
-                  NNController.INPUT_COUNT, activation='tanh'))
+        model.add(layers.Dense(units=input_cout, activation='tanh'))
 
         # средние скрытые слои
         for _ in range(mean_layers - 1):
-            model.add(layers.Dense(units=freq_history_size +
-                                   NNController.INPUT_COUNT, activation='elu'))
+            model.add(layers.Dense(units=input_cout, activation='elu'))
 
         # последний слой
-        model.add(layers.Dense(units=preend_layer_neurons, activation='elu'))
+        model.add(layers.Dense(units=pre_end_layer_neurons, activation='elu'))
 
         # выходной слой
         model.add(layers.Dense(units=NNController.OUTUT_COUNT, activation='tanh'))
@@ -57,7 +58,7 @@ class NNController:
 
         NNController._history_size = freq_history_size
         NNController._mean_layers = mean_layers
-        NNController._preend_neurons = preend_layer_neurons
+        NNController._preend_neurons = pre_end_layer_neurons
 
         weights = model.get_weights()
         flat_weights = NNController._convert_weights_from_model(weights)
@@ -98,7 +99,7 @@ class NNController:
     @staticmethod
     def map_zero_one(v: float) -> float:
         return (1.0 + v) / 2.0
-    
+
     @staticmethod
     def shuffled_weights() -> list[float]:
         """
@@ -130,8 +131,13 @@ class NNController:
         Функция обновляет состояние контроллера
         """
 
-        v = [*input['freq_history'], *input['current_pos'],
-             *input['target_pos'], input['current_s'], input['current_f']]
+        v = list()
+        # extend list v with content of list 
+        for l in input['freq_history']:
+            v.extend(l)
+        for mhi in input['move_history']:
+            v.extend(mhi)
+        v.append(input['time'])
         input = tf.constant([v])  # type: ignore
         output, = self._model.predict(input, verbose=None)  # type: ignore
 
