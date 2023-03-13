@@ -6,13 +6,12 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.transforms import Affine2D
 
 from generate_playground import generate_playground
 
 
 class AdjustZoneModel:
-    METAL_DENSITY = 10.49 / math.pow(1e1, 3)  # g/sm^3 -> g/mm^3
+    METAL_DENSITY = 10.49 / math.pow(1e+1, 3)  # g/sm^3 -> g/mm^3
     SENSIVITY_BASE = 3e-9  # g/Hz
 
     def __init__(self,
@@ -121,7 +120,9 @@ def update_target(position: tuple, target_polygon_real, target_polygon_original,
     if is_point_inside_polygon(position, target_polygon_real):
         original_base_pos = target_polygon_original[0]
         target_pos = (untransformed_pos - original_base_pos) / target_size
-        zone.update(target_pos, **update_args)
+        d = zone.update(target_pos, **update_args)
+        if not d:
+            print(f"Target {target_pos} deepleed!")
 
         for row in patches:
             for patch in row:

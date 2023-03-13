@@ -7,13 +7,9 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 
-from misc.common import Rezonator, draw_polygon
+from misc.common import Rezonator, draw_polygon, create_tail
 from models.movement import Movment
 from misc.coordinate_transformer import CoordinateTransformer
-
-
-def create_tail(ax, tail_len, init_pos):
-    return [ax.plot(*init_pos, 'o-')[0] for _ in range(tail_len)]
 
 
 def draw_rezonators(ax: list[Axes], rez: Rezonator, ct: CoordinateTransformer):

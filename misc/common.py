@@ -133,5 +133,10 @@ def draw_polygon(axis: plt.Axes, vertexes, **kwargs):
     """
     return axis.add_patch(Polygon(vertexes, closed=True, **kwargs))
 
+
 def limit(v: float, _min: float, _max: float) -> float:
     return max(_min, min(v, _max))
+
+
+def create_tail(ax, tail_len: int, init_pos):
+    return [ax.plot(*init_pos, 'o-')[0] for _ in range(tail_len)]

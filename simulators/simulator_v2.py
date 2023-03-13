@@ -4,6 +4,8 @@ from misc.queue import Queue
 from models.rezonator_model import RezonatorModel, Zone, ModelView, Playground
 from models.movement import Movment
 from misc.work_zone import WorkZone, Rect
+from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates, ModelCoordinates, RealCoordinates
+from misc.f_s_transformer import FSTransformer
 
 
 class Simulator:
@@ -24,39 +26,43 @@ class Simulator:
     def __init__(self,
                  rezonator_model: RezonatorModel,
                  controller_v2,
-                 global_center: tuple[float, float],
+                 coord_transformer: CoordinateTransformer,
+                 fs_transformer: FSTransformer,
+                 laser_power: float,
                  initial_freq_diff=0.5,
-                 max_f=1000.0,
                  freqmeter_period=0.4,
                  modeling_period=0.01,
-                 laser_power_max_s=255.0,
                  freq_history_size=10,
-                 move_history_len=10):
+                 move_history_len=10,
+                 initial_wz_pos=WorkzoneRelativeCoordinates(0.0, 1.0)):
         """
-        :param rezonator: Резонатор
-        :param controller_v2: Контроллер (API v2)
-        :param global_center: Координаты центра рабочей зоны в глобальной системе координат
-        :param initial_freq_diff: Для от максимально-возможной перестройки частоты для этой симуляции
-        :param max_f: Максимальная скорость перемещения станка
-        :param freqmeter_period: Период измерения частоты, [с]
-        :param modeling_period: Период моделирования движения и растройки резонатора, [с]
-        :param laser_power_max_s: Максимальная мощность лазера [W]
+        :param rezonator_model: Модель резонатора
+        :param controller_v2: Контроллер
+        :param coord_transformer: Преобразователь координат
+        :param fs_transformer: Преобразователь мощности лазера и скорости перемещения станка
+        :param laser_power: Мощность лазера в Вт
+        :param initial_freq_diff: Относительное начальное отклонение частоты [0..1]
+        :param freqmeter_period: Период измерения частоты
+        :param modeling_period: Период моделирования
         :param freq_history_size: Размер истории измерений частоты
+        :param move_history_len: Размер истории перемещений
+        :param initial_wz_pos: Начальное положение станка в рабочей зоне
         """
         self._rezonator_model = rezonator_model
         self._controller = controller_v2
         self._freqmeter_period = freqmeter_period
         self._modeling_period = modeling_period
+        self._laser_power = laser_power
 
-        self._work_zone = WorkZone(Rect.from_rezonator(
-            RezonatorModel.REZONATOR, global_center),
-            laser_power_max_s, max_f)
+        self._coord_transformer = coord_transformer
+        self._fs_transformer = fs_transformer
 
         self._period_accum = 0.0
         self._next_mesure_after = 0.0
 
         self._movement = Movment()
-        self._curremt_pos_global = self._work_zone.map_to_global((0, 1.0))
+        self._curremt_pos_global = self._coord_transformer.wrap_from_workzone_relative_to_real(
+            initial_wz_pos)
 
         self._initial_freq_diff = initial_freq_diff
 
@@ -73,7 +79,7 @@ class Simulator:
                     np.array([0.0, 1.0, 0.0, 0.0]), move_history_len),
                 newshape=(4, move_history_len)).T)
 
-    def perform_modeling(self, playground: Playground, stop_detector, input_display=lambda input: None):
+    def perform_modeling(self, stop_detector, input_display=lambda input: None):
         """
         Выполнение симуляции
         :param stop_detector: Детектор условия остановки симуляции
@@ -88,13 +94,17 @@ class Simulator:
             )
             input_display(controller_input)
             command = self._controller.update(controller_input)
-
+            
+            dest_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
+                    WorkzoneRelativeCoordinates(*command['destination']))
             traectory = self._movement.interpolate_move(
-                src=self._curremt_pos_global,
-                dst=self._work_zone.map_to_global(command['destination']),
-                speed=self._work_zone.map_f_to_global(command['speed']),
+                src=self._curremt_pos_global.tuple(),
+                dst=dest_real.tuple(),
+                speed=self._fs_transformer.map_f_to_global(command['speed']),
                 time_step=self._modeling_period
             )
+
+            self._curremt_pos_global = dest_real
 
             cmd_s = command['power']
 
@@ -110,23 +120,25 @@ class Simulator:
                     self._measure_diff_history.enqueue(
                         np.array([self._initial_freq_diff - m['freq_change']]))
 
-                model_pos = self._work_zone.map_relative_to_local(
-                    self._work_zone.map_from_global((pos_x, pos_y)))
+                model_pos = self._coord_transformer.wrap_from_real_to_model(
+                    RealCoordinates(pos_x, pos_y)).tuple()
+                
+                laser_power = self._laser_power * cmd_s  # мощность лазера в Вт
 
                 match ModelView.detect_zone(model_pos):
                     case Zone.BODY:
                         # just heat up
                         self._rezonator_model.heat_body(
-                            cmd_s, self._modeling_period)
+                            laser_power, self._modeling_period)
                     case Zone.FORBIDDEN:
                         # heat up and add energy to forbidden zone
                         self._rezonator_model.heat_forbidden(
-                            cmd_s, self._modeling_period)
+                            laser_power, self._modeling_period)
                     case Zone.TARGET1 | Zone.TARGET2 as zone:
                         # Обработка мишеней
                         pos = ModelView.map_to_zone(zone, model_pos)
                         self._rezonator_model.target(
-                            zone, pos, cmd_s, self._modeling_period)
+                            zone, pos, laser_power, self._modeling_period)
                     case _:
                         self._rezonator_model.idle(self._modeling_period)
 

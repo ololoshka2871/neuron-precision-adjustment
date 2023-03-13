@@ -103,7 +103,7 @@ class ModelView:
         return self._working_area
 
     @staticmethod
-    def detect_zone(position) -> Zone:
+    def detect_zone(position:tuple[float, float]) -> Zone:
         """
         Функция определяет зону резонатора в которой находится точка
         :param position: координаты точки

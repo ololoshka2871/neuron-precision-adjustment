@@ -5,94 +5,158 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from misc.common import draw_polygon, gen_sigmoid
+from misc.common import Rezonator, draw_polygon, gen_sigmoid, create_tail
 from adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
+from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
+from misc.f_s_transformer import FSTransformer
 #from controller_grader import ControllerGrager
-from models.rezonator_model import RezonatorModel, Playground, ModelView
+from models.rezonator_model import RezonatorModel, ModelView
 #from sim_stop_detector import SimStopDetector, StopCondition
 from simulators.simulator_v2 import Simulator
 
 
 class ControllerInputDisplay:
-    def __init__(self, pg_ax: Axes, model_ax: Axes, info_ax: Axes, 
-                 playground: Playground, model_view: ModelView, move_history_size: int):
+    def __init__(self, wz_ax: Axes, model_ax: Axes, info_ax: Axes,
+                 rez: Rezonator, model_view: ModelView, ct: CoordinateTransformer,
+                 move_history_size: int, initial_pos: WorkzoneRelativeCoordinates):
+        self._ct = ct
+        self._model_view = model_view
 
-        # рисуем базовую форму
-        draw_polygon(pg_ax, playground.rezonator,
-                    edgecolor='black', facecolor='none')
+        # базовая точка - середина в месте крепления (0, 0)
+        rezonator = rez['rezonator']
 
-        # рисуем цели
-        draw_polygon(pg_ax, playground.target(0), color='green')
-        draw_polygon(pg_ax, playground.target(1), color='green')
+        # первая ветка
+        target1 = rez['targets'][0]
 
-        # рисуем запрещенную область
-        draw_polygon(pg_ax, playground.forbidden_area, color='magenta')
+        # вторая ветка
+        target2 = rez['targets'][1]
 
-        # рисуем рабочую область
-        draw_polygon(pg_ax, playground.working_area,
-                    edgecolor='blue', facecolor='none')
+        # рабочая область
+        working_area = rez['working_area']
 
-        # текущая точка
-        self.current_pos_pg = pg_ax.plot([0], [0], 'ro')
-
-        # ----------------------------------------
-
-        # рисуем базовую форму
-        draw_polygon(model_ax, model_view.rezonator,
-                    edgecolor='black', facecolor='none')
-
-        # рисуем цели
-        self_patches = [draw_model(model_ax, model_view.target(i)) for i in range(2)]
-
-        # рисуем запрещенную область
-        draw_polygon(model_ax, model_view.forbidden_area, color='magenta')
-
-        # рисуем рабочую область
-        draw_polygon(model_ax, model_view.working_area,
-                    edgecolor='blue', facecolor='none')
-
-        # текущая точка
-        #model_pos = playground.map_to_model(current_pos_global)
-        #current_pos_transformed, = mv.plot(*model_pos, 'ro')
-
-        # Установка границ по осям X и Y чтобы видно было только рабочую область
-        limits = model_view.working_area_limits(0.1)
-        model_ax.set_xlim(*limits[0])
-        model_ax.set_ylim(*limits[1])
+        # Запрещенная область
+        forbidden_area = rez['forbidden_area']
 
         # ----------------------------------------
 
+        real_rezonator = ct.array_wrap_from_model_to_real(rezonator)
+        real_target1 = ct.array_wrap_from_model_to_real(target1)
+        real_target2 = ct.array_wrap_from_model_to_real(target2)
+        real_forbidden_area = ct.array_wrap_from_model_to_real(forbidden_area)
+        real_working_area = ct.get_real_working_zone(working_area)
+
+        # ----------------------------------------
+
+        wz_ax.set_title('Рабочая зона')
+
+        wz_rezonator = ct.array_wrap_from_real_to_workzone(real_rezonator)
+        wz_target1 = ct.array_wrap_from_real_to_workzone(real_target1)
+        wz_target2 = ct.array_wrap_from_real_to_workzone(real_target2)
+        wz_forbidden_area = ct.array_wrap_from_real_to_workzone(
+            real_forbidden_area)
+        wz_working_area = ct.array_wrap_from_real_to_workzone(
+            real_working_area)
+
+        # рисуем базовую форму
+        draw_polygon(wz_ax, wz_rezonator, edgecolor='black', facecolor='none')
+
+        # рисуем цели
+        draw_polygon(wz_ax, wz_target1, color='green')
+        draw_polygon(wz_ax, wz_target2, color='green')
+
+        # рисуем запрещенную область
+        draw_polygon(wz_ax, wz_forbidden_area, color='magenta')
+
+        # рисуем рабочую область
+        draw_polygon(wz_ax, wz_working_area,
+                     edgecolor='blue', facecolor='none')
+
+        self._wz_tail = create_tail(
+            wz_ax, move_history_size, initial_pos.tuple())
+
         # Установка границ по осям X и Y чтобы видно было только рабочую область
-        #limits = playground.working_area_limits(0.1)
-        #pg.set_xlim(*limits[0])
-        #pg.set_ylim(*limits[1])
-#
-        #playground.set_xlim(-1, 1)
-        #playground.set_ylim(-1, 1)
-        #self._tail = [playground.plot([0], [0], 'o-')[0]
-        #              for _ in range(move_history_size)]
-#
-        #self._freq_history, = info.plot([0], [0], '-g')
-        #info.set_xlim(0, 1)
-        #info.set_ylim(0, 1)
-        #self._info = info
+        wz_ax.set_xlim(-1.0, 1.0)
+        wz_ax.set_ylim(-1.0, 1.0)
+
+        # ----------------------------------------
+
+        model_ax.set_title('Модель')
+
+        model_rezonator = ct.array_wrap_from_real_to_model(real_rezonator)
+        model_forbidden_area = ct.array_wrap_from_real_to_model(
+            real_forbidden_area)
+        model_working_area = ct.array_wrap_from_real_to_model(
+            real_working_area)
+
+        # рисуем базовую форму
+        draw_polygon(model_ax, model_rezonator,
+                     edgecolor='black', facecolor='none')
+
+        # рисуем цели
+        self._patches = [draw_model(model_ax, model_view.target(i))
+                         for i in range(2)]
+
+        # рисуем запрещенную область
+        draw_polygon(model_ax, model_forbidden_area, color='magenta')
+
+        # рисуем рабочую область
+        draw_polygon(model_ax, model_working_area,
+                     edgecolor='blue', facecolor='none')
+
+        # текущая точка
+        model_pos = ct.wrap_from_workzone_relative_to_model(initial_pos)
+        self._model_tail = create_tail(model_ax, move_history_size, model_pos)
+
+        # Установка границ по осям X и Y чтобы видно было только рабочую область
+        ax[1].set_xlim(min(model_working_area[:, 0]),
+                       max(model_working_area[:, 0]))
+        ax[1].set_ylim(min(model_working_area[:, 1]),
+                       max(model_working_area[:, 1]))
+
+        # ----------------------------------------
+
+        self._info_ax = info_ax
+        self._info_ax.set_title('Info')
+
+        self._freq_gistory_curve, = info_ax.plot([], [], 'b-o')
 
     def __call__(self, input: dict) -> None:
-        #start: tuple[float, float] = input['move_history'][0][:2]
-#
-        #for curve, move_history_item in zip(self._tail, input['move_history']):
-        #    dest_x, dest_y, S, F = move_history_item
-        #    curve.set_data([start[0], dest_x], [start[1], dest_y])
-        #    curve.set_color((F, 0, 0, S))  # type: ignore
-        #    start = move_history_item[:2]
-#
-        #freq_history = input['freq_history']
-#
-        #x = np.linspace(0.0, 1.0, len(freq_history))
-        #self._freq_history.set_data(x, freq_history)
-        #self._info.relim()
-        pass
+        start_wz: tuple[float, float] = input['move_history'][0][:2]
+        start_model = self._ct.wrap_from_workzone_relative_to_model(
+            WorkzoneRelativeCoordinates(*start_wz))
+
+        # Траектория
+        for wz_curve, model_curve, move_history_item in zip(self._wz_tail, self._model_tail, input['move_history']):
+            dest_x, dest_y, S, F = move_history_item
+            color = (F, 0, 0, S)
+            wz_curve.set_data([start_wz[0], dest_x], [start_wz[1], dest_y])
+            wz_curve.set_color(color)  # type: ignore
+
+            model_pos = self._ct.wrap_from_workzone_relative_to_model(
+                WorkzoneRelativeCoordinates(dest_x, dest_y))
+
+            model_curve.set_data([start_model[0], model_pos[0]], [
+                                 start_model[1], model_pos[1]])
+            model_curve.set_color(color)  # type: ignore
+
+            start_wz = move_history_item[:2]
+            start_model = model_pos
+
+        # Мишень
+        for target in range(2):
+            target_colors = self._model_view.target_color_map(target)
+            for row in zip(self._patches[target], target_colors):
+                for patch, color in zip(*row):
+                    patch.set_facecolor(color)
+
+        # Инфо
+        freq_history = input['freq_history']
+
+        x = np.linspace(0.0, 1.0, len(freq_history))
+        self._freq_gistory_curve.set_data(x, freq_history)
+        self._info_ax.relim()
+        self._info_ax.autoscale_view()
 
 
 if __name__ == "__main__":
@@ -102,6 +166,7 @@ if __name__ == "__main__":
     POWER_THRESHOLD = 0.05
     DEST_FREQ_CH = 50.0
     MAX_T = 100.0
+    MAX_F = 1000.0
 
     SIM_CYCLE_TIME = 0.01
     SIM_TIMEOUT = 10.0
@@ -109,21 +174,28 @@ if __name__ == "__main__":
     f, ax = plt.subplots(1, 3)
 
     rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD)
+    initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
 
     # Генерируем случайное смещение и случайный угол поворота
-    offset = (np.random.random() * 0.3, np.random.random() * 0.5)
-    angle = np.random.random() * 20 - 10
+    offset = (0, 0)  #(np.random.random() * 0.3, np.random.random() * 0.5)
+    angle = 0  #np.random.random() * 20 - 10
     print('offset: {}, angle: {}'.format(offset, angle))
 
-    playground = rezonator.get_playground(offset, angle)
-    model_view = rezonator.get_model_view(offset, angle)
+    rez = Rezonator.load()
+    coord_transformer = CoordinateTransformer(rez, (0, 0), offset, angle)
 
     # NNController.init_model(F_HISTORY_SIZE)
 
     # weights = NNController.shuffled_weights()
 
-    sim = Simulator(rezonator, ManualController(), (0, 0),
-                    freq_history_size=F_HISTORY_SIZE)
+    sim = Simulator(rezonator_model=rezonator,
+                    controller_v2=ManualController(),
+                    coord_transformer=coord_transformer,
+                    fs_transformer=FSTransformer(255.0, MAX_F),
+                    laser_power=LASER_POWER,
+                    modeling_period=SIM_CYCLE_TIME,
+                    freq_history_size=F_HISTORY_SIZE,
+                    initial_wz_pos=initial_pos)
 
     # sim_stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
     #                                    history_len_s=1.0,
@@ -169,13 +241,15 @@ if __name__ == "__main__":
 #
     # ----------------------------------------
 
+    model = rezonator.get_model_view(offset, angle)
     input_display = ControllerInputDisplay(
-        *ax, playground, model_view, MOVE_HISTORY_SIZE  # type: ignore
+        *ax, rez, model, coord_transformer,  # type: ignore
+        move_history_size=MOVE_HISTORY_SIZE, initial_pos=initial_pos
     )
 
     plt.show(block=False)
 
-    sim.perform_modeling(playground, 0, input_display)
+    sim.perform_modeling(0, input_display)
 
     # while True:
     #    pos = sim.laser_pos()

@@ -38,6 +38,9 @@ class ManualController:
                 continue
 
             click = click[0]
+            if click[0] < -1.0 or click[0] > 1.0 or click[1] < -1.0 or click[1] > 1.0:
+                continue
+
             return {
                 'destination': click,
                 'power': limit(np.random.normal(0.5, 0.2), 0.0, 1.0),

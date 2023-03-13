@@ -24,6 +24,12 @@ class Coordinates:
 
     def offset(self, x: float, y: float):
         return self.point + np.array([x, y])
+    
+    def tuple(self):
+        return tuple(self.point)
+    
+    def __getitem__(self, key):
+        return self.point[key]
 
 
 class RealCoordinates(Coordinates):
