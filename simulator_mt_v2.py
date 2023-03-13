@@ -177,8 +177,8 @@ if __name__ == "__main__":
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
 
     # Генерируем случайное смещение и случайный угол поворота
-    offset = (0, 0)  #(np.random.random() * 0.3, np.random.random() * 0.5)
-    angle = 0  #np.random.random() * 20 - 10
+    offset = (np.random.random() * 0.3, np.random.random() * 0.5)
+    angle = np.random.random() * 20 - 10
     print('offset: {}, angle: {}'.format(offset, angle))
 
     rez = Rezonator.load()

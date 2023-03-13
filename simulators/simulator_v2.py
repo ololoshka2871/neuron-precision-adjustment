@@ -1,10 +1,9 @@
 import numpy as np
 
 from misc.queue import Queue
-from models.rezonator_model import RezonatorModel, Zone, ModelView, Playground
+from models.rezonator_model import RezonatorModel, Zone, ModelView
 from models.movement import Movment
-from misc.work_zone import WorkZone, Rect
-from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates, ModelCoordinates, RealCoordinates
+from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates, RealCoordinates
 from misc.f_s_transformer import FSTransformer
 
 
@@ -83,6 +82,7 @@ class Simulator:
         """
         Выполнение симуляции
         :param stop_detector: Детектор условия остановки симуляции
+        :param input_display: Колбэк-функция отображения входных данных нейронной сети
         :return: Причина остановки симуляции
         """
 
@@ -94,9 +94,9 @@ class Simulator:
             )
             input_display(controller_input)
             command = self._controller.update(controller_input)
-            
+
             dest_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
-                    WorkzoneRelativeCoordinates(*command['destination']))
+                WorkzoneRelativeCoordinates(*command['destination']))
             traectory = self._movement.interpolate_move(
                 src=self._curremt_pos_global.tuple(),
                 dst=dest_real.tuple(),
@@ -109,6 +109,7 @@ class Simulator:
             cmd_s = command['power']
 
             ts = 0.0  # заглушка
+            last_zone = Zone.NONE
             for pos_x, pos_y, ts in zip(*traectory):
                 self._next_mesure_after -= self._modeling_period
                 if self._next_mesure_after <= 0.0:
@@ -117,15 +118,17 @@ class Simulator:
                     # Сдвигаем историю измерений частоты и добавляем новое измерение
                     self._measure_diff_history.dequeue()
                     m = self._rezonator_model.get_metrics()
-                    self._measure_diff_history.enqueue(
-                        np.array([self._initial_freq_diff - m['freq_change']]))
+                    abs_freq_change = np.array(
+                        [self._initial_freq_diff - self._map_adj_to_relatie(m['freq_change'])])
+                    self._measure_diff_history.enqueue(abs_freq_change)
 
                 model_pos = self._coord_transformer.wrap_from_real_to_model(
                     RealCoordinates(pos_x, pos_y)).tuple()
-                
+
                 laser_power = self._laser_power * cmd_s  # мощность лазера в Вт
 
-                match ModelView.detect_zone(model_pos):
+                zone = ModelView.detect_zone(model_pos, last_zone)
+                match zone:
                     case Zone.BODY:
                         # just heat up
                         self._rezonator_model.heat_body(
@@ -141,6 +144,7 @@ class Simulator:
                             zone, pos, laser_power, self._modeling_period)
                     case _:
                         self._rezonator_model.idle(self._modeling_period)
+                last_zone = zone
 
             self._period_accum += ts
 
@@ -151,98 +155,16 @@ class Simulator:
         self._move_history.dequeue()
         self._move_history.enqueue(np.array([[*dest_pos, S, F]]))
 
-    # def _map_adj_to_relatie(self, adj: float) -> float:
-    #    """
-    #    Преобразование изменения частоты резонатора в относительное значение приведенное к максимальному теоритическому изменинию
-    #    :param adj: Абсолютное значение изменения частоты
-    #    :return: Относительное значение
-    #    """
-    #    return adj / self._rezonator_model.possible_freq_adjust
-
-    # def tick(self, cycle_time: float, model_pos) -> dict:
-    #    """
-    #    Шаг симуляции
-    #    :param time: Время шага
-    #    """
-#
-    #    current_pos = self._work_zone.map_from_global(
-    #        self._movement.current_position)
-    #    current_target = self._work_zone.map_from_global(
-    #        self._movement.move_target)
-    #    current_s = self._work_zone.map_s_from_global(
-    #        self._movement.current_s)
-    #    current_f = self._work_zone.map_f_from_global(
-    #        self._movement.current_f)
-#
-    #    match ModelView.detect_zone(model_pos):
-    #        case Zone.BODY:
-    #            # just heat up
-    #            self._rezonator_model.heat_body(current_s, cycle_time)
-    #        case Zone.FORBIDDEN:
-    #            # heat up and add energy to forbidden zone
-    #            self._rezonator_model.heat_forbidden(current_s, cycle_time)
-    #        case Zone.TARGET1 | Zone.TARGET2 as zone:
-    #            # Обработка мишеней
-    #            pos = ModelView.map_to_zone(zone, model_pos)
-    #            self._rezonator_model.target(
-    #                zone, pos, current_s, cycle_time)
-    #        case _:
-    #            self._rezonator_model.idle(cycle_time)
-#
-    #    passed_path_len = self._movement.tick(cycle_time)
-#
-    #    result = self._controller.update({
-    #        'current_pos': current_pos,
-    #        'target_pos': current_target,
-    #        'current_s': current_s,
-    #        'current_f': current_f,
-    #        'freq_history': self._measure_diff_history,
-    #    })
-#
-    #    destination = result['destination']
-    #    #print("({}, {}) -> ({}, {})".format(current_pos[0], current_pos[1], destination[0], destination[1]))
-#
-    #    self._period_accum += cycle_time
-    #    if self._period_accum > self._freqmeter_period:
-    #        self._period_accum -= self._freqmeter_period
-#
-    #        current_freq = self._rezonator_model.get_metrics()['freq_change']
-    #        self._measure_diff_history.append(
-    #            self._initial_freq_diff - self._map_adj_to_relatie(current_freq))
-    #        self._measure_diff_history.pop(0)
-#
-    #    # try send new command
-    #    cmd = Command(
-    #        destinanton=self._work_zone.map_to_global(destination),
-    #        F=self._work_zone.map_f_to_global(result['speed']),
-    #        S=self._work_zone.map_s_to_global(result['power']))
-    #    # print(cmd)
-    #    self._movement.process(cmd)
-#
-    #    return {
-    #        'F': current_f,
-    #        'S': current_s,
-    #        'self_grade': result['self_grade'],
-    #        'Passed': self._work_zone.map_path_len_from_global(passed_path_len),
-    #    }
+    def _map_adj_to_relatie(self, adj: float) -> float:
+        """
+        Преобразование изменения частоты резонатора в относительное значение приведенное к максимальному теоритическому изменинию
+        :param adj: Абсолютное значение изменения частоты
+        :return: Относительное значение
+        """
+        return adj / self._rezonator_model.possible_freq_adjust
 
     def use_rezonator(self, f, *args, **kwargs):
         """
         Применить функцию к резонатору, сохраняя его состояние
         """
         return f(self._rezonator_model, *args, **kwargs)
-
-    # def laser_pos(self) -> tuple[float, float]:
-    #    """
-    #    Функция возвращает текущую глобальную позицию лазера
-    #    """
-    #    relative_pos = self._work_zone.map_from_global(
-    #        self._movement.current_position)
-    #    local_pos = self._work_zone.map_relative_to_local(relative_pos)
-    #    return self._rezonator_model.map_local_to_global(local_pos)
-
-    # def laser_rel_power(self) -> float:
-    #    """
-    #    Текущая отностительная мощность лазера [0..1]
-    #    """
-    #    return self._work_zone.map_s_from_global(self._movement.current_s)

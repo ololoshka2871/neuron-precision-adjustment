@@ -103,9 +103,9 @@ class ModelView:
         return self._working_area
 
     @staticmethod
-    def detect_zone(position:tuple[float, float]) -> Zone:
+    def _detect_zone_slow(position:tuple[float, float]) -> Zone:
         """
-        Функция определяет зону резонатора в которой находится точка
+        Функция определяет зону резонатора в которой находится точка (медленный вариант)
         :param position: координаты точки
         :return: зона
         """
@@ -120,6 +120,33 @@ class ModelView:
                 return Zone.BODY
         else:
             return Zone.NONE
+
+    @staticmethod
+    def detect_zone(position:tuple[float, float], hint: Zone = Zone.NONE) -> Zone:
+        """
+        Функция определяет зону резонатора в которой находится точка. Сначала проверяет зону, указанную в hint, если точка
+            не входит в нее, то выполняется полный перебор всех зон.
+        :param position: Координаты точки
+        :param hint: Предполагаемая зона
+        :return: зона
+        """
+
+        match hint:
+            case Zone.TARGET1:
+                if is_point_inside_polygon(position, RezonatorModel.REZONATOR['targets'][0]):
+                    return Zone.TARGET1
+            case Zone.TARGET2:
+                if is_point_inside_polygon(position, RezonatorModel.REZONATOR['targets'][1]):
+                    return Zone.TARGET2
+            case Zone.BODY:
+                if is_point_inside_polygon(position, RezonatorModel.REZONATOR['rezonator']):
+                    return Zone.BODY
+            case Zone.FORBIDDEN:
+                if is_point_inside_polygon(position, RezonatorModel.REZONATOR['forbidden_area']):
+                    return Zone.FORBIDDEN
+            case _:
+                return ModelView._detect_zone_slow(position)
+        return ModelView._detect_zone_slow(position)
 
     def working_area_limits(self, offset: float) -> tuple[tuple[float, float], tuple[float, float]]:
         """
@@ -178,7 +205,7 @@ class Metrics(dict):
         if key == "static_freq_change":
             return sum(self["freq_change_branches"])  # type: ignore
         elif key == "freq_change":
-            return self["static_freq_change"] * self['temperature'] * self._tfk
+            return self["static_freq_change"] + self['temperature'] * self._tfk
         elif key == "disbalance":
             total_change = self["static_freq_change"]
             if total_change == 0.0:
