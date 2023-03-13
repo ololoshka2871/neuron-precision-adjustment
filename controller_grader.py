@@ -1,6 +1,6 @@
 
 from models.rezonator_model import Metrics
-from sim_stop_detector import StopCondition
+from models.stop_condition import StopCondition
 
 
 class ControllerGrager:

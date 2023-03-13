@@ -11,8 +11,9 @@ from misc.common import gen_sigmoid
 from controllers.controller_v1 import NNController
 from controller_grader import ControllerGrager
 from models.rezonator_model import RezonatorModel
-from sim_stop_detector import SimStopDetector, StopCondition
+from models.sim_stop_detector_v1 import SimStopDetector
 from simulators.simulator_v1 import Simulator
+from models.stop_condition import StopCondition
 
 # Веса оценок работы симуляции
 # Оценка:

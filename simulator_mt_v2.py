@@ -10,9 +10,9 @@ from adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
-#from controller_grader import ControllerGrager
+from controller_grader import ControllerGrager
 from models.rezonator_model import RezonatorModel, ModelView
-#from sim_stop_detector import SimStopDetector, StopCondition
+from models.sim_stop_detector_v2 import SimStopDetector
 from simulators.simulator_v2 import Simulator
 
 
@@ -109,10 +109,10 @@ class ControllerInputDisplay:
         self._model_tail = create_tail(model_ax, move_history_size, model_pos)
 
         # Установка границ по осям X и Y чтобы видно было только рабочую область
-        ax[1].set_xlim(min(model_working_area[:, 0]),
-                       max(model_working_area[:, 0]))
-        ax[1].set_ylim(min(model_working_area[:, 1]),
-                       max(model_working_area[:, 1]))
+        model_ax.set_xlim(min(model_working_area[:, 0]),
+                          max(model_working_area[:, 0]))
+        model_ax.set_ylim(min(model_working_area[:, 1]),
+                          max(model_working_area[:, 1]))
 
         # ----------------------------------------
 
@@ -197,49 +197,18 @@ if __name__ == "__main__":
                     freq_history_size=F_HISTORY_SIZE,
                     initial_wz_pos=initial_pos)
 
-    # sim_stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
-    #                                    history_len_s=1.0,
-    #                                    min_path=0.01,
-    #                                    min_avg_speed=0.05,
-    #                                    min_laser_power=POWER_THRESHOLD * 0.5,
-    #                                    max_temperature=MAX_T)
+    stop_detector = SimStopDetector(timeout=SIM_TIMEOUT, 
+                                    history_len_s=SIM_TIMEOUT / 2.0,
+                                    min_path=0.01, min_avg_speed=0.05,
+                                    min_laser_power=POWER_THRESHOLD * 0.5,
+                                    max_temperature=MAX_T,
+                                    self_grade_epsilon=0.01,
+                                    start_timestamp=0.0)
 
-    # grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
-    #                          f_penalty=gen_sigmoid(
-    #                              k=1.0 / LASER_POWER, x_offset_to_right=-6),
-    #                          max_temperature=MAX_T)
-
-    # ----------------------------------------
-#
-    #now = 0
-#
-    # ----------------------------------------
-#
-    #rmetrics = sim.use_rezonator(RezonatorModel.get_metrics)
-#
-    #mp = ax[2]
-#
-    # рисуем температуру
-    # tc, = mp.plot(dt.datetime.fromtimestamp(
-    #    now), rmetrics['temperature'], 'r-')
-#
-    # рисуем изменение частоты
-    # fс, = mp.plot(dt.datetime.fromtimestamp(
-    #    now), rmetrics['freq_change'], 'b-')
-#
-    # Рисуем диссбаланс
-    # dc, = mp.plot(dt.datetime.fromtimestamp(
-    #    now), rmetrics['disbalance'], ':')
-#
-    # форматирование оси X
-    # устанавливаем интервал в 1 секунду
-    #hours = mdates.SecondLocator(interval=1)
-    # time_format = mdates.DateFormatter('%S')  # устанавливаем формат времени
-    # mp.xaxis.set_major_locator(hours)  # устанавливаем локатор основных делений
-    # устанавливаем форматтер основных делений
-    # mp.xaxis.set_major_formatter(time_format)
-#
-    # ----------------------------------------
+    grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
+                              f_penalty=gen_sigmoid(
+                                  k=1.0 / LASER_POWER, x_offset_to_right=-6),
+                              max_temperature=MAX_T)
 
     model = rezonator.get_model_view(offset, angle)
     input_display = ControllerInputDisplay(
@@ -247,80 +216,14 @@ if __name__ == "__main__":
         move_history_size=MOVE_HISTORY_SIZE, initial_pos=initial_pos
     )
 
+
     plt.show(block=False)
 
-    sim.perform_modeling(0, input_display)
+    stop_condition = sim.perform_modeling(stop_detector, input_display)
 
-    # while True:
-    #    pos = sim.laser_pos()
-    #    current_pos.set_data(pos)
-#
-    #    model_pos = playground.map_to_model(pos)
-    #    model_power = sim.laser_rel_power()
-    #    current_pos_transformed.set_data(model_pos)
-    #    current_pos_transformed.set_markerfacecolor(
-    #        (1.0, 0.0, 0.0, model_power))  # type: ignore
-#
-    #    mmetrics = sim.tick(SIM_CYCLE_TIME, model_pos)
-    #    rmetrics = sim.use_rezonator(RezonatorModel.get_metrics)
-#
-    #    model_view = sim.use_rezonator(
-    #        RezonatorModel.get_model_view, offset, angle)
-#
-    #    for target in range(2):
-    #        target_colors = model_view.target_color_map(target)
-    #        for row in zip(patches[target], target_colors):
-    #            for patch, color in zip(*row):
-    #                patch.set_facecolor(color)
-#
-    #    # ------------ Условие останова ----------
-#
-    #    stop_condition = sim_stop_detector.tick(
-    #        SIM_CYCLE_TIME, mmetrics, rmetrics)
-#
-    #    if stop_condition != StopCondition.NONE:
-    #        grade = grader.get_grade(
-    #            rmetrics, sim_stop_detector.summary(), stop_condition)
-    #        print(
-    #            f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
-    #        sf, ax = plt.subplots(1, 1)
-    #        sim_stop_detector.plot_summary(ax)
-    #        plt.show(block=True)
-    #        break
-#
-    #    # ------------ Метрики -------------------
-#
-    #    d = tc.get_data(orig=True)
-#
-    #    points = min(100, len(d[0]))
-    #    ts = dt.datetime.fromtimestamp(now)
-#
-    #    d = [list(d[0][-points:]), list(d[1][-points:])]
-    #    d[0].append(ts)  # type: ignore
-    #    d[1].append(rmetrics['temperature'])
-    #    tc.set_data(d)
-#
-    #    d = fс.get_data(orig=True)
-    #    d = [list(d[0][-points:]), list(d[1][-points:])]
-    #    d[0].append(ts)  # type: ignore
-    #    d[1].append(rmetrics['freq_change'])
-    #    fс.set_data(d)
-#
-    #    d = dc.get_data(orig=True)
-    #    d = [list(d[0][-points:]), list(d[1][-points:])]
-    #    d[0].append(ts)  # type: ignore
-    #    d[1].append(rmetrics['disbalance'] * 100)
-    #    dc.set_data(d)
-#
-    #    mp.relim()
-    #    mp.autoscale_view()
-#
-    #    print(
-    #        f"Static freq change: {rmetrics['static_freq_change']:.2f} Hz, disbalance: {rmetrics['disbalance'] * 100:.2f} %")
-#
-    #    # ----------------------------------------
-#
-    #    now += SIM_CYCLE_TIME
-#
-    #    plt.draw()
-    #    plt.pause(0.0001)
+    grade = grader.get_grade(rezonator.get_metrics(), stop_detector.summary(), stop_condition)
+    print(
+        f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
+    sf, ax = plt.subplots(1, 1)
+    stop_detector.plot_summary(ax)
+    plt.show(block=True)

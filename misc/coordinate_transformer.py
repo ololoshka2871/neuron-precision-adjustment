@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 
 import numpy as np
 
@@ -30,6 +31,9 @@ class Coordinates:
     
     def __getitem__(self, key):
         return self.point[key]
+    
+    def abs_path_from(self, other) -> float:
+        return math.sqrt((self.point[0] - other.point[0]) ** 2 + (self.point[1] - other.point[1]) ** 2)
 
 
 class RealCoordinates(Coordinates):

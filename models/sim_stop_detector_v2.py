@@ -1,24 +1,12 @@
 import time
 
-from enum import Enum
-
 import numpy as np
 
 from matplotlib.pyplot import Axes
 
 from models.rezonator_model import Metrics, RezonatorModel
 
-
-class StopCondition(Enum):
-    NONE = 0  # Пет отстановки - продолжить симуляцию
-    TIMEOUT = 1  # Таймаут
-    # Нейронная сеть перестала двигать луч лазера (скорость движения меньше min_avg_speed)
-    STALL_SPEED = 2
-    # Нейронная сеть перестала двигать луч лазера (Пройденное расстояние меньше min_path)
-    STALL_MOVE = 3
-    LOW_POWER = 4  # Низкая мощность лазера
-    OVERHEAT = 5  # Перегрев резонатора
-    SELF_STOP = 6  # Нейронная сеть решила остановить выполнение самостоятельно
+from models.stop_condition import StopCondition
 
 
 class SimStopDetector:
@@ -36,7 +24,7 @@ class SimStopDetector:
                  min_laser_power: float,
                  max_temperature: float,
                  self_grade_epsilon=0.01,
-                 strart_timestamp=time.time()):
+                 start_timestamp=time.time()):
         """
         :param timeout: Безусловный таймаут [s]
         :param history_len_s: Длина истории метрик [s]
@@ -53,7 +41,7 @@ class SimStopDetector:
         self._min_laser_power = min_laser_power
         self._max_temperature = max_temperature
 
-        self._start_timestamp = strart_timestamp
+        self._start_timestamp = start_timestamp
 
         self._timestamps = np.array([], dtype=float)
         self._path_history = np.array([], dtype=float)
@@ -66,8 +54,8 @@ class SimStopDetector:
 
         self._max_temperature = 0
 
-    def _trimm_history_if_too_long(self, step_time: float) -> bool:
-        if len(self._timestamps) > 0 and (self._timestamps[-1] + step_time > self._timestamps[0] + self._history_len_s):
+    def _trimm_history_if_too_long(self, time: float) -> bool:
+        if len(self._timestamps) > 0 and (time > self._timestamps[0] + self._history_len_s):
             self._timestamps = self._timestamps[1:]
             self._path_history = self._path_history[1:]
             self._speed_history = self._speed_history[1:]
@@ -77,13 +65,8 @@ class SimStopDetector:
             return True
         return False
 
-    def _add_metric(self, step_time: float, m: dict, T: float):
-        if len(self._timestamps) > 0:
-            self._timestamps = np.append(
-                self._timestamps, self._timestamps[-1] + step_time)
-        else:
-            self._timestamps = np.append(
-                self._timestamps, self._start_timestamp + step_time)
+    def _add_metric(self, time: float, m: dict, T: float):
+        self._timestamps = np.append(self._timestamps, time)
 
         self._path_history = np.append(self._path_history, m['Passed'])
         self._speed_history = np.append(self._speed_history, m['F'])
@@ -96,7 +79,7 @@ class SimStopDetector:
         if T > self._max_temperature:
             self._max_temperature = T
 
-    def tick(self, step_time: float, m: dict, rm: Metrics) -> StopCondition:
+    def __call__(self, t: float, rm: Metrics, mm: dict) -> StopCondition:
         """
         Акумулирует метрики и вынусоит суждение о том стоит ли остановить симуляцю
         Метрики симуляции:
@@ -107,13 +90,12 @@ class SimStopDetector:
         - Температура резонатора [C] -> [K]
         """
 
-        trimmed = self._trimm_history_if_too_long(step_time)
-        self._add_metric(
-            step_time, m, rm['temperature'] + RezonatorModel.CELSUSS_TO_KELVIN)
-
+        trimmed = self._trimm_history_if_too_long(t)
+        self._add_metric(t, mm, rm['temperature'] + RezonatorModel.CELSUSS_TO_KELVIN)
+        
         if len(self._timestamps) < 2:
             return StopCondition.NONE
-
+        
         passed = self._timestamps[-1] - self._start_timestamp
         if passed > self._timeout:
             return StopCondition.TIMEOUT

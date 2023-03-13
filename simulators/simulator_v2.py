@@ -5,6 +5,7 @@ from models.rezonator_model import RezonatorModel, Zone, ModelView
 from models.movement import Movment
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates, RealCoordinates
 from misc.f_s_transformer import FSTransformer
+from models.stop_condition import StopCondition
 
 
 class Simulator:
@@ -78,7 +79,10 @@ class Simulator:
                     np.array([0.0, 1.0, 0.0, 0.0]), move_history_len),
                 newshape=(4, move_history_len)).T)
 
-    def perform_modeling(self, stop_detector, input_display=lambda input: None):
+    def perform_modeling(self,
+                         stop_detector,
+                         input_display=lambda input: None
+                         ) -> StopCondition:
         """
         Выполнение симуляции
         :param stop_detector: Детектор условия остановки симуляции
@@ -95,8 +99,10 @@ class Simulator:
             input_display(controller_input)
             command = self._controller.update(controller_input)
 
-            dest_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
-                WorkzoneRelativeCoordinates(*command['destination']))
+            dest_wz = WorkzoneRelativeCoordinates(*command['destination'])
+            dest_real = \
+                self._coord_transformer.wrap_from_workzone_relative_to_real(
+                    dest_wz)
             traectory = self._movement.interpolate_move(
                 src=self._curremt_pos_global.tuple(),
                 dst=dest_real.tuple(),
@@ -105,7 +111,6 @@ class Simulator:
             )
 
             self._curremt_pos_global = dest_real
-
             cmd_s = command['power']
 
             ts = 0.0  # заглушка
@@ -148,8 +153,20 @@ class Simulator:
 
             self._period_accum += ts
 
+            prew_wz = self._move_history.peek_last_N(1)[0]
             self._shift_move_history(
-                command['destination'], S=cmd_s, F=command['speed'])
+                dest_wz.tuple(), S=cmd_s, F=command['speed'])
+
+            reason = stop_detector(
+                self._period_accum, self._rezonator_model.get_metrics(),
+                {
+                    'F': command['speed'],
+                    'S': command['power'],
+                    'self_grade': command['self_grade'],
+                    'Passed': dest_wz.abs_path_from(WorkzoneRelativeCoordinates(prew_wz[0], prew_wz[1])),
+                })
+            if reason != StopCondition.NONE:
+                return reason
 
     def _shift_move_history(self, dest_pos: tuple[float, float], S: float, F: float):
         self._move_history.dequeue()
