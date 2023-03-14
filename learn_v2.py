@@ -200,7 +200,7 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
 
 
 if __name__ == '__main__':
-    POPULATION_SIZE = 10
+    POPULATION_SIZE = 100
     N_GEN = 100
 
     learn_main(POPULATION_SIZE, N_GEN,

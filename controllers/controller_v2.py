@@ -139,7 +139,7 @@ class NNController:
             v.extend(mhi)
         v.append(input['time'])
         input = tf.constant([v])  # type: ignore
-        output, = self._model.predict(input, verbose=None)  # type: ignore
+        output, = self._model.predict_on_batch(input)
 
         speed = NNController.map_zero_one(output[3])
         return {
