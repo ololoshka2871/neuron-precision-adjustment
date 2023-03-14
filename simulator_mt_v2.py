@@ -209,7 +209,8 @@ if __name__ == "__main__":
 
     stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
                                     history_len_s=0.5,
-                                    min_path=0.01, min_avg_speed=0.05,
+                                    min_path=0.1, 
+                                    min_avg_speed=0.05,
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
                                     self_grade_epsilon=0.01,
