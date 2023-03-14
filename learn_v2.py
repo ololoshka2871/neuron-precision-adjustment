@@ -91,7 +91,7 @@ def eval_rezonator_adjust(individual):
 
     stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
                                     history_len_s=0.5,
-                                    min_path=0.1,
+                                    min_path=0.05,
                                     min_avg_speed=0.05,
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
@@ -102,7 +102,7 @@ def eval_rezonator_adjust(individual):
     def_freq = np.random.normal(DEST_FREQ_CH, 10.0)
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
                               f_penalty=gen_sigmoid(
-                                  k=1.0 / LASER_POWER, x_offset_to_right=-6),
+                                  k=1.0 / LASER_POWER, x_offset_to_right=-1),
                               max_temperature=MAX_T)
 
     stop_condition = sim.perform_modeling(stop_detector)

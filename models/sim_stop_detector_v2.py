@@ -99,7 +99,7 @@ class SimStopDetector:
         passed = self._timestamps[-1] - self._start_timestamp
         if passed > self._timeout:
             return StopCondition.TIMEOUT
-        if trimmed and self._path_history.sum() < self._min_path:
+        if trimmed and self._path_history.min() < self._min_path or self._path_history.mean() < self._min_path * 2.0:
             return StopCondition.STALL_MOVE
         if trimmed and self._speed_history.mean() < self._min_avg_speed:
             return StopCondition.STALL_SPEED

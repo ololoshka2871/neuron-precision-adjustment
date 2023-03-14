@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
     stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
                                     history_len_s=0.5,
-                                    min_path=0.1, 
+                                    min_path=0.05, 
                                     min_avg_speed=0.05,
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
                               f_penalty=gen_sigmoid(
-                                  k=1.0 / LASER_POWER, x_offset_to_right=-6),
+                                  k=1.0 / LASER_POWER, x_offset_to_right=-1),
                               max_temperature=MAX_T)
 
     model = rezonator.get_model_view(offset, angle)
