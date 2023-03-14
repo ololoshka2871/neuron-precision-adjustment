@@ -52,7 +52,7 @@ class ControllerGrager:
 
         db = abs(rezonator_metrics['disbalance'])
 
-        return (freq_target_distance_rel if freq_target_distance_rel < 0.0 else -freq_target_distance_rel * 2.0,
+        return (freq_target_distance_rel if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0,
                 db if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
                 self._f_penalty(rezonator_metrics['penalty_energy']),
                 sim_metrics['total_duration_rel'],
