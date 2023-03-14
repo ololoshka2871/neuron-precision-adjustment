@@ -106,7 +106,7 @@ class Simulator:
             traectory = self._movement.interpolate_move(
                 src=self._curremt_pos_global.tuple(),
                 dst=dest_real.tuple(),
-                speed=self._fs_transformer.map_f_to_global(command['speed']),
+                speed=self._fs_transformer.map_f_to_global(max(1e-3, command['speed'])), # speedm mast be > 0
                 time_step=self._modeling_period
             )
 
