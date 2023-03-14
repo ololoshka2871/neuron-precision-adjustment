@@ -233,8 +233,8 @@ if __name__ == "__main__":
 
     grade = grader.get_grade(rezonator.get_metrics(),
                              stop_detector.summary(), stop_condition)
-    print(
-        f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
+    #print(
+    #    f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
     sf, ax = plt.subplots(1, 1)
     stop_detector.plot_summary(ax)
     plt.show(block=True)
