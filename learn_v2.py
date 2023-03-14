@@ -16,6 +16,9 @@ from models.rezonator_model import RezonatorModel
 from models.sim_stop_detector_v2 import SimStopDetector
 from simulators.simulator_v2 import Simulator
 
+from deap_elements.fitnes_max import register_finex_max
+from deap_elements.individual import register_individual
+
 
 # Веса оценок работы симуляции
 # Оценка:
@@ -33,19 +36,10 @@ F_HISTORY_SIZE = 10
 MOVE_HISTORY_SIZE = 10
 
 
-total_parameters = NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
+NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
 
-creator.create("FitnessMax", base.Fitness, weights=FITNES_WEIGHTS)
-
-# Создать класс Individual, наследованный от array.array, но содержащий поля
-# fitness, которое будет содержать объект класса FitnessMax определенного выше
-# и typecode, который будет 'f
-creator.create("Individual", array.array,
-               typecode='f',
-               fitness=creator.FitnessMax,  # type: ignore
-               rezonator_offset=(0.0, 0.0),
-               rezonator_angle=0.0,
-               adjust_freq=0.0)
+register_finex_max(FITNES_WEIGHTS)
+register_individual(creator.FitnessMax)  # type: ignore
 
 toolbox = base.Toolbox()
 

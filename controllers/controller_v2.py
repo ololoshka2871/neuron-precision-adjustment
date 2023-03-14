@@ -133,15 +133,12 @@ class NNController:
 
         v = list()
         
-        # extend list v with content of list 
-        for l in input['freq_history']:
-            v.extend(l)
-        for mhi in input['move_history']:
-            v.extend(mhi)
+        v.extend(input['freq_history'].flatten())
+        v.extend(input['move_history'].flatten())
         v.append(input['time'])
 
-        input = tf.constant([v])  # type: ignore
-        output, = self._model.predict_on_batch(input)
+        input = tf.convert_to_tensor([v], dtype=tf.float32) # type: ignore
+        output, = self._model.predict_on_batch(input) # type: ignore
 
         speed = NNController.map_zero_one(output[3])
         return {
