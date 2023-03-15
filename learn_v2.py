@@ -122,7 +122,7 @@ toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0, indpb=0.5)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
 
-def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
+def learn_main(polulation_size: int, checkpoint_file: str,
                multyprocess: bool | None = None, gens_for_checkpoint=1, verbose=True,
                cxpb=0.5, mutpb=0.2):
     import os
@@ -198,7 +198,5 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
 
 if __name__ == '__main__':
     POPULATION_SIZE = 25
-    N_GEN = 50
 
-    learn_main(POPULATION_SIZE, N_GEN,
-               checkpoint_file='learn_v2.ckl', gens_for_checkpoint=1)
+    learn_main(POPULATION_SIZE, checkpoint_file='learn_v2.ckl', gens_for_checkpoint=1)
