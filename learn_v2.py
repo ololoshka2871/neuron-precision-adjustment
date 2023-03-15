@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import random
+import functools
 
 import numpy as np
 
@@ -178,7 +179,7 @@ def learn_main(polulation_size: int, max_iterations: int,
         it += 1
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in population if not ind.fitness.valid]
-        fitnesses = toolbox.map(lambda individual: toolbox.evaluate(individual, gen, it), invalid_ind)  # type: ignore
+        fitnesses = toolbox.map(functools.partial(toolbox.evaluate, gen=gen, it=it), invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = (fit['fitness'],)
             ind.grade = fit['grade']
