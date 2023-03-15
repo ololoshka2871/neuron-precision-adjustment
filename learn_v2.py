@@ -40,10 +40,10 @@ toolbox.register("population", tools.initRepeat, list,
                  toolbox.individual)  # type: ignore
 
 
-def get_fithess_weights(it: int) -> np.ndarray:
+def get_fithess_weights(gen: int) -> np.ndarray:
     ITERATIONS_PER_EPOCH = 50
 
-    epoch = it // ITERATIONS_PER_EPOCH
+    epoch = gen // ITERATIONS_PER_EPOCH
 
     res = np.array(FITNES_WEIGHTS)
     if epoch < len(FITNES_WEIGHTS) - 1:
@@ -88,7 +88,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
                               f_penalty=gen_sigmoid(
                                   k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
                               max_temperature=MAX_T,
-                              grade_weights=get_fithess_weights(it))
+                              grade_weights=get_fithess_weights(gen))
 
     stop_condition = sim.perform_modeling(stop_detector)
 
@@ -113,7 +113,8 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     """
     SIM_TRYS = 3
 
-    res = [eval_rezonator_adjust(individual, gen, it) for _ in range(SIM_TRYS)]
+    res = toolbox.map(functools.partial(eval_rezonator_adjust, it=it, gen=gen),  # type: ignore
+                      np.repeat([individual], SIM_TRYS, axis=0)) 
     avg_total_grade = np.mean([r['fitness'] for r in res])
     res[0]['fitness'] = avg_total_grade
     return res[0]
