@@ -6,8 +6,9 @@ import functools
 import numpy as np
 
 from deap import algorithms, base, creator, tools
+from misc.Rezonator import Rezonator
 
-from misc.common import Rezonator, gen_sigmoid
+from misc.common import gen_sigmoid
 from controllers.controller_v2 import NNController
 from graders.controller_grader_v2 import ControllerGrager
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
@@ -19,23 +20,8 @@ from simulators.simulator_v2 import Simulator
 from deap_elements.fitnes_max import register_finex_max
 from deap_elements.individual import register_individual
 
-
-# Веса оценок работы симуляции
-# Оценка:
-#    - Относительная дистанция до целевой частоты - меньше - лучше
-#    - Относительный штраф за попадание куда не надо - меньше - лучше
-#    - Относителдьный диссбаланс - меньше - лучше
-#    - Точность самооценки - больше - лучше
-#    - Максимальная достигнутая температура - меньше - лучше
-#    - Средняя скорость движения - больше - лучше
-#    - Относительное время симуляции - меньше - лучше
-#    - Оценка за причину остановки - больше - лучше
-FITNES_WEIGHTS = [-5.0, -10.0, -0.25, 0.25, -0.05, 0.5, -0.25, 0.5]
-
-F_HISTORY_SIZE = 10
-MOVE_HISTORY_SIZE = 10
-ITERATIONS_PER_EPOCH = 50
-
+from constants_v2 import POWER_THRESHOLD, DEST_FREQ_CH, F_HISTORY_SIZE, MOVE_HISTORY_SIZE, \
+    MAX_F, LASER_POWER, SIM_CYCLE_TIME, SIM_TIMEOUT, MAX_T, FITNES_WEIGHTS
 
 NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
 
@@ -55,6 +41,8 @@ toolbox.register("population", tools.initRepeat, list,
 
 
 def get_fithess_weights(it: int) -> np.ndarray:
+    ITERATIONS_PER_EPOCH = 50
+
     epoch = it // ITERATIONS_PER_EPOCH
 
     res = np.array(FITNES_WEIGHTS)
@@ -65,15 +53,6 @@ def get_fithess_weights(it: int) -> np.ndarray:
 
 
 def eval_rezonator_adjust(individual, gen: int, it: int):
-    SIM_CYCLE_TIME = 0.01
-    MAX_F = 1000.0
-    LASER_POWER = 30.0  # [W]
-    POWER_THRESHOLD = 0.05
-    DEST_FREQ_CH = 50.0
-    MAX_T = 100.0
-
-    SIM_TIMEOUT = 10.0
-
     rezonator_model = RezonatorModel(power_threshold=POWER_THRESHOLD)
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
     rez = Rezonator.load()

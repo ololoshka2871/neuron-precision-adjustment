@@ -4,8 +4,10 @@ from enum import Enum
 
 import numpy as np
 
+from misc.Rezonator import Rezonator
+
 from .adjust_zone_model import AdjustZoneModel, create_linear_sensivity_multiplicator
-from misc.common import Rezonator, build_transform_matrix
+from misc.common import build_transform_matrix
 from .temperature_model import TemperatureModel, QUARTZ_DESTENSITY, QUARTZ_HEAT_CAPACITY
 from misc.inside_detector import is_point_inside_polygon
 

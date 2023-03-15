@@ -4,10 +4,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from misc.Rezonator import Rezonator
 
-from misc.common import Rezonator, draw_polygon, gen_sigmoid, create_tail
+from misc.common import draw_polygon, gen_sigmoid, create_tail
 from models.adjust_zone_model import draw_model
-from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
 from graders.controller_grader_v2 import ControllerGrager
@@ -171,23 +171,13 @@ if __name__ == "__main__":
     from deap_elements.fitnes_max import register_finex_max
     from deap_elements.individual import register_individual
 
-    from learn_v2 import FITNES_WEIGHTS
-
-    LASER_POWER = 30.0  # [W]
-    F_HISTORY_SIZE = 10
-    MOVE_HISTORY_SIZE = 10
-    POWER_THRESHOLD = 0.05
-    DEST_FREQ_CH = 50.0
-    MAX_T = 100.0
-    MAX_F = 1000.0
-
-    SIM_CYCLE_TIME = 0.01
-    SIM_TIMEOUT = 10.0
+    from constants_v2 import POWER_THRESHOLD, DEST_FREQ_CH, F_HISTORY_SIZE, MOVE_HISTORY_SIZE, \
+        MAX_F, LASER_POWER, SIM_CYCLE_TIME, SIM_TIMEOUT, MAX_T, FITNES_WEIGHTS
 
     # parse argumants
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', type=int, help='item (default: hof)', default='-1')
-    parser.add_argument('-r', type=bool, help='random environment', default=False)
+    parser.add_argument('-r', action=argparse.BooleanOptionalAction)
     parser.add_argument('file', type=str, help='Simulation history file', default='learn_v2.ckl')
     args = parser.parse_args()
 
@@ -198,18 +188,14 @@ if __name__ == "__main__":
     with open(args.file, "rb") as cp_file:
         cp = pickle.load(cp_file)  # type: ignore
 
-    population = cp["population"]
-    hof = cp["halloffame"]
+    gen_hof = cp["gen_hof"]
 
     f, ax = plt.subplots(1, 3)
 
     rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD)
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
 
-    if args.i < 0:
-        individuum = hof[0]
-    else:
-        individuum = population[args.i]
+    individuum = gen_hof[args.i]
 
     if args.r:
         # Генерируем случайное смещение и случайный угол поворота

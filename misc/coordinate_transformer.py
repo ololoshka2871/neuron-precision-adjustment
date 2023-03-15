@@ -5,8 +5,9 @@ import math
 import numpy as np
 
 from matplotlib.transforms import Affine2D
+from misc.Rezonator import Rezonator
 
-from misc.common import Rezonator, build_transform_matrix
+from misc.common import build_transform_matrix
 
 
 class Coordinates:

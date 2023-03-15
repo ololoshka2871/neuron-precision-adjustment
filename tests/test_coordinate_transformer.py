@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib.transforms import Affine2D
 
 from misc.coordinate_transformer import CoordinateTransformer, RealCoordinates, ModelCoordinates, WorkzoneRelativeCoordinates
-from misc.common import Rezonator
+from misc.Rezonator import Rezonator
 
 
 class TestCoordinateTransformer:

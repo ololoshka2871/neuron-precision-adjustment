@@ -4,9 +4,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from misc.Rezonator import Rezonator
 
-from misc.common import Rezonator, draw_polygon, gen_sigmoid, create_tail
-from adjust_zone_model import draw_model
+from misc.common import draw_polygon, gen_sigmoid, create_tail
+from models.adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
@@ -165,16 +166,8 @@ class ControllerInputDisplay:
 if __name__ == "__main__":
     import sys
 
-    LASER_POWER = 30.0  # [W]
-    F_HISTORY_SIZE = 10
-    MOVE_HISTORY_SIZE = 10
-    POWER_THRESHOLD = 0.05
-    DEST_FREQ_CH = 50.0
-    MAX_T = 100.0
-    MAX_F = 1000.0
-
-    SIM_CYCLE_TIME = 0.01
-    SIM_TIMEOUT = 10.0
+    from constants_v2 import POWER_THRESHOLD, DEST_FREQ_CH, F_HISTORY_SIZE, MOVE_HISTORY_SIZE, \
+        MAX_F, LASER_POWER, SIM_CYCLE_TIME, SIM_TIMEOUT, MAX_T, FITNES_WEIGHTS
 
     manual = len(sys.argv) > 1
 

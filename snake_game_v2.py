@@ -6,8 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
+from misc.Rezonator import Rezonator
 
-from misc.common import Rezonator, draw_polygon, create_tail
+from misc.common import draw_polygon, create_tail
 from models.movement import Movment
 from misc.coordinate_transformer import CoordinateTransformer
 

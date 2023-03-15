@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from misc.common import build_transform_matrix, transform_all, Rezonator
+from misc.Rezonator import Rezonator
+from misc.common import build_transform_matrix, transform_all
 
 rezonator_cached = None
 

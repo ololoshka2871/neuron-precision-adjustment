@@ -2,7 +2,7 @@
 
 import math
 
-from models.rezonator_model import Rezonator
+from misc.Rezonator import Rezonator
 
 
 class Rect:

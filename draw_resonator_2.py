@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from misc.Rezonator import Rezonator
 
-from misc.common import draw_polygon, Rezonator
+from misc.common import draw_polygon
 from misc.coordinate_transformer import RealCoordinates, ModelCoordinates, WorkzoneRelativeCoordinates, CoordinateTransformer
 
 
