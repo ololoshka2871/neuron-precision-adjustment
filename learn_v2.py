@@ -106,7 +106,20 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
     }
 
 
-toolbox.register("evaluate", eval_rezonator_adjust)
+def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
+    """
+    Запустить симуляцию несколько раз для каждого генома с разными начальными условиями
+    чтобы исключить фактор "угадывания"
+    """
+    SIM_TRYS = 3
+
+    res = [eval_rezonator_adjust(individual, gen, it) for _ in range(SIM_TRYS)]
+    avg_total_grade = np.mean([r['fitness'] for r in res])
+    res[0]['fitness'] = avg_total_grade
+    return res[0]
+
+
+toolbox.register("evaluate", eval_rezonator_adjust_wrapper)
 toolbox.register("mate", tools.cxBlend, alpha=0.5)
 toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0, indpb=0.5)
 toolbox.register("select", tools.selTournament, tournsize=3)

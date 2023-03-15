@@ -6,7 +6,7 @@ DEST_FREQ_CH = 50.0
 MAX_T = 100.0
 MAX_F = 100.0
 
-SIM_CYCLE_TIME = 0.001
+SIM_CYCLE_TIME = 0.005
 SIM_TIMEOUT = 10.0
 
 # Веса оценок работы симуляции
