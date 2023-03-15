@@ -40,12 +40,12 @@ class ControllerGrager:
         """
         Оценка:
             - Относительная дистанция до целевой частоты - меньше - лучше
-            - Относителдьный диссбаланс - меньше (по модулю) - лучше
             - Относительный штраф за попадание куда не надо - меньше - лучше
-            - Относительное время симуляции - меньше - лучше
+            - Относителдьный диссбаланс - меньше - лучше
             - Точность самооценки - больше - лучше
             - Максимальная достигнутая температура - меньше - лучше
             - Средняя скорость движения - больше - лучше
+            - Относительное время симуляции - меньше - лучше
             - Оценка за причину остановки - больше - лучше
         """
 
@@ -56,13 +56,15 @@ class ControllerGrager:
 
         db = abs(rezonator_metrics['disbalance'])
 
-        w = np.array([freq_target_distance_rel if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0,
-                db if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
-                self._f_penalty(rezonator_metrics['penalty_energy']),
-                sim_metrics['total_duration_rel'],
-                1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel),
-                sim_metrics['max_temperature'] / self._max_temperature,
-                sim_metrics['avg_speed'],
-                self._grade_stop_condition[stop_condition]])
+        w = np.array([
+            freq_target_distance_rel if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0, # настройка
+            self._f_penalty(rezonator_metrics['penalty_energy']), # штраф за попадание куда не надо
+            db if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
+            1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel), # точность самооценки
+            sim_metrics['max_temperature'] / self._max_temperature,  # температура
+            sim_metrics['avg_speed'],  # скорость
+            sim_metrics['total_duration_rel'],  # время
+            self._grade_stop_condition[stop_condition]  # причина остановки
+        ])
         
         return (w * self._grade_weights).sum(), w

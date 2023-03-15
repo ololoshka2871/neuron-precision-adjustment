@@ -22,18 +22,18 @@ from deap_elements.individual import register_individual
 # Веса оценок работы симуляции
 # Оценка:
 #    - Относительная дистанция до целевой частоты - меньше - лучше
-#    - Относителдьный диссбаланс - меньше - лучше
 #    - Относительный штраф за попадание куда не надо - меньше - лучше
-#    - Относительное время симуляции - меньше - лучше
+#    - Относителдьный диссбаланс - меньше - лучше
 #    - Точность самооценки - больше - лучше
 #    - Максимальная достигнутая температура - меньше - лучше
 #    - Средняя скорость движения - больше - лучше
+#    - Относительное время симуляции - меньше - лучше
 #    - Оценка за причину остановки - больше - лучше
-#FITNES_WEIGHTS = [-5.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5]
-FITNES_WEIGHTS = [-5.0, -0.25, -10.0, 0.0, 0.8, 0.0, 0.2, 0.0]
+FITNES_WEIGHTS = [-5.0, -10.0, -0.25, 0.25, -0.05, 0.5, -0.25, 0.5]
 
 F_HISTORY_SIZE = 10
 MOVE_HISTORY_SIZE = 10
+ITERATIONS_PER_EPOCH = 50
 
 
 NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
@@ -53,7 +53,17 @@ toolbox.register("population", tools.initRepeat, list,
                  toolbox.individual)  # type: ignore
 
 
-def eval_rezonator_adjust(individual):
+def get_fithess_weights(it: int) -> np.ndarray:
+    epoch = it // ITERATIONS_PER_EPOCH
+
+    res = np.array(FITNES_WEIGHTS)
+    if epoch < len(FITNES_WEIGHTS) - 1:
+        res[epoch + 1:] = 0.0
+        
+    return res
+
+
+def eval_rezonator_adjust(individual, gen: int, it: int):
     SIM_CYCLE_TIME = 0.01
     MAX_F = 1000.0
     LASER_POWER = 30.0  # [W]
@@ -98,7 +108,7 @@ def eval_rezonator_adjust(individual):
                               f_penalty=gen_sigmoid(
                                   k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
                               max_temperature=MAX_T,
-                              grade_weights=np.array(FITNES_WEIGHTS))
+                              grade_weights=get_fithess_weights(it))
 
     stop_condition = sim.perform_modeling(stop_detector)
 
@@ -122,7 +132,8 @@ toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0, indpb=0.5)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
 
-def learn_main(polulation_size: int, checkpoint_file: str,
+def learn_main(polulation_size: int, max_iterations: int,
+               checkpoint_file: str,
                multyprocess: bool | None = None, gens_for_checkpoint=1, verbose=True,
                cxpb=0.5, mutpb=0.2):
     import os
@@ -146,7 +157,8 @@ def learn_main(polulation_size: int, checkpoint_file: str,
             cp = pickle.load(cp_file)  # type: ignore
         population = cp["population"]
         gen = cp["generation"]
-        hof = cp["halloffame"]
+        hof_gloabal = cp["halloffame"]
+        gen_hof = cp["gen_hof"]
         logbook = cp["logbook"]
         random.setstate(cp["rndstate"])
     except FileNotFoundError:
@@ -154,15 +166,19 @@ def learn_main(polulation_size: int, checkpoint_file: str,
         population = toolbox.population(n=polulation_size)  # type: ignore
         gen = 0
         # Здесь будут геномы самых лучших представителей каждого поколения
-        hof = tools.HallOfFame(maxsize=1)
+        hof_gloabal = tools.HallOfFame(maxsize=1)
+        gen_hof = []
         logbook = tools.Logbook()
         logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])  # type: ignore
 
+    it = 0
+
     while True:
         gen += 1
+        it += 1
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in population if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)  # type: ignore
+        fitnesses = toolbox.map(lambda individual: toolbox.evaluate(individual, gen, it), invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = (fit['fitness'],)
             ind.grade = fit['grade']
@@ -170,12 +186,9 @@ def learn_main(polulation_size: int, checkpoint_file: str,
             ind.rezonator_angle = fit['sim_angle']
             ind.adjust_freq = fit['sim_def_freq']
 
-            if ind.fitness.values[0] > 1.1:
-                g = ind.grade
-                print(
-                    f"Found anomaly fitness ({ind.fitness.values[0]}): {fit['stop_condition']}; Fd:{g[0]:.2f}, db:{g[1]:.2f}, fzp:{g[2]:.2f} ({fit['penalty']}), t:{g[3]:.2f}, sg:{g[4]:.2f}, Tmax:{g[5]:.2f}, Va:{g[6]:.2f}, scg:{g[7]:.2f}")
+        hof_gloabal.update(population)
+        gen_hof.append(hof_gloabal[0])
 
-        hof.update(population)
         record = stats.compile(population)
         logbook.record(gen=gen, evals=len(invalid_ind), **record)
         if verbose:
@@ -189,14 +202,24 @@ def learn_main(polulation_size: int, checkpoint_file: str,
             print(f"Save state >>> {checkpoint_file}")
 
             # Fill the dictionary using the dict(key=value[, ...]) constructor
-            cp = dict(population=population, generation=gen, halloffame=hof,
-                      logbook=logbook, rndstate=random.getstate())
+            cp = dict(population=population, generation=gen, halloffame=hof_gloabal,
+                      gen_hof=gen_hof, logbook=logbook, rndstate=random.getstate())
 
             with open(checkpoint_file, "wb") as cp_file:
                 pickle.dump(cp, cp_file)
 
+        if max_iterations > 0 and it >= max_iterations:
+            break
+
 
 if __name__ == '__main__':
-    POPULATION_SIZE = 25
+    import argparse
 
-    learn_main(POPULATION_SIZE, checkpoint_file='learn_v2.ckl', gens_for_checkpoint=1)
+    # parse argumants
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', type=int, help='Population size', default=25)
+    parser.add_argument('-m', type=int, help='Max iterations', default=0)
+    parser.add_argument('file', type=str, help='Simulation history file', nargs='?', default='learn_v2.ckl')
+    args = parser.parse_args()
+
+    learn_main(args.p, args.m, checkpoint_file=args.file, gens_for_checkpoint=1)

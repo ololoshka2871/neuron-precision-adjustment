@@ -7,8 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-from generate_playground import generate_playground
-
 
 class AdjustZoneModel:
     METAL_DENSITY = 10.49 / math.pow(1e+1, 3)  # g/sm^3 -> g/mm^3
@@ -149,6 +147,7 @@ def create_linear_sensivity_multiplicator(min, max):
 if __name__ == '__main__':
     from misc.common import draw_polygon, transform_all
     from misc.inside_detector import is_point_inside_polygon
+    from old.generate_playground import generate_playground
 
     f, ax = plt.subplots(1, 2)
 
