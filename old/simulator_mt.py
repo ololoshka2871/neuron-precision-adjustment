@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 from misc.common import draw_polygon, gen_sigmoid
-from adjust_zone_model import draw_model
+from models.adjust_zone_model import draw_model
 from controllers.controller_v1 import NNController
 from graders.controller_grader_v1 import ControllerGrager
 from models.rezonator_model import RezonatorModel

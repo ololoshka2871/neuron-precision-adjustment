@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 from misc.common import Rezonator, draw_polygon, gen_sigmoid, create_tail
-from adjust_zone_model import draw_model
+from models.adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
