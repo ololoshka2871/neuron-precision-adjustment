@@ -10,7 +10,7 @@ from adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
-from graders.controller_grader_v1 import ControllerGrager
+from graders.controller_grader_v2 import ControllerGrager
 from models.rezonator_model import RezonatorModel, ModelView
 from models.sim_stop_detector_v2 import SimStopDetector
 from simulators.simulator_v2 import Simulator
@@ -163,8 +163,15 @@ class ControllerInputDisplay:
 
 
 if __name__ == "__main__":
-    import sys
     import argparse
+    import pickle
+
+    from deap import creator
+
+    from deap_elements.fitnes_max import register_finex_max
+    from deap_elements.individual import register_individual
+
+    from learn_v2 import FITNES_WEIGHTS
 
     LASER_POWER = 30.0  # [W]
     F_HISTORY_SIZE = 10
@@ -177,27 +184,47 @@ if __name__ == "__main__":
     SIM_CYCLE_TIME = 0.01
     SIM_TIMEOUT = 10.0
 
-    manual = len(sys.argv) > 1
+    # parse argumants
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', type=int, help='item', default='0')
+    parser.add_argument('-r', type=bool, help='random environment', default=False)
+    parser.add_argument('file', type=str, help='Simulation history file', default='learn_v2.ckl')
+    args = parser.parse_args()
+
+    register_finex_max()
+    register_individual(creator.FitnessMax)  # type: ignore
+
+    # read history file
+    with open(args.file, "rb") as cp_file:
+        cp = pickle.load(cp_file)  # type: ignore
+
+    population = cp["population"]
 
     f, ax = plt.subplots(1, 3)
 
     rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD)
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
 
-    # Генерируем случайное смещение и случайный угол поворота
-    offset = (np.random.random() * 0.3, np.random.random() * 0.5)
-    angle = np.random.random() * 20 - 10
+    individuum = population[args.i]
+    if args.r:
+        # Генерируем случайное смещение и случайный угол поворота
+        offset = (np.random.random() * 0.3, np.random.random() * 0.5)
+        angle = np.random.random() * 20 - 10
+        def_freq = DEST_FREQ_CH
+    else:
+        # Смещение и угол поворота из файла
+        offset = individuum.rezonator_offset
+        angle = individuum.rezonator_angle
+        def_freq = individuum.adjust_freq
+
     print('offset: {}, angle: {}'.format(offset, angle))
 
     rez = Rezonator.load()
     coord_transformer = CoordinateTransformer(rez, (0, 0), offset, angle)
 
-    if manual:
-        controller = ManualController()
-    else:
-        NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
-        weights = NNController.shuffled_weights()
-        controller = NNController(weights)
+    NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
+    weights = individuum
+    controller = NNController(weights)
 
     sim = Simulator(rezonator_model=rezonator,
                     controller_v2=controller,
@@ -217,10 +244,11 @@ if __name__ == "__main__":
                                     self_grade_epsilon=0.01,
                                     start_timestamp=0.0)
 
-    grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
+    grader = ControllerGrager(dest_freq_ch=def_freq,
                               f_penalty=gen_sigmoid(
-                                  k=1.0 / LASER_POWER, x_offset_to_right=-1),
-                              max_temperature=MAX_T)
+                                  k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
+                              max_temperature=MAX_T,
+                              grade_weights=np.array(FITNES_WEIGHTS))
 
     model = rezonator.get_model_view(offset, angle)
     input_display = ControllerInputDisplay(
@@ -232,10 +260,10 @@ if __name__ == "__main__":
 
     stop_condition = sim.perform_modeling(stop_detector, input_display)
 
-    grade = grader.get_grade(rezonator.get_metrics(),
-                             stop_detector.summary(), stop_condition)
+    rm = rezonator.get_metrics()
+    total, g = grader.get_grade(rm, stop_detector.summary(), stop_condition)
     print(
-        f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
+        f"Done {stop_condition} ({total}); Fd:{g[0]:.2f}, db:{g[1]:.2f}, fzp:{g[2]:.2f} ({rm['penalty_energy']}), t:{g[3]:.2f}, sg:{g[4]:.2f}, Tmax:{g[5]:.2f}, Va:{g[6]:.2f}, scg:{g[7]:.2f}")
     sf, ax = plt.subplots(1, 1)
     stop_detector.plot_summary(ax)
     plt.show(block=True)

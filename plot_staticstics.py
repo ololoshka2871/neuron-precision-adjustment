@@ -12,18 +12,15 @@ from deap import creator
 from deap_elements.fitnes_max import register_finex_max
 from deap_elements.individual import register_individual
 
-from learn_v2 import FITNES_WEIGHTS
-
 
 if __name__ == '__main__':
-    # parce argumants
+    # parse argumants
     # optional arguments: filaname, default = 'learn_v2.ckl'
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='Simulation history file', default='learn_v2.ckl')
-
     args = parser.parse_args()
 
-    register_finex_max(FITNES_WEIGHTS)
+    register_finex_max()
     register_individual(creator.FitnessMax)  # type: ignore
 
     # read history file

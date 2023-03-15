@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import array
 import random
 
 import numpy as np
@@ -26,11 +25,12 @@ from deap_elements.individual import register_individual
 #    - Относителдьный диссбаланс - меньше - лучше
 #    - Относительный штраф за попадание куда не надо - меньше - лучше
 #    - Относительное время симуляции - меньше - лучше
-#    - Точность самоошенки - больше - лучше
+#    - Точность самооценки - больше - лучше
 #    - Максимальная достигнутая температура - меньше - лучше
 #    - Средняя скорость движения - больше - лучше
 #    - Оценка за причину остановки - больше - лучше
-FITNES_WEIGHTS = [-5.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5]
+#FITNES_WEIGHTS = [-5.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5]
+FITNES_WEIGHTS = [-5.0, -0.25, -10.0, 0.0, 0.8, 0.0, 0.2, 0.0]
 
 F_HISTORY_SIZE = 10
 MOVE_HISTORY_SIZE = 10
@@ -201,7 +201,7 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
 
 
 if __name__ == '__main__':
-    POPULATION_SIZE = 25
+    POPULATION_SIZE = 250
     N_GEN = 1000
 
     learn_main(POPULATION_SIZE, N_GEN,
