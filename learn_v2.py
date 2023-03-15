@@ -145,20 +145,21 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
         with open(checkpoint_file, "rb") as cp_file:
             cp = pickle.load(cp_file)  # type: ignore
         population = cp["population"]
-        start_gen = cp["generation"]
+        gen = cp["generation"]
         hof = cp["halloffame"]
         logbook = cp["logbook"]
         random.setstate(cp["rndstate"])
     except FileNotFoundError:
         # Start a new evolution
         population = toolbox.population(n=polulation_size)  # type: ignore
-        start_gen = 0
+        gen = 0
         # Здесь будут геномы самых лучших представителей каждого поколения
         hof = tools.HallOfFame(maxsize=1)
         logbook = tools.Logbook()
         logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])  # type: ignore
 
-    for gen in range(start_gen, start_gen + n_gen):
+    while True:
+        gen += 1
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in population if not ind.fitness.valid]
         fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)  # type: ignore
@@ -193,11 +194,6 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
 
             with open(checkpoint_file, "wb") as cp_file:
                 pickle.dump(cp, cp_file)
-
-    if multyprocess:
-        pool.close()  # type: ignore
-
-    return population, stats, hof
 
 
 if __name__ == '__main__':

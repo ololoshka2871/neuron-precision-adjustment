@@ -186,7 +186,7 @@ if __name__ == "__main__":
 
     # parse argumants
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', type=int, help='item', default='0')
+    parser.add_argument('-i', type=int, help='item (default: hof)', default='-1')
     parser.add_argument('-r', type=bool, help='random environment', default=False)
     parser.add_argument('file', type=str, help='Simulation history file', default='learn_v2.ckl')
     args = parser.parse_args()
@@ -199,13 +199,18 @@ if __name__ == "__main__":
         cp = pickle.load(cp_file)  # type: ignore
 
     population = cp["population"]
+    hof = cp["halloffame"]
 
     f, ax = plt.subplots(1, 3)
 
     rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD)
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
 
-    individuum = population[args.i]
+    if args.i < 0:
+        individuum = hof[0]
+    else:
+        individuum = population[args.i]
+
     if args.r:
         # Генерируем случайное смещение и случайный угол поворота
         offset = (np.random.random() * 0.3, np.random.random() * 0.5)
