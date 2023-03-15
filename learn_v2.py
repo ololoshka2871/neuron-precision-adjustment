@@ -15,6 +15,7 @@ from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeC
 from misc.f_s_transformer import FSTransformer
 from models.rezonator_model import RezonatorModel
 from models.sim_stop_detector_v2 import SimStopDetector
+from models.stop_condition import StopCondition
 from simulators.simulator_v2 import Simulator
 
 from deap_elements.fitnes_max import register_finex_max
@@ -113,11 +114,18 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     """
     SIM_TRYS = 3
 
-    res = list(toolbox.map(functools.partial(eval_rezonator_adjust, it=it, gen=gen),  # type: ignore
-               np.repeat([individual], SIM_TRYS, axis=0)))
-    avg_total_grade = np.mean([r['fitness'] for r in res])
-    res[0]['fitness'] = avg_total_grade
-    return res[0]
+    fitness = []
+    res = dict()
+    
+    for _ in range(SIM_TRYS):
+        res = eval_rezonator_adjust(individual, it=it, gen=gen)
+        fitness.append(res['fitness'])
+        if res['stop_condition'] == StopCondition.TIMEOUT:
+            break
+    
+    avg_total_grade = np.mean(fitness)
+    res['fitness'] = avg_total_grade
+    return res
 
 
 toolbox.register("evaluate", eval_rezonator_adjust_wrapper)
