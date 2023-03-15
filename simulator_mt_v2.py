@@ -10,7 +10,7 @@ from adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
-from controller_grader import ControllerGrager
+from graders.controller_grader_v2 import ControllerGrager
 from models.rezonator_model import RezonatorModel, ModelView
 from models.sim_stop_detector_v2 import SimStopDetector
 from simulators.simulator_v2 import Simulator
@@ -218,8 +218,9 @@ if __name__ == "__main__":
 
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
                               f_penalty=gen_sigmoid(
-                                  k=1.0 / LASER_POWER, x_offset_to_right=-1),
-                              max_temperature=MAX_T)
+                                  k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
+                              max_temperature=MAX_T,
+                              grade_weights=np.array([-5.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5]))
 
     model = rezonator.get_model_view(offset, angle)
     input_display = ControllerInputDisplay(
@@ -231,10 +232,10 @@ if __name__ == "__main__":
 
     stop_condition = sim.perform_modeling(stop_detector, input_display)
 
-    grade = grader.get_grade(rezonator.get_metrics(),
-                             stop_detector.summary(), stop_condition)
+    rm = rezonator.get_metrics()
+    total, g = grader.get_grade(rm, stop_detector.summary(), stop_condition)
     print(
-        f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
+        f"Done {stop_condition} ({total}); Fd:{g[0]:.2f}, db:{g[1]:.2f}, fzp:{g[2]:.2f} ({rm['penalty_energy']}), t:{g[3]:.2f}, sg:{g[4]:.2f}, Tmax:{g[5]:.2f}, Va:{g[6]:.2f}, scg:{g[7]:.2f}")
     sf, ax = plt.subplots(1, 1)
     stop_detector.plot_summary(ax)
     plt.show(block=True)

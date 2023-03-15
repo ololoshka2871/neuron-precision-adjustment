@@ -9,7 +9,7 @@ from deap import algorithms, base, creator, tools
 
 from misc.common import Rezonator, gen_sigmoid
 from controllers.controller_v2 import NNController
-from controller_grader import ControllerGrager
+from graders.controller_grader_v2 import ControllerGrager
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
 from models.rezonator_model import RezonatorModel
@@ -30,7 +30,7 @@ from deap_elements.individual import register_individual
 #    - Максимальная достигнутая температура - меньше - лучше
 #    - Средняя скорость движения - больше - лучше
 #    - Оценка за причину остановки - больше - лучше
-FITNES_WEIGHTS = (-5.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5)
+FITNES_WEIGHTS = [-5.0, -0.25, -10.0, -0.25, 0.5, -0.05, 0.5, 0.5]
 
 F_HISTORY_SIZE = 10
 MOVE_HISTORY_SIZE = 10
@@ -38,7 +38,7 @@ MOVE_HISTORY_SIZE = 10
 
 NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
 
-register_finex_max(FITNES_WEIGHTS)
+register_finex_max()
 register_individual(creator.FitnessMax)  # type: ignore
 
 toolbox = base.Toolbox()
@@ -96,19 +96,20 @@ def eval_rezonator_adjust(individual):
     def_freq = np.random.normal(DEST_FREQ_CH, 10.0)
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
                               f_penalty=gen_sigmoid(
-                                  k=1.0 / LASER_POWER, x_offset_to_right=-1),
-                              max_temperature=MAX_T)
+                                  k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
+                              max_temperature=MAX_T,
+                              grade_weights=np.array(FITNES_WEIGHTS))
 
     stop_condition = sim.perform_modeling(stop_detector)
 
-    grade = grader.get_grade(rezonator_model.get_metrics(),
-                             stop_detector.summary(), stop_condition)
-
-    #print(
-    #    f"Done {stop_condition}; Fd:{grade[0]:.2f}, db:{grade[1]:.2f}, pen:{grade[2]:.2f}, t:{grade[3]:.2f}, ss:{grade[4]:.2f}, Tmax:{grade[5]:.2f}, Va:{grade[6]:.2f}")
+    rm = rezonator_model.get_metrics()
+    total, g = grader.get_grade(rm, stop_detector.summary(), stop_condition)
 
     return {
-        'grade': grade,
+        'stop_condition': stop_condition,
+        'fitness': total,
+        'grade': g,
+        'penalty': rm['penalty_energy'],
         'sim_offset': offset,
         'sim_angle': angle,
         'sim_def_freq': def_freq
@@ -162,10 +163,16 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
         invalid_ind = [ind for ind in population if not ind.fitness.valid]
         fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit['grade']
+            ind.fitness.values = (fit['fitness'],)
+            ind.grade = fit['grade']
             ind.rezonator_offset = fit['sim_offset']
             ind.rezonator_angle = fit['sim_angle']
             ind.adjust_freq = fit['sim_def_freq']
+
+            if ind.fitness.values[0] > 1.1:
+                g = ind.grade
+                print(
+                    f"Found anomaly fitness ({ind.fitness.values[0]}): {fit['stop_condition']}; Fd:{g[0]:.2f}, db:{g[1]:.2f}, fzp:{g[2]:.2f} ({fit['penalty']}), t:{g[3]:.2f}, sg:{g[4]:.2f}, Tmax:{g[5]:.2f}, Va:{g[6]:.2f}, scg:{g[7]:.2f}")
 
         hof.update(population)
         record = stats.compile(population)
@@ -194,8 +201,8 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
 
 
 if __name__ == '__main__':
-    POPULATION_SIZE = 250
-    N_GEN = 10000
+    POPULATION_SIZE = 25
+    N_GEN = 1000
 
     learn_main(POPULATION_SIZE, N_GEN,
                checkpoint_file='learn_v2.ckl', gens_for_checkpoint=1)

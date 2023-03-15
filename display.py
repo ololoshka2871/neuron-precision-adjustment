@@ -10,7 +10,7 @@ from adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
 from misc.f_s_transformer import FSTransformer
-from controller_grader import ControllerGrager
+from graders.controller_grader_v1 import ControllerGrager
 from models.rezonator_model import RezonatorModel, ModelView
 from models.sim_stop_detector_v2 import SimStopDetector
 from simulators.simulator_v2 import Simulator

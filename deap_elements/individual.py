@@ -12,6 +12,7 @@ def register_individual(fitnes_max):
     creator.create("Individual", array.array,
                 typecode='f',
                 fitness=fitnes_max,
+                grade=0.0,
                 rezonator_offset=(0.0, 0.0),
                 rezonator_angle=0.0,
                 adjust_freq=0.0)

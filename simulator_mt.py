@@ -9,7 +9,7 @@ import matplotlib.dates as mdates
 from misc.common import draw_polygon, gen_sigmoid
 from adjust_zone_model import draw_model
 from controllers.controller_v1 import NNController
-from controller_grader import ControllerGrager
+from graders.controller_grader_v1 import ControllerGrager
 from models.rezonator_model import RezonatorModel
 from models.sim_stop_detector_v1 import SimStopDetector
 from models.stop_condition import StopCondition
