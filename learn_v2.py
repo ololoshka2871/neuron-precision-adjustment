@@ -158,7 +158,7 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
         logbook = tools.Logbook()
         logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])  # type: ignore
 
-    for gen in range(start_gen, n_gen):
+    for gen in range(start_gen, start_gen + n_gen):
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in population if not ind.fitness.valid]
         fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)  # type: ignore
@@ -201,8 +201,8 @@ def learn_main(polulation_size: int, n_gen: int, checkpoint_file: str,
 
 
 if __name__ == '__main__':
-    POPULATION_SIZE = 250
-    N_GEN = 1000
+    POPULATION_SIZE = 25
+    N_GEN = 50
 
     learn_main(POPULATION_SIZE, N_GEN,
                checkpoint_file='learn_v2.ckl', gens_for_checkpoint=1)
