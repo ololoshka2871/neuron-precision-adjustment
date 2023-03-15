@@ -52,6 +52,7 @@ class NNController:
         model.add(layers.Dense(units=NNController.OUTUT_COUNT, activation='tanh'))
         model.compile(loss='mean_squared_error',
                       optimizer=optimizers.Adam(0.1))
+        model.trainable = False
 
         # model.summary()
         NNController._model = model
@@ -125,6 +126,7 @@ class NNController:
         if wieghts is not None:
             self._model.set_weights(
                 NNController._convert_weights_to_model(wieghts))
+        self._model.trainable = False
 
     def update(self, input: dict):
         """
@@ -138,7 +140,7 @@ class NNController:
         v.append(input['time'])
 
         input = tf.convert_to_tensor([v], dtype=tf.float32) # type: ignore
-        output, = self._model.predict_on_batch(input) # type: ignore
+        output, = self._model(input) # type: ignore
 
         speed = NNController.map_zero_one(output[3])
         return {
