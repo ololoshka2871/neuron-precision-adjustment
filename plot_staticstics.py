@@ -17,14 +17,14 @@ if __name__ == '__main__':
     # parse argumants
     # optional arguments: filaname, default = 'learn_v2.ckl'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', type=str, help='Simulation history file', default='learn_v2.ckl')
+    parser.add_argument('file', type=str, help='Simulation history file', default='learn_v2.ckl')
     args = parser.parse_args()
 
     register_finex_max()
     register_individual(creator.FitnessMax)  # type: ignore
 
     # read history file
-    with open(args.f, "rb") as cp_file:
+    with open(args.file, "rb") as cp_file:
         cp = pickle.load(cp_file)  # type: ignore
     
     population = cp["population"]
@@ -49,6 +49,6 @@ if __name__ == '__main__':
 
     lines = line1 + line2
     labs = [l.get_label() for l in lines]
-    ax1.legend(lines, labs, loc="center right")
+    ax1.legend(lines, labs)
 
     plt.show()
