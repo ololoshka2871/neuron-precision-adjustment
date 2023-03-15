@@ -106,14 +106,14 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
     }
 
 
-def eval_rezonator_adjust_wrapper(individual, gen: int, it: int, _map):
+def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     """
     Запустить симуляцию несколько раз для каждого генома с разными начальными условиями
     чтобы исключить фактор "угадывания"
     """
     SIM_TRYS = 3
 
-    res = list(_map(functools.partial(eval_rezonator_adjust, it=it, gen=gen),  # type: ignore
+    res = list(toolbox.map(functools.partial(eval_rezonator_adjust, it=it, gen=gen),  # type: ignore
                np.repeat([individual], SIM_TRYS, axis=0)))
     avg_total_grade = np.mean([r['fitness'] for r in res])
     res[0]['fitness'] = avg_total_grade
@@ -172,7 +172,7 @@ def learn_main(polulation_size: int, max_iterations: int,
         it += 1
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in population if not ind.fitness.valid]
-        fitnesses = toolbox.map(functools.partial(toolbox.evaluate, gen=gen, it=it, _map=toolbox.map), invalid_ind)  # type: ignore
+        fitnesses = toolbox.map(functools.partial(toolbox.evaluate, gen=gen, it=it), invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = (fit['fitness'],)
             ind.grade = fit['grade']
