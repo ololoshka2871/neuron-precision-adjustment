@@ -123,7 +123,7 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
         if res['stop_condition'] == StopCondition.TIMEOUT:
             break
     
-    avg_total_grade = np.mean(fitness)
+    avg_total_grade = np.min(fitness)
     res['fitness'] = avg_total_grade
     return res
 
@@ -189,7 +189,9 @@ def learn_main(polulation_size: int, max_iterations: int,
             ind.adjust_freq = fit['sim_def_freq']
 
         hof_gloabal.update(population)
-        gen_hof.append(hof_gloabal[0])
+        best = tools.HallOfFame(maxsize=1)
+        best.update(population)
+        gen_hof.append(best[0])
 
         record = stats.compile(population)
         logbook.record(gen=gen, evals=len(invalid_ind), **record)
