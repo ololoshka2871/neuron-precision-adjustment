@@ -22,7 +22,7 @@ from deap_elements.fitnes_max import register_finex_max
 from deap_elements.individual import register_individual
 
 from constants_v2 import POWER_THRESHOLD, DEST_FREQ_CH, F_HISTORY_SIZE, MOVE_HISTORY_SIZE, \
-    MAX_F, LASER_POWER, SIM_CYCLE_TIME, SIM_TIMEOUT, MAX_T, FITNES_WEIGHTS
+    MAX_F, LASER_POWER, SIM_CYCLE_TIME, SIM_TIMEOUT, MAX_T, FITNES_WEIGHTS, MIN_AVG_SPEED
 
 NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
 
@@ -77,7 +77,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
     stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
                                     history_len_s=0.5,
                                     min_path=0.05,
-                                    min_avg_speed=0.05,
+                                    min_avg_speed=MIN_AVG_SPEED,
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
                                     self_grade_epsilon=0.01,

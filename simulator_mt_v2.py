@@ -4,8 +4,9 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from misc.Rezonator import Rezonator
 
+from constants_v2 import MIN_AVG_SPEED
+from misc.Rezonator import Rezonator
 from misc.common import draw_polygon, gen_sigmoid, create_tail
 from models.adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
@@ -203,7 +204,7 @@ if __name__ == "__main__":
     stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
                                     history_len_s=0.5,
                                     min_path=0.05,
-                                    min_avg_speed=0.05,
+                                    min_avg_speed=MIN_AVG_SPEED,
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
                                     self_grade_epsilon=0.01,
