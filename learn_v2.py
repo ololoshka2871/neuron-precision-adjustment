@@ -139,7 +139,7 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     return res
 
 
-toolbox.register("evaluate", eval_rezonator_adjust_wrapper)
+toolbox.register("evaluate", eval_rezonator_adjust)
 toolbox.register("mate", tools.cxBlend, alpha=0.5)
 toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0, indpb=0.5)
 toolbox.register("select", tools.selTournament, tournsize=3)
