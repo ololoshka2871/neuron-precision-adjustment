@@ -15,7 +15,7 @@ class AdjustZoneModel:
     def __init__(self,
                  size: tuple[float, float],
                  divizion: tuple[int, int],
-                 layer_thiknes=0.5e-6 * 1e3,
+                 layer_thikness=0.5e-6 * 1e3,
                  sensitivity_multiplicator=lambda pos: 1.0,
                  power_threshold=0.0,
                  energy_consume_rate=lambda pos: 1.0):
@@ -30,7 +30,7 @@ class AdjustZoneModel:
         """
 
         full_mass = size[0] * size[1] * \
-            layer_thiknes * AdjustZoneModel.METAL_DENSITY
+            layer_thikness * AdjustZoneModel.METAL_DENSITY
 
         self.chank_freq_offset_max = full_mass / \
             AdjustZoneModel.SENSIVITY_BASE / (divizion[0] * divizion[1])

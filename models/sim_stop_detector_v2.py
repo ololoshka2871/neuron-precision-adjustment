@@ -175,3 +175,4 @@ class SimStopDetector:
                 'ro-', label='temperature_history')
         ax.plot(t, self._energy_history / self._start_energy, 'mo-', label='energy_history')
         ax.legend()
+        ax.grid()

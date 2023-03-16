@@ -54,7 +54,11 @@ def get_fithess_weights(gen: int) -> np.ndarray:
 
 
 def eval_rezonator_adjust(individual, gen: int, it: int):
-    rezonator_model = RezonatorModel(power_threshold=POWER_THRESHOLD)
+    # Генерируем толщину серебра
+    ag_layer_thikness = (np.random.normal() + 0.5) * 0.5e-3
+
+    rezonator_model = RezonatorModel(power_threshold=POWER_THRESHOLD, 
+                                     layer_thikness=ag_layer_thikness)
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
     rez = Rezonator.load()
 
@@ -109,6 +113,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
         'penalty': rm['penalty_energy'],
         'sim_offset': offset,
         'sim_angle': angle,
+        'sim_ag_layer_thikness': ag_layer_thikness,
         'sim_def_freq': def_freq
     }
 
@@ -193,6 +198,7 @@ def learn_main(polulation_size: int, max_iterations: int,
             ind.rezonator_offset = fit['sim_offset']
             ind.rezonator_angle = fit['sim_angle']
             ind.adjust_freq = fit['sim_def_freq']
+            ind.ag_layer_thikness = fit['sim_ag_layer_thikness']
 
         hof_gloabal.update(population)
         best = tools.HallOfFame(maxsize=1)

@@ -196,9 +196,6 @@ if __name__ == "__main__":
 
     f, ax = plt.subplots(1, 3)
 
-    rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD)
-    initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
-
     if args.p is not None:
         individuum = population[args.p]
     else:
@@ -209,13 +206,19 @@ if __name__ == "__main__":
         offset = (np.random.random() * 0.3, np.random.random() * 0.5)
         angle = np.random.random() * 20 - 10
         def_freq = DEST_FREQ_CH
+        ag_layer_thikness = (np.random.normal() + 0.5) * 0.5e-3
     else:
         # Смещение и угол поворота из файла
         offset = individuum.rezonator_offset
         angle = individuum.rezonator_angle
         def_freq = individuum.adjust_freq
+        ag_layer_thikness = individuum.ag_layer_thikness
 
-    print('offset: {}, angle: {}'.format(offset, angle))
+    print('offset: {}, angle: {}, Ag layer: {} [mm]'.format(offset, angle, ag_layer_thikness))
+
+    rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD,
+                               layer_thikness=ag_layer_thikness)
+    initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
 
     rez = Rezonator.load()
     coord_transformer = CoordinateTransformer(rez, (0, 0), offset, angle)

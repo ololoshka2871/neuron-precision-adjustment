@@ -231,12 +231,14 @@ class RezonatorModel:
                  heat_dissipation_rate: float = 0.9,
                  ambient_temperatire: float = 0.0,
                  power_threshold: float = 0.05,
+                 layer_thikness=0.5e-3,
                  tfk: float = -0.05):
         """
         :param rezonator_thickness: Толщина резонатора [мм]
         :param heat_dissipation_rate: Скорость рассеяние энергии в окружающую стреду [0..1]
         :param ambient_temperatire: температура окружающей среды, [градусы Цельсия]
         :param power_threshold: Минимальная доля мощности лазера, необходимая чтобы началось испарение серебра
+        :param layer_thikness: Толщина слоя серебра [мм]
         :param tfk: температурная чувствительность резонатора Hz/K
         """
 
@@ -266,6 +268,7 @@ class RezonatorModel:
 
         self._adj_zones = [AdjustZoneModel(target_zone_size,
                                            divizion=RezonatorModel.TARGET_CHANK_DIVIZION,
+                                           layer_thikness=layer_thikness,
                                            sensitivity_multiplicator=f_sensivity,
                                            power_threshold=power_threshold,
                                            energy_consume_rate=f_consume) for _ in range(2)]
