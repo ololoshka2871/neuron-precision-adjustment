@@ -79,6 +79,9 @@ class SimStopDetector:
         if T > self._max_temperature:
             self._max_temperature = T
 
+    def get_time_limit(self) -> float:
+        return self._timeout
+
     def __call__(self, t: float, rm: Metrics, mm: dict) -> StopCondition:
         """
         Акумулирует метрики и вынусоит суждение о том стоит ли остановить симуляцю

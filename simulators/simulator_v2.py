@@ -5,6 +5,7 @@ from models.rezonator_model import RezonatorModel, Zone, ModelView
 from models.movement import Movment
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates, RealCoordinates
 from misc.f_s_transformer import FSTransformer
+from models.sim_stop_detector_v2 import SimStopDetector
 from models.stop_condition import StopCondition
 
 
@@ -80,7 +81,7 @@ class Simulator:
                 newshape=(4, move_history_len)).T)
 
     def perform_modeling(self,
-                         stop_detector,
+                         stop_detector: SimStopDetector,
                          input_display=lambda input: None
                          ) -> StopCondition:
         """
@@ -103,11 +104,12 @@ class Simulator:
             dest_real = \
                 self._coord_transformer.wrap_from_workzone_relative_to_real(
                     dest_wz)
-            traectory = self._movement.interpolate_move(
+            traectory = self._movement.interpolat_move_time_limit(
                 src=self._curremt_pos_global.tuple(),
                 dst=dest_real.tuple(),
                 speed=self._fs_transformer.map_f_to_global(max(1e-3, command['speed'])), # speedm mast be > 0
-                time_step=self._modeling_period
+                time_step=self._modeling_period,
+                time_limit=stop_detector.get_time_limit() - self._period_accum,
             )
 
             self._curremt_pos_global = dest_real
