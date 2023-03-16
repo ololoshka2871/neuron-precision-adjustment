@@ -171,7 +171,7 @@ class SimStopDetector:
         ax.plot(t, self._laser_power_history,
                 'go-', label='laser_power_history')
         ax.plot(t, self._self_grade_history, 'yo-', label='self_grade_history')
-        ax.plot(t, (self._temperature_history - self._temperature_history[0]) / self._max_temperature,
+        ax.plot(t, self._temperature_history / self._max_temperature,
                 'ro-', label='temperature_history')
         ax.plot(t, self._energy_history / self._start_energy, 'mo-', label='energy_history')
         ax.legend()
