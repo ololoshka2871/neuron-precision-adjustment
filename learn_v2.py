@@ -190,7 +190,7 @@ def learn_main(polulation_size: int, max_iterations: int,
         gen += 1
         it += 1
         # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in population if not ind.fitness.valid]
+        invalid_ind = [ind for ind in population] # ignore valid fitness
         fitnesses = toolbox.map(functools.partial(toolbox.evaluate, gen=gen, it=it), invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = (fit['fitness'],)
@@ -200,10 +200,10 @@ def learn_main(polulation_size: int, max_iterations: int,
             ind.adjust_freq = fit['sim_def_freq']
             ind.ag_layer_thikness = fit['sim_ag_layer_thikness']
 
-        hof_gloabal.update(population)
         best = tools.HallOfFame(maxsize=1)
         best.update(population)
         gen_hof.append(best[0])
+        hof_gloabal.update(population)
 
         record = stats.compile(population)
         logbook.record(gen=gen, evals=len(invalid_ind), **record)
@@ -233,7 +233,7 @@ if __name__ == '__main__':
 
     # parse argumants
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', type=int, help='Population size', default=25)
+    parser.add_argument('-p', type=int, help='Population size', default=5)
     parser.add_argument('-m', type=int, help='Max iterations', default=0)
     parser.add_argument('file', type=str, help='Simulation history file', nargs='?', default='learn_v2.ckl')
     args = parser.parse_args()
