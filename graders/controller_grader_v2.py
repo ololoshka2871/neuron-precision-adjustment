@@ -1,6 +1,8 @@
 
 import numpy as np
 
+from misc.common import normal_dist
+
 from models.rezonator_model import Metrics
 from models.stop_condition import StopCondition
 
@@ -24,7 +26,7 @@ class ControllerGrager:
                  },
                  f_penalty=lambda x: x,
                  max_temperature=1000.0,
-                 grade_weights: np.ndarray = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])):
+                 grade_weights: np.ndarray = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])):
         """
         :param dest_freq_ch: Зелаемое изменение частоты [Hz]
         :param f_penalty: Функция, преобразующая накопленную штрафную энергию в значение [0..1]
@@ -47,7 +49,9 @@ class ControllerGrager:
             - 4 Максимальная достигнутая температура - меньше - лучше
             - 5 Средняя скорость движения - больше - лучше
             - 6 Относительное время симуляции - меньше - лучше
-            - 7 Оценка за причину остановки - больше - лучше
+            - 7 Бонус за дину пройденнго пути - больше - лучше
+            - 8 Бонус за остаток энергии - больше - лучше (лучше если энергия есть в запасе, но не более 30%)
+            - 9 Оценка за причину остановки - больше - лучше
         """
 
         # относительная дистанция от текущей частоты до желаемой
@@ -65,6 +69,8 @@ class ControllerGrager:
             sim_metrics['max_temperature'] / self._max_temperature,  # температура
             sim_metrics['avg_speed'],  # скорость
             sim_metrics['total_duration_rel'],  # время
+            sim_metrics['total_path_len'],  # длина пути
+            normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10), # остаток энергии
             self._grade_stop_condition[stop_condition]  # причина остановки
         ])
         

@@ -69,6 +69,7 @@ class SimStopDetector:
         self._self_grade_epsilon = self_grade_epsilon
 
         self._max_temperature = 0.0
+        self._path_accum = 0.0
 
     def _trimm_history_if_too_long(self, time: float) -> bool:
         if len(self._timestamps) > 0 and (time > self._timestamps[0] + self._history_len_s):
@@ -113,6 +114,7 @@ class SimStopDetector:
         - Температура резонатора [C] -> [K]
         """
 
+        self._path_accum += mm['Passed']
         self._energy -= self._energy_consumption_pre_1 * mm['Passed'] + self._energy_fixed_tax
 
         trimmed = self._trimm_history_if_too_long(t)
@@ -155,6 +157,8 @@ class SimStopDetector:
             'self_grade': self._self_grade_history[-1],
             'max_temperature': self._max_temperature - RezonatorModel.CELSUSS_TO_KELVIN,
             'avg_speed': self._speed_history.mean(),
+            'total_path_len': self._path_accum,
+            'energy_relative': self._energy / self._start_energy,
         }
 
     def plot_summary(self, ax: Axes):

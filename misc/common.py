@@ -64,3 +64,13 @@ def limit(v: float, _min: float, _max: float) -> float:
 def create_tail(ax, tail_len: int, init_pos):
     return [ax.plot(*init_pos, 'o-')[0] for _ in range(tail_len)]
 
+
+def normal_dist(x, mean=0.0, sd=1.0):
+    """
+    Функция вычисляет плотность вероятности нормального распределения
+    :param x: точка, в которой вычисляется плотность
+    :param mean: математическое ожидание
+    :param sd: среднеквадратичное отклонение
+    """
+    prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
+    return prob_density
