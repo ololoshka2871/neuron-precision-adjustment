@@ -179,6 +179,7 @@ if __name__ == "__main__":
     # parse argumants
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', type=int, help='item (default: hof)', default='-1')
+    parser.add_argument('-p', type=int, help='Population item')
     parser.add_argument('-r', action=argparse.BooleanOptionalAction)
     parser.add_argument('file', type=str, help='Simulation history file', default='learn_v2.ckl')
     args = parser.parse_args()
@@ -191,13 +192,17 @@ if __name__ == "__main__":
         cp = pickle.load(cp_file)  # type: ignore
 
     gen_hof = cp["gen_hof"]
+    population = cp["population"]
 
     f, ax = plt.subplots(1, 3)
 
     rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD)
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
 
-    individuum = gen_hof[args.i]
+    if args.p is not None:
+        individuum = population[args.p]
+    else:
+        individuum = gen_hof[args.i]
 
     if args.r:
         # Генерируем случайное смещение и случайный угол поворота

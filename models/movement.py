@@ -65,11 +65,11 @@ class Movment:
         else:
             move_steps_f = min(move_time, time_limit) / time_step
             move_steps = math.ceil(move_steps_f)
-            if move_steps == 0:
-                return ([src[0], dst[0]], [src[1], dst[1]], [0, time_step])
+            move_pre_step_x = (dst[0] - src[0]) / move_steps
+            move_pre_step_y = (dst[1] - src[1]) / move_steps
+            if move_steps <= 1:
+                return ([src[0], src[0] + move_pre_step_x * move_steps], [src[1], src[1] + move_pre_step_y * move_steps], [0, time_step])
             else:
-                move_pre_step_x = (dst[0] - src[0]) / move_steps
-                move_pre_step_y = (dst[1] - src[1]) / move_steps
                 steps_x = [src[0] + move_pre_step_x * i for i in range(move_steps)]
                 steps_y = [src[1] + move_pre_step_y * i for i in range(move_steps)]
                 time_steps = [time_step * i for i in range(move_steps + 1)]

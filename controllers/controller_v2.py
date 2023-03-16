@@ -139,9 +139,10 @@ class NNController:
         v.extend(input['move_history'].flatten())
         v.append(input['time'])
 
-        input = tf.convert_to_tensor([v], dtype=tf.float32) # type: ignore
-        output, = self._model(input) # type: ignore
-
+        input = tf.convert_to_tensor([v], dtype=tf.float32)  # type: ignore
+        output, = self._model(input)  # type: ignore
+        output = output.numpy()
+        
         speed = NNController.map_zero_one(output[3])
         return {
             'destination': output[:2],
