@@ -106,7 +106,7 @@ class SimStopDetector:
     def get_time_limit(self) -> float:
         return self._timeout
 
-    def __call__(self, t: float, rm: Metrics, mm: dict) -> StopCondition:
+    def __call__(self, t: float, rm: Metrics, mm: dict, F_measured: float) -> StopCondition:
         """
         Акумулирует метрики и вынусоит суждение о том стоит ли остановить симуляцю
         Метрики симуляции:
@@ -121,7 +121,7 @@ class SimStopDetector:
         self._energy -= self._energy_consumption_pre_1 * mm['Passed'] + self._energy_fixed_tax
 
         trimmed = self._trimm_history_if_too_long(t)
-        self._add_metric(t, mm, rm['temperature'] + RezonatorModel.CELSUSS_TO_KELVIN, rm['freq_change'])
+        self._add_metric(t, mm, rm['temperature'] + RezonatorModel.CELSUSS_TO_KELVIN, F_measured)
         
         if len(self._timestamps) < 2:
             return StopCondition.NONE
@@ -129,11 +129,11 @@ class SimStopDetector:
         passed = self._timestamps[-1] - self._start_timestamp
         if passed > self._timeout:
             return StopCondition.TIMEOUT
-        if trimmed and self._path_history.min() < self._min_path:  # or self._path_history.mean() < self._min_path * 2.0:
+        if self._path_history.min() < self._min_path:  # or self._path_history.mean() < self._min_path * 2.0:
             return StopCondition.STALL_MOVE
-        if trimmed and self._speed_history.mean() < self._min_avg_speed:
+        if self._speed_history.mean() < self._min_avg_speed:
             return StopCondition.STALL_SPEED
-        if trimmed and self._laser_power_history.mean() < self._min_laser_power:
+        if self._laser_power_history.mean() < self._min_laser_power:
             return StopCondition.LOW_POWER
         if self._temperature_history.mean() / self._max_temperature > self._max_temperature:
             return StopCondition.OVERHEAT

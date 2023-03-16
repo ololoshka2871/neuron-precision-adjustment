@@ -160,6 +160,7 @@ class Simulator:
             self._shift_move_history(
                 dest_wz.tuple(), S=cmd_s, F=command['speed'])
 
+            last_freqs = self._measure_diff_history.peek_last_N(2)[:, 0]
             reason = stop_detector(
                 self._period_accum, self._rezonator_model.get_metrics(),
                 {
@@ -167,7 +168,7 @@ class Simulator:
                     'S': command['power'],
                     'self_grade': command['self_grade'],
                     'Passed': dest_wz.abs_path_from(WorkzoneRelativeCoordinates(prew_wz[0], prew_wz[1])),
-                })
+                }, last_freqs[0] - last_freqs[1])
             if reason != StopCondition.NONE:
                 return reason
 
