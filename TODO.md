@@ -21,9 +21,9 @@
     [v] Определеить входные параметры сети
     [v] Заменить заглушку на нейронную сеть
 [v] Создание замкнутой симуляции процесса настройки для обучения сети методом искуственного отбора (генетический алгоритм)
-[_] Отладка симуляции
+[v] Отладка симуляции
     [v] Добавить к входным параметрам нейронной сети текущую цель движения
-    [_] Профилирование
+    [v] Профилирование
         ```
         WARNING:tensorflow:5 out of the last 13 calls to <function Model.make_predict_function.<locals>.predict_function at 0x000001C2B9C82680> triggered tf.function retracing. 
         Tracing is expensive and the excessive number of tracings could be due to 
@@ -34,7 +34,7 @@
         For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. 
         For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
         ```
-    [_] Проверка на корректность
+    [v] Проверка на корректность
     [v] Сохранять параметры симуляции, угол, смещение и перестройку частоты
 [v] Сохранение промежуточных результатов симуляции в файл
     [v] Возобновление симуляции из файла
@@ -65,7 +65,7 @@
     [v] Расход энергии на движение + фмксированный расход на шаг
     [v] Добавлении порции энергии если частота изменилась вверх
 
-[v] Добавить бонус длину пройденного пути
+[v] Добавить бонус длину пройденного пути - стало лучше!
 [v] Добавить бонус за остаток энергии
 
 # Локальные
