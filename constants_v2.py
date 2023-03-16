@@ -9,9 +9,9 @@ MIN_AVG_SPEED = 0.1
 FREQMETER_PERIOD = 0.4  # [s]
 
 START_ENERGY = 1.0
-ENERGY_CONSUMPTION_PRE_1 = 0.15
+ENERGY_CONSUMPTION_PRE_1 = 0.2
 ENERGY_FIXED_TAX = 0.05
-ENERGY_INCOME_PER_HZ = 1.0
+ENERGY_INCOME_PER_HZ = 0.25
 
 SIM_CYCLE_TIME = 0.005
 SIM_TIMEOUT = 10.0
@@ -28,4 +28,4 @@ SIM_TIMEOUT = 10.0
 #    - Бонус за дину пройденнго пути - больше - лучше
 #    - Бонус за остаток энергии - больше - лучше
 #    - Оценка за причину остановки - больше - лучше
-FITNES_WEIGHTS = [-10.0, -7.5, -1.5, 0.25, -0.05, 0.5, -0.25, 0.5, 0.5, 0.5]
+FITNES_WEIGHTS = [-15.0, -10.0, -2.0, 2.5, -0.05, 0.25, -0.15, 0.4, 0.5, 0.5]
