@@ -29,7 +29,6 @@ class SimStopDetector:
                  energy_income_per_hz=0.1,
                  energy_fixed_tax=0.01,
                  incum_function=lambda x: x,
-                 ambient_temperature=20.0,
                  start_timestamp=time.time()):
         """
         :param timeout: Безусловный таймаут [s]
@@ -59,7 +58,6 @@ class SimStopDetector:
         self._energy_income_per_freq_change = energy_income_per_hz
         self._energy_fixed_tax = energy_fixed_tax
         self._incum_function = incum_function
-        self._ambient_temperature = ambient_temperature + RezonatorModel.CELSUSS_TO_KELVIN
 
         self._start_timestamp = start_timestamp
 
@@ -169,12 +167,13 @@ class SimStopDetector:
 
     def plot_summary(self, ax: Axes):
         t = self._timestamps - self._start_timestamp
+        min_T = self._temperature_history.min()
         ax.plot(t, self._path_history, 'co-', label='path_history')
         ax.plot(t, self._speed_history, 'bo-', label='speed_history')
         ax.plot(t, self._laser_power_history,
                 'go-', label='laser_power_history')
         ax.plot(t, self._self_grade_history, 'yo-', label='self_grade_history')
-        ax.plot(t, (self._temperature_history - self._ambient_temperature) / self._max_temperature,
+        ax.plot(t, (self._temperature_history - min_T) / (self._max_temperature - min_T),
                 'ro-', label='temperature_history')
         ax.plot(t, self._energy_history / self._start_energy, 'mo-', label='energy_history')
         ax.legend()
