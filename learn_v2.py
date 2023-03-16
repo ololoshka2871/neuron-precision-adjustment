@@ -47,8 +47,8 @@ def get_fithess_weights(gen: int) -> np.ndarray:
     epoch = gen // ITERATIONS_PER_EPOCH
 
     res = np.array(FITNES_WEIGHTS)
-    if epoch < len(FITNES_WEIGHTS) - 1:
-        res[epoch + 1:] = 0.0
+    #if epoch < len(FITNES_WEIGHTS) - 1:
+    #    res[epoch + 1:] = 0.0
         
     return res
 
