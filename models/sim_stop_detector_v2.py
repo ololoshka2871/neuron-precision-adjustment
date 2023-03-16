@@ -28,6 +28,7 @@ class SimStopDetector:
                  energy_consumption_pre_1=0.1,
                  energy_income_per_hz=0.1,
                  energy_fixed_tax=0.01,
+                 incum_function=lambda x: x,
                  start_timestamp=time.time()):
         """
         :param timeout: Безусловный таймаут [s]
@@ -41,6 +42,7 @@ class SimStopDetector:
         :param energy_consumption_pre_1: Расход энергии за 1 единицу пути
         :param energy_income_per_freq_change: Доход энергии за 1 Гц изменения частоты
         :param energy_fixed_tax: Постоянный налог на энергию за шаг
+        :param incum_function: Функция инкремента энергии
         :param start_timestamp: Время начала симуляции
         """
         self._timeout = timeout
@@ -54,6 +56,7 @@ class SimStopDetector:
         self._energy_consumption_pre_1 = energy_consumption_pre_1
         self._energy_income_per_freq_change = energy_income_per_hz
         self._energy_fixed_tax = energy_fixed_tax
+        self._incum_function = incum_function
 
         self._start_timestamp = start_timestamp
 
@@ -140,7 +143,7 @@ class SimStopDetector:
         # доход энергии
         freq_change = self._freq_history[-1] - self._freq_history[-2]
         if freq_change > 0.0:
-            self._energy += freq_change * self._energy_income_per_freq_change
+            self._energy += self._incum_function(freq_change * self._energy_income_per_freq_change)
 
         # расход энергии
         if self._energy < 0.0:
