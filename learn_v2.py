@@ -126,8 +126,8 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     for _ in range(SIM_TRYS):
         res = eval_rezonator_adjust(individual, it=it, gen=gen)
         fitness.append(res['fitness'])
-        if res['stop_condition'] == StopCondition.TIMEOUT:
-            break
+        #if res['stop_condition'] == StopCondition.TIMEOUT:
+        #    break
     
     avg_total_grade = np.min(fitness)
     res['fitness'] = avg_total_grade
