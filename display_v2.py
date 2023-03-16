@@ -249,6 +249,7 @@ if __name__ == "__main__":
                                     energy_income_per_hz=ENERGY_INCOME_PER_HZ,
                                     energy_fixed_tax=ENERGY_FIXED_TAX,
                                     incum_function=gen_sigmoid(k=5.0, x_offset_to_right=0.2),
+                                    ambient_temperature=AMBIENT_T,
                                     start_timestamp=0.0)
 
     grader = ControllerGrager(dest_freq_ch=def_freq,

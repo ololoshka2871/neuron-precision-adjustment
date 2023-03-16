@@ -29,6 +29,7 @@ class SimStopDetector:
                  energy_income_per_hz=0.1,
                  energy_fixed_tax=0.01,
                  incum_function=lambda x: x,
+                 ambient_temperature=20.0,
                  start_timestamp=time.time()):
         """
         :param timeout: Безусловный таймаут [s]
@@ -43,6 +44,7 @@ class SimStopDetector:
         :param energy_income_per_freq_change: Доход энергии за 1 Гц изменения частоты
         :param energy_fixed_tax: Постоянный налог на энергию за шаг
         :param incum_function: Функция инкремента энергии
+        :param ambient_temperature: Температура окружающей среды
         :param start_timestamp: Время начала симуляции
         """
         self._timeout = timeout
@@ -50,13 +52,14 @@ class SimStopDetector:
         self._min_path = min_path
         self._min_avg_speed = min_avg_speed
         self._min_laser_power = min_laser_power
-        self._max_temperature = max_temperature
+        self._temperature_limit = max_temperature
         self._start_energy = start_energy
         self._energy = start_energy
         self._energy_consumption_pre_1 = energy_consumption_pre_1
         self._energy_income_per_freq_change = energy_income_per_hz
         self._energy_fixed_tax = energy_fixed_tax
         self._incum_function = incum_function
+        self._ambient_temperature = ambient_temperature + RezonatorModel.CELSUSS_TO_KELVIN
 
         self._start_timestamp = start_timestamp
 
@@ -135,7 +138,7 @@ class SimStopDetector:
             return StopCondition.STALL_SPEED
         if self._laser_power_history.mean() < self._min_laser_power:
             return StopCondition.LOW_POWER
-        if self._temperature_history.mean() / self._max_temperature > self._max_temperature:
+        if self._temperature_history.mean() > self._temperature_limit:
             return StopCondition.OVERHEAT
         if abs(self._self_grade_history[-1]) < self._self_grade_epsilon:
             return StopCondition.SELF_STOP
@@ -171,7 +174,7 @@ class SimStopDetector:
         ax.plot(t, self._laser_power_history,
                 'go-', label='laser_power_history')
         ax.plot(t, self._self_grade_history, 'yo-', label='self_grade_history')
-        ax.plot(t, self._temperature_history / self._max_temperature,
+        ax.plot(t, (self._temperature_history - self._ambient_temperature) / self._max_temperature,
                 'ro-', label='temperature_history')
         ax.plot(t, self._energy_history / self._start_energy, 'mo-', label='energy_history')
         ax.legend()
