@@ -24,6 +24,10 @@ class SimStopDetector:
                  min_laser_power: float,
                  max_temperature: float,
                  self_grade_epsilon=0.01,
+                 start_energy=1.0,
+                 energy_consumption_pre_1=0.1,
+                 energy_income_per_hz=0.1,
+                 energy_fixed_tax=0.01,
                  start_timestamp=time.time()):
         """
         :param timeout: Безусловный таймаут [s]
@@ -33,6 +37,11 @@ class SimStopDetector:
         :param min_avg_power: Минимальная мощность лазера - используется, чтобы определить что сеть пытается работать с выключенным лазером [0..1]
         :param max_temperature: Максимальная температура - перегрев, стоп
         :param self_grade_epsilon: размер окресности точки 0 при попадании в которую значения нейрона самооценки останавливает симуляцию (0..1)
+        :param start_energy: Начальная энергия
+        :param energy_consumption_pre_1: Расход энергии за 1 единицу пути
+        :param energy_income_per_freq_change: Доход энергии за 1 Гц изменения частоты
+        :param energy_fixed_tax: Постоянный налог на энергию за шаг
+        :param start_timestamp: Время начала симуляции
         """
         self._timeout = timeout
         self._history_len_s = history_len_s
@@ -40,6 +49,11 @@ class SimStopDetector:
         self._min_avg_speed = min_avg_speed
         self._min_laser_power = min_laser_power
         self._max_temperature = max_temperature
+        self._start_energy = start_energy
+        self._energy = start_energy
+        self._energy_consumption_pre_1 = energy_consumption_pre_1
+        self._energy_income_per_freq_change = energy_income_per_hz
+        self._energy_fixed_tax = energy_fixed_tax
 
         self._start_timestamp = start_timestamp
 
@@ -49,10 +63,12 @@ class SimStopDetector:
         self._laser_power_history = np.array([], dtype=float)
         self._temperature_history = np.array([], dtype=float)
         self._self_grade_history = np.array([], dtype=float)
+        self._freq_history = np.array([], dtype=float)
+        self._energy_history = np.array([], dtype=float)
 
         self._self_grade_epsilon = self_grade_epsilon
 
-        self._max_temperature = 0
+        self._max_temperature = 0.0
 
     def _trimm_history_if_too_long(self, time: float) -> bool:
         if len(self._timestamps) > 0 and (time > self._timestamps[0] + self._history_len_s):
@@ -62,10 +78,12 @@ class SimStopDetector:
             self._laser_power_history = self._laser_power_history[1:]
             self._temperature_history = self._temperature_history[1:]
             self._self_grade_history = self._self_grade_history[1:]
+            self._freq_history = self._freq_history[1:]
+            self._energy_history = self._energy_history[1:]
             return True
         return False
 
-    def _add_metric(self, time: float, m: dict, T: float):
+    def _add_metric(self, time: float, m: dict, T: float, F: float):
         self._timestamps = np.append(self._timestamps, time)
 
         self._path_history = np.append(self._path_history, m['Passed'])
@@ -75,6 +93,8 @@ class SimStopDetector:
         self._temperature_history = np.append(self._temperature_history, T)
         self._self_grade_history = np.append(
             self._self_grade_history, m['self_grade'])
+        self._freq_history = np.append(self._freq_history, F)
+        self._energy_history = np.append(self._energy_history, self._energy)
 
         if T > self._max_temperature:
             self._max_temperature = T
@@ -93,8 +113,10 @@ class SimStopDetector:
         - Температура резонатора [C] -> [K]
         """
 
+        self._energy -= self._energy_consumption_pre_1 * mm['Passed'] + self._energy_fixed_tax
+
         trimmed = self._trimm_history_if_too_long(t)
-        self._add_metric(t, mm, rm['temperature'] + RezonatorModel.CELSUSS_TO_KELVIN)
+        self._add_metric(t, mm, rm['temperature'] + RezonatorModel.CELSUSS_TO_KELVIN, rm['freq_change'])
         
         if len(self._timestamps) < 2:
             return StopCondition.NONE
@@ -102,7 +124,7 @@ class SimStopDetector:
         passed = self._timestamps[-1] - self._start_timestamp
         if passed > self._timeout:
             return StopCondition.TIMEOUT
-        if trimmed and self._path_history.min() < self._min_path or self._path_history.mean() < self._min_path * 2.0:
+        if trimmed and self._path_history.min() < self._min_path:  # or self._path_history.mean() < self._min_path * 2.0:
             return StopCondition.STALL_MOVE
         if trimmed and self._speed_history.mean() < self._min_avg_speed:
             return StopCondition.STALL_SPEED
@@ -112,8 +134,20 @@ class SimStopDetector:
             return StopCondition.OVERHEAT
         if abs(self._self_grade_history[-1]) < self._self_grade_epsilon:
             return StopCondition.SELF_STOP
+        
+        # доход энергии
+        freq_change = self._freq_history[-1] - self._freq_history[-2]
+        if freq_change > 0.0:
+            self._energy += freq_change * self._energy_income_per_freq_change
+
+        # расход энергии
+        if self._energy < 0.0:
+            return StopCondition.NO_ENERGY
 
         return StopCondition.NONE
+    
+    def get_energy_relative(self) -> float:
+        return self._energy / self._start_energy
 
     def summary(self) -> dict:
         return {
@@ -132,4 +166,5 @@ class SimStopDetector:
         ax.plot(t, self._self_grade_history, 'yo-', label='self_grade_history')
         ax.plot(t, (self._temperature_history - self._temperature_history[0]) / self._max_temperature,
                 'ro-', label='temperature_history')
+        ax.plot(t, self._energy_history / self._start_energy, 'mo-', label='energy_history')
         ax.legend()

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 
-from constants_v2 import MIN_AVG_SPEED
+from constants_v2 import *
 from misc.Rezonator import Rezonator
 from misc.common import draw_polygon, gen_sigmoid, create_tail
 from models.adjust_zone_model import draw_model
@@ -229,6 +229,7 @@ if __name__ == "__main__":
                     coord_transformer=coord_transformer,
                     fs_transformer=FSTransformer(255.0, MAX_F),
                     laser_power=LASER_POWER,
+                    freqmeter_period=FREQMETER_PERIOD,
                     modeling_period=SIM_CYCLE_TIME,
                     freq_history_size=F_HISTORY_SIZE,
                     initial_wz_pos=initial_pos)
@@ -240,6 +241,10 @@ if __name__ == "__main__":
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
                                     self_grade_epsilon=0.01,
+                                    start_energy=START_ENERGY,
+                                    energy_consumption_pre_1=ENERGY_CONSUMPTION_PRE_1,
+                                    energy_income_per_hz=ENERGY_INCOME_PER_HZ,
+                                    energy_fixed_tax=ENERGY_FIXED_TAX,
                                     start_timestamp=0.0)
 
     grader = ControllerGrager(dest_freq_ch=def_freq,

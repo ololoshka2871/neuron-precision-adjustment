@@ -12,6 +12,7 @@ class NNController:
         - freq_history - История измерений freq_history_size
         - move_history - История перемещений вида (dest_pos, S, F) длиной move_history_size
         - time - Относительное время до таймаута (0.0..1.0)
+        - energy - Относительная энергия (0.0..1.0)
 
     Выходы:
         - Желаемая цель движения: tuple[x, y]: -1.0..1.0
@@ -20,7 +21,7 @@ class NNController:
         - Самооценка: 0.0..1.0
     """
 
-    INPUT_COUNT_CONST = 1
+    INPUT_COUNT_CONST = 1 + 1
     OUTUT_COUNT = 2 + 1 + 1 + 1
 
     _model = None
@@ -138,11 +139,12 @@ class NNController:
         v.extend(input['freq_history'].flatten())
         v.extend(input['move_history'].flatten())
         v.append(input['time'])
+        v.append(input['energy'])
 
         input = tf.convert_to_tensor([v], dtype=tf.float32)  # type: ignore
         output, = self._model(input)  # type: ignore
         output = output.numpy()
-        
+
         speed = NNController.map_zero_one(output[3])
         return {
             'destination': output[:2],

@@ -96,6 +96,7 @@ class Simulator:
                 time=self._period_accum,
                 freq_history=self._measure_diff_history.peek_all(),
                 move_history=self._move_history.peek_all(),
+                energy=stop_detector.get_energy_relative(),
             )
             input_display(controller_input)
             command = self._controller.update(controller_input)

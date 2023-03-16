@@ -21,8 +21,8 @@ from simulators.simulator_v2 import Simulator
 from deap_elements.fitnes_max import register_finex_max
 from deap_elements.individual import register_individual
 
-from constants_v2 import POWER_THRESHOLD, DEST_FREQ_CH, F_HISTORY_SIZE, MOVE_HISTORY_SIZE, \
-    MAX_F, LASER_POWER, SIM_CYCLE_TIME, SIM_TIMEOUT, MAX_T, FITNES_WEIGHTS, MIN_AVG_SPEED
+from constants_v2 import *
+
 
 NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
 
@@ -70,6 +70,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
                     coord_transformer=coord_transformer,
                     fs_transformer=FSTransformer(255.0, MAX_F),
                     laser_power=LASER_POWER,
+                    freqmeter_period=FREQMETER_PERIOD,
                     modeling_period=SIM_CYCLE_TIME,
                     freq_history_size=F_HISTORY_SIZE,
                     initial_wz_pos=initial_pos)
@@ -81,6 +82,10 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
                                     min_laser_power=POWER_THRESHOLD * 0.5,
                                     max_temperature=MAX_T,
                                     self_grade_epsilon=0.01,
+                                    start_energy=START_ENERGY,
+                                    energy_consumption_pre_1=ENERGY_CONSUMPTION_PRE_1,
+                                    energy_income_per_hz=ENERGY_INCOME_PER_HZ,
+                                    energy_fixed_tax=ENERGY_FIXED_TAX,
                                     start_timestamp=0.0)
 
     # Случайнное смещение целевой частоты

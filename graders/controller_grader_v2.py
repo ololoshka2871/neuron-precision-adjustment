@@ -19,6 +19,7 @@ class ControllerGrager:
                      StopCondition.LOW_POWER: -0.6,
                      StopCondition.OVERHEAT: -0.2,
                      StopCondition.SELF_STOP: 0.2,
+                     StopCondition.NO_ENERGY: -1.0,
                      StopCondition.NONE: 0.0
                  },
                  f_penalty=lambda x: x,
