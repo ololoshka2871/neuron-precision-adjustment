@@ -119,18 +119,21 @@ class SimStopDetector:
         """
 
         self._path_accum += mm['Passed']
-        self._energy -= self._energy_consumption_pre_1 * mm['Passed'] + self._energy_fixed_tax
+        self._energy -= self._energy_consumption_pre_1 * \
+            mm['Passed'] + self._energy_fixed_tax
 
         trimmed = self._trimm_history_if_too_long(t)
-        self._add_metric(t, mm, rm['temperature'] + RezonatorModel.CELSUSS_TO_KELVIN, F_measured)
-        
+        self._add_metric(t, mm, rm['temperature'] +
+                         RezonatorModel.CELSUSS_TO_KELVIN, F_measured)
+
         if len(self._timestamps) < 2:
             return StopCondition.NONE
-        
+
         passed = self._timestamps[-1] - self._start_timestamp
         if passed > self._timeout:
             return StopCondition.TIMEOUT
-        if self._path_history.min() < self._min_path:  # or self._path_history.mean() < self._min_path * 2.0:
+        # or self._path_history.mean() < self._min_path * 2.0:
+        if self._path_history.min() < self._min_path:
             return StopCondition.STALL_MOVE
         if self._speed_history.mean() < self._min_avg_speed:
             return StopCondition.STALL_SPEED
@@ -140,18 +143,19 @@ class SimStopDetector:
             return StopCondition.OVERHEAT
         if abs(self._self_grade_history[-1]) < self._self_grade_epsilon:
             return StopCondition.SELF_STOP
-        
+
         # доход энергии
         freq_change = self._freq_history[-2] - self._freq_history[-1]
         if freq_change > 0.0:
-            self._energy += self._incum_function(freq_change * self._energy_income_per_freq_change)
+            self._energy += self._incum_function(
+                freq_change * self._energy_income_per_freq_change)
 
         # расход энергии
         if self._energy < 0.0:
             return StopCondition.NO_ENERGY
 
         return StopCondition.NONE
-    
+
     def get_energy_relative(self) -> float:
         return self._energy / self._start_energy
 
@@ -167,15 +171,20 @@ class SimStopDetector:
 
     def plot_summary(self, ax: Axes):
         t = self._timestamps - self._start_timestamp
-        min_T = self._temperature_history.min()
         ax.plot(t, self._path_history, 'co-', label='path_history')
         ax.plot(t, self._speed_history, 'bo-', label='speed_history')
         ax.plot(t, self._laser_power_history,
                 'go-', label='laser_power_history')
         ax.plot(t, self._self_grade_history, 'yo-', label='self_grade_history')
-        ax.plot(t, (self._temperature_history - min_T) / (self._max_temperature - min_T),
-                'ro-', label='temperature_history')
-        ax.plot(t, self._energy_history / self._start_energy, 'mo-', label='energy_history')
-        ax.plot(t, self._freq_history, 'ko-', label='freq_history')
+        ax.plot(t, SimStopDetector._normalize(
+            self._temperature_history), 'ro-', label='temperature_history')
+        ax.plot(t, SimStopDetector._normalize(self._energy_history /
+                self._start_energy), 'mo-', label='energy_history')
+        ax.plot(t, SimStopDetector._normalize(
+            self._freq_history), 'ko-', label='freq_history')
         ax.legend()
         ax.grid()
+
+    @staticmethod
+    def _normalize(x: np.ndarray) -> np.ndarray:
+        return (x - x.min()) / (x.max() - x.min())
