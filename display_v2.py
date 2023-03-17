@@ -225,7 +225,7 @@ if __name__ == "__main__":
 
     NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
     weights = individuum
-    controller = NNController(weights)
+    controller = NNController(weights, save_history=True)
 
     sim = Simulator(rezonator_model=rezonator,
                     controller_v2=controller,
@@ -272,6 +272,9 @@ if __name__ == "__main__":
     print(
         f"Done {stop_condition} ({total}); Fd:{g[0]:.6f}, fzp:{g[1]:.2f} ({rm['penalty_energy']}), db:{g[2]:.2f}, sg:{g[3]:.2f}, Tmax:{g[4]:.2f}, Va:{g[5]:.2f}, t:{g[6]:.2f}, S:{g[7]:.2f}, E:{g[8]:.2f}, scg:{g[9]:.2f}"
     )
-    sf, ax = plt.subplots(1, 1)
-    stop_detector.plot_summary(ax)
+    sf, ax = plt.subplots(1, 2)
+    stop_detector.plot_summary(ax[0])
+
+    ax[1].imshow(controller.history().T, interpolation='none', cmap='gray', origin='lower')  # type: ignore
+
     plt.show(block=True)

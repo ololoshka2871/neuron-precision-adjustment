@@ -29,22 +29,24 @@ class NNController:
     _preend_neurons = 0
     _mean_layers = 0
 
+    _total_inputs = 0
+
     @staticmethod
     def init_model(freq_history_size: int, move_history_size: int,
                    mean_layers=2, pre_end_layer_neurons=10) -> int:
         model = Sequential()
 
-        input_cout = freq_history_size + \
+        NNController._total_inputs = freq_history_size + \
             (move_history_size * 4) + NNController.INPUT_COUNT_CONST
 
         # входы
-        model.add(layers.Input(batch_size=1, shape=(input_cout,)))
+        model.add(layers.Input(batch_size=1, shape=(NNController._total_inputs,)))
         # первый скрытый слой
-        model.add(layers.Dense(units=input_cout, activation='tanh'))
+        model.add(layers.Dense(units=NNController._total_inputs, activation='tanh'))
 
         # средние скрытые слои
         for _ in range(mean_layers - 1):
-            model.add(layers.Dense(units=input_cout, activation='elu'))
+            model.add(layers.Dense(units=NNController._total_inputs, activation='elu'))
 
         # последний слой
         model.add(layers.Dense(units=pre_end_layer_neurons, activation='elu'))
@@ -119,7 +121,7 @@ class NNController:
                 all_weights.extend(l)
         return all_weights
 
-    def __init__(self, wieghts: list | None = None):
+    def __init__(self, wieghts: list | None = None, save_history=False):
         """
         Создет контроллер с указанными весами нейронной сети
         """
@@ -128,6 +130,10 @@ class NNController:
             self._model.set_weights(
                 NNController._convert_weights_to_model(wieghts))
         self._model.trainable = False
+        if save_history:
+            self._input_history = np.array([[0.0] * NNController._total_inputs])
+        else:
+            self._input_history = None
 
     def update(self, input: dict):
         """
@@ -141,7 +147,12 @@ class NNController:
         v.append(input['time'])
         v.append(input['energy'])
 
-        input = tf.convert_to_tensor([v], dtype=tf.float32)  # type: ignore
+        v = [v]
+
+        if self._input_history is not None:
+            self._input_history = np.append(self._input_history, v, axis=0)
+
+        input = tf.convert_to_tensor(v, dtype=tf.float32)  # type: ignore
         output, = self._model(input)  # type: ignore
         output = output.numpy()
 
@@ -156,3 +167,9 @@ class NNController:
     def get_weights(self):
         weights = self._model.get_weights()  # type: ignore
         return NNController._convert_weights_from_model(weights)
+
+    def history(self) -> np.ndarray:
+        if self._input_history is None:
+            return np.array([])
+        else:
+            return self._input_history
