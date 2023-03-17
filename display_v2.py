@@ -238,7 +238,7 @@ if __name__ == "__main__":
                     initial_wz_pos=initial_pos)
 
     stop_detector = SimStopDetector(timeout=SIM_TIMEOUT,
-                                    history_len_s=SIM_TIMEOUT / 3.0,
+                                    history_len_s=SIM_TIMEOUT,
                                     min_path=0.01,
                                     min_avg_speed=MIN_AVG_SPEED,
                                     min_laser_power=POWER_THRESHOLD * 0.5,
