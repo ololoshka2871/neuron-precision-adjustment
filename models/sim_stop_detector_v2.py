@@ -171,7 +171,8 @@ class SimStopDetector:
 
     def plot_summary(self, ax: Axes):
         t = self._timestamps - self._start_timestamp
-        ax.plot(t, self._path_history, 'co-', label='path_history')
+        ax.plot(t, SimStopDetector._normalize(
+            self._path_history), 'co-', label='path_history')
         ax.plot(t, self._speed_history, 'bo-', label='speed_history')
         ax.plot(t, self._laser_power_history,
                 'go-', label='laser_power_history')

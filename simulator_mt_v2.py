@@ -234,7 +234,7 @@ if __name__ == "__main__":
     rm = rezonator.get_metrics()
     total, g = grader.get_grade(rm, stop_detector.summary(), stop_condition)
     print(
-        f"Done {stop_condition} ({total}); Fd:{g[0]:.2f}, fzp:{g[1]:.2f} ({rm['penalty_energy']}), db:{g[2]:.2f}, sg:{g[3]:.2f}, Tmax:{g[4]:.2f}, Va:{g[5]:.2f}, t:{g[6]:.2f}, S:{g[7]:.2f}, E:{g[8]:.2f}, scg:{g[9]:.2f}"
+        f"Done {stop_condition} ({total}); Fd:{g[0]:.2f}, fzp:{g[1]:.6f} ({rm['penalty_energy']}), db:{g[2]:.2f}, sg:{g[3]:.2f}, Tmax:{g[4]:.2f}, Va:{g[5]:.2f}, t:{g[6]:.2f}, S:{g[7]:.2f}, E:{g[8]:.2f}, scg:{g[9]:.2f}"
     )
     sf, ax = plt.subplots(1, 1)
     stop_detector.plot_summary(ax)
