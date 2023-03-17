@@ -12,9 +12,9 @@ class NumpyArrayEncoder(JSONEncoder):
         return JSONEncoder.default(self, obj)
 
 
-def gen_sigmoid(A=1.0, k=1.0, x_offset_to_right=0.0):
+def gen_sigmoid(A=1.0, k=1.0, x_offset_to_right=0.0, vertical_shift=0.0):
     def sigmoid(x: float) -> float:
-        return A / (1.0 + np.exp(-k * (x - x_offset_to_right)))
+        return A / (1.0 + np.exp(-k * (x - x_offset_to_right))) + vertical_shift
     return sigmoid
 
 

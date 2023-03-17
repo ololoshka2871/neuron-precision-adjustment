@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from misc.common import normal_dist
+from misc.common import gen_sigmoid, normal_dist
 
 from models.rezonator_model import Metrics
 from models.stop_condition import StopCondition
@@ -61,10 +61,12 @@ class ControllerGrager:
 
         db = abs(rezonator_metrics['disbalance'])
 
+        sigmoid_grade = gen_sigmoid(A=2.0, k=10.0, x_offset_to_right=0, vertical_shift=-1.0)
+
         w = np.array([
-            freq_target_distance_rel if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0, # настройка
+            sigmoid_grade(freq_target_distance_rel) if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0, # настройка
             self._f_penalty(rezonator_metrics['penalty_energy']), # штраф за попадание куда не надо
-            db if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
+            sigmoid_grade(db) if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
             1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel), # точность самооценки
             sim_metrics['max_temperature'] / self._max_temperature,  # температура
             sim_metrics['avg_speed'],  # скорость
