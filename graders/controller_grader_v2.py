@@ -74,7 +74,7 @@ class ControllerGrager:
             sim_metrics['max_temperature'] / self._max_temperature,  # температура
             sim_metrics['avg_speed'],  # скорость
             sim_metrics['total_duration_rel'],  # время
-            path * ((1.0 - adjust_grade * 0.5)),  # длина пути
+            path * ((1.0 - adjust_grade * 0.25)),  # длина пути
             normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10),  # остаток энергии
             self._grade_stop_condition[stop_condition]  # причина остановки
         ])

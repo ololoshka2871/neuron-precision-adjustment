@@ -108,7 +108,8 @@ class Simulator:
             traectory = self._movement.interpolat_move_time_limit(
                 src=self._curremt_pos_global.tuple(),
                 dst=dest_real.tuple(),
-                speed=self._fs_transformer.map_f_to_global(max(1e-3, command['speed'])), # speedm mast be > 0
+                speed=self._fs_transformer.map_f_to_global(
+                    max(1e-3, command['speed'])),  # speedm mast be > 0
                 time_step=self._modeling_period,
                 time_limit=stop_detector.get_time_limit() - self._period_accum,
             )
@@ -160,7 +161,6 @@ class Simulator:
             self._shift_move_history(
                 dest_wz.tuple(), S=cmd_s, F=command['speed'])
 
-            last_freq = self._measure_diff_history.peek_rear()
             reason = stop_detector(
                 self._period_accum, self._rezonator_model.get_metrics(),
                 {
