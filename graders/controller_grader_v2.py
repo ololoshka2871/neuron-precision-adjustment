@@ -63,16 +63,19 @@ class ControllerGrager:
 
         sigmoid_grade = gen_sigmoid(A=2.0, k=5.0, x_offset_to_right=0, vertical_shift=-1.0)
 
+        path = sim_metrics['total_path_len']
+        adjust_grade = sigmoid_grade(freq_target_distance_rel) if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0
+
         w = np.array([
-            sigmoid_grade(freq_target_distance_rel) if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0, # настройка
-            self._f_penalty(rezonator_metrics['penalty_energy']), # штраф за попадание куда не надо
+            adjust_grade,  # настройка
+            self._f_penalty(rezonator_metrics['penalty_energy']),  # штраф за попадание куда не надо
             sigmoid_grade(db) if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
-            1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel), # точность самооценки
+            1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel),  # точность самооценки
             sim_metrics['max_temperature'] / self._max_temperature,  # температура
             sim_metrics['avg_speed'],  # скорость
             sim_metrics['total_duration_rel'],  # время
-            sim_metrics['total_path_len'],  # длина пути
-            normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10), # остаток энергии
+            path * (min(1.0 - adjust_grade, 0.0)),  # длина пути
+            normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10),  # остаток энергии
             self._grade_stop_condition[stop_condition]  # причина остановки
         ])
         
