@@ -188,4 +188,8 @@ class SimStopDetector:
 
     @staticmethod
     def _normalize(x: np.ndarray) -> np.ndarray:
-        return (x - x.min()) / (x.max() - x.min())
+        size = x.max() - x.min()
+        if size == 0.0:
+            return x
+        else:
+            return (x - x.min()) / size
