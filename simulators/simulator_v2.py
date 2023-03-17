@@ -93,7 +93,7 @@ class Simulator:
 
         while True:
             controller_input = dict(
-                time=self._period_accum,
+                time=self._period_accum / stop_detector.get_time_limit(),
                 freq_history=self._measure_diff_history.peek_all(),
                 move_history=self._move_history.peek_all(),
                 energy=stop_detector.get_energy_relative(),
