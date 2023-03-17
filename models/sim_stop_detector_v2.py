@@ -142,7 +142,7 @@ class SimStopDetector:
             return StopCondition.SELF_STOP
         
         # доход энергии
-        freq_change = self._freq_history[-1] - self._freq_history[-2]
+        freq_change = self._freq_history[-2] - self._freq_history[-1]
         if freq_change > 0.0:
             self._energy += self._incum_function(freq_change * self._energy_income_per_freq_change)
 
@@ -176,5 +176,6 @@ class SimStopDetector:
         ax.plot(t, (self._temperature_history - min_T) / (self._max_temperature - min_T),
                 'ro-', label='temperature_history')
         ax.plot(t, self._energy_history / self._start_energy, 'mo-', label='energy_history')
+        ax.plot(t, self._freq_history, 'ko-', label='freq_history')
         ax.legend()
         ax.grid()
