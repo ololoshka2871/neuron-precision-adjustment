@@ -61,7 +61,7 @@ class ControllerGrager:
 
         db = abs(rezonator_metrics['disbalance'])
 
-        sigmoid_grade = gen_sigmoid(A=2.0, k=10.0, x_offset_to_right=0, vertical_shift=-1.0)
+        sigmoid_grade = gen_sigmoid(A=2.0, k=5.0, x_offset_to_right=0, vertical_shift=-1.0)
 
         w = np.array([
             sigmoid_grade(freq_target_distance_rel) if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0, # настройка
