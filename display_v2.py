@@ -173,8 +173,7 @@ if __name__ == "__main__":
     from deap_elements.fitnes_max import register_finex_max
     from deap_elements.individual import register_individual
 
-    from constants_v2 import POWER_THRESHOLD, DEST_FREQ_CH, F_HISTORY_SIZE, MOVE_HISTORY_SIZE, \
-        MAX_F, LASER_POWER, SIM_CYCLE_TIME, SIM_TIMEOUT, MAX_T
+    from constants_v2 import *
 
     # parse argumants
     parser = argparse.ArgumentParser()
@@ -207,17 +206,17 @@ if __name__ == "__main__":
         # Генерируем случайное смещение и случайный угол поворота
         offset = (np.random.random() * 0.3, np.random.random() * 0.5)
         angle = np.random.random() * 20 - 10
-        def_freq = DEST_FREQ_CH
         ag_layer_thikness = (np.random.normal() + 0.5) * 0.5e-3
         initial_freq_diff = max(
             0.05, min(np.random.normal(loc=0.5, scale=0.25), 0.95))
+        def_freq = DEST_FREQ_CH * initial_freq_diff
     else:
         # Смещение и угол поворота из файла
         offset = individuum.rezonator_offset
         angle = individuum.rezonator_angle
-        def_freq = individuum.adjust_freq
         ag_layer_thikness = individuum.ag_layer_thikness
         initial_freq_diff = individuum.initial_freq_diff
+        def_freq = individuum.adjust_freq
 
     print('offset: {}, angle: {}, Ag layer: {} [mm], fd: {}'.format(
         offset, angle, ag_layer_thikness, initial_freq_diff))

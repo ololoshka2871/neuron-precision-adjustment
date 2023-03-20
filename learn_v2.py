@@ -86,7 +86,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
 
     # Случайнное смещение целевой частоты
     def_freq = np.random.normal(DEST_FREQ_CH, 10.0)
-    grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
+    grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH * initial_freq_diff,
                               f_penalty=gen_sigmoid(
                                   k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
                               max_temperature=MAX_T)
