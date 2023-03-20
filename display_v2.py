@@ -258,8 +258,7 @@ if __name__ == "__main__":
                                     start_timestamp=0.0)
 
     grader = ControllerGrager(dest_freq_ch=def_freq,
-                              f_penalty=gen_sigmoid(
-                                  k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
+                              f_penalty=f_penalty,
                               max_temperature=MAX_T)
 
     model = rezonator.get_model_view(offset, angle)

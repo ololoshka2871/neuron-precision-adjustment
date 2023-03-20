@@ -88,35 +88,11 @@ class ControllerGrager:
 
         w = np.array([0.0] * 10)
 
-        # Вообще не работает
-        ## Самый важный параметр - настройка
-        #w[0] = adjust_grade
-        #if adjust_grade < 0.3:
-        #    # Если настройка хорошая - то штраф за попадание куда не надо уже учитывается
-        #    w[1] = penalty
-        #    if penalty < 0.1:
-        #        # Если штрафа нет - то дисбаланс уже учитывается
-        #        w[2] = disbalance
-        #        if disbalance < 0.3:
-        #            # Если дисбаланс мал - то уже учитывается самооценка, температура, скорость, время
-        #            w[3] = self_grade_accuracy
-        #            w[4] = temp_rel
-        #            w[5] = speed_avg
-        #            w[6] = time_rel
-        #            if time_rel < 0.8 and time_rel > 0.3:
-        #                # Если время симуляции в пределах 30% - то уже учитывается длина пути и остаток энергии
-        #                w[7] = path_bonus
-        #                w[8] = energy_left
-        #                if energy_left > 0.0:
-        #                    # Если остаток энергии есть - то уже учитывается причина остановки
-        #                    w[9] = stop_condition_grade
-
         # На основе пройденного пути и времени симуляции
         w[7] = path
         if path > 10.0:
             w[1] = -penalty * 100.0
-            if adjust_grade < 0.5:
-                w[0] = (1.0 - adjust_grade) * 5.0
-                w[2] = -disbalance * 2.0
+            w[0] = (1.0 - adjust_grade) * 5.0
+            w[2] = -disbalance * 2.0
         
         return (w).sum(), w

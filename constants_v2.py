@@ -21,5 +21,5 @@ ENERGY_INCOME_PER_HZ = 0.25
 SIM_CYCLE_TIME = 0.005
 SIM_TIMEOUT = 10.0
 
-incum_function = gen_sigmoid(
-    k=5.0, x_offset_to_right=0.2, vertical_shift=-0.26894142136999510395)
+incum_function = gen_sigmoid(k=5.0, x_offset_to_right=0.2)
+f_penalty = gen_sigmoid(k=LASER_POWER, x_offset_to_right=0.2, vertical_shift=-0.00247262315663477434)
