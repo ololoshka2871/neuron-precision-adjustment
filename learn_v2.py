@@ -8,7 +8,7 @@ import numpy as np
 from deap import algorithms, base, creator, tools
 from misc.Rezonator import Rezonator
 
-from misc.common import gen_sigmoid
+from misc.common import my_normal
 from controllers.controller_v2 import NNController
 from graders.controller_grader_v2 import ControllerGrager
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
@@ -43,7 +43,7 @@ toolbox.register("population", tools.initRepeat, list,
 
 def eval_rezonator_adjust(individual, gen: int, it: int):
     # Генерируем толщину серебра
-    ag_layer_thikness = (np.random.normal() + 0.5) * 0.5e-3
+    ag_layer_thikness = (my_normal() + 0.5) * 0.5e-3
 
     rezonator_model = RezonatorModel(power_threshold=POWER_THRESHOLD,
                                      layer_thikness=ag_layer_thikness)
@@ -53,8 +53,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
     angle = np.random.random() * 20 - 10
-    initial_freq_diff = max(
-        0.05, min(np.random.normal(loc=0.5, scale=0.25), 0.95))
+    initial_freq_diff = my_normal(0.05, 0.95)
     coord_transformer = CoordinateTransformer(rez, (0, 0), offset, angle)
 
     controller = NNController(individual)
@@ -85,7 +84,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
                                     start_timestamp=0.0)
 
     # Случайнное смещение целевой частоты
-    def_freq = np.random.normal(DEST_FREQ_CH, 10.0)
+    def_freq = my_normal() * 10.0 + DEST_FREQ_CH
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH * initial_freq_diff,
                               f_penalty=f_penalty,
                               max_temperature=MAX_T)

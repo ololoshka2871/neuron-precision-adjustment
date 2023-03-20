@@ -6,7 +6,7 @@ import random
 import numpy as np
 
 from deap import algorithms, base, creator, tools
-from misc.common import gen_sigmoid
+from misc.common import gen_sigmoid, my_normal
 
 from controllers.controller_v1 import NNController
 from graders.controller_grader_v1 import ControllerGrager
@@ -75,7 +75,7 @@ def eval_rezonator_adjust(individual): # individual: Individual
                                         max_temperature=MAX_T)
 
     # Случайнное смещение целевой частоты
-    def_freq = np.random.normal(DEST_FREQ_CH, 10.0)
+    def_freq = my_normal() * 10.0 + DEST_FREQ_CH
     grader = ControllerGrager(dest_freq_ch=def_freq,
                               f_penalty=gen_sigmoid(
                                   k=1.0 / LASER_POWER, x_offset_to_right=-6),

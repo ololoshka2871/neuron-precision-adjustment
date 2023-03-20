@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 
 from constants_v2 import *
 from misc.Rezonator import Rezonator
-from misc.common import draw_polygon, gen_sigmoid, create_tail
+from misc.common import draw_polygon, create_tail, my_normal
 from models.adjust_zone_model import draw_model
 from controllers.manual_controller import ManualController
 from misc.coordinate_transformer import CoordinateTransformer, WorkzoneRelativeCoordinates
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
     angle = np.random.random() * 20 - 10
-    initial_freq_diff = max(0.05, min(np.random.normal(loc=0.5, scale=0.25), 0.95))
+    initial_freq_diff = my_normal(0.05, 0.95)
     print('Offset: {}, angle: {}, fd: {}'.format(offset, angle, initial_freq_diff))
 
     rez = Rezonator.load()
