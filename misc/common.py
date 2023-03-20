@@ -75,5 +75,5 @@ def normal_dist(x, mean=0.0, sd=1.0):
     prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
     return prob_density
 
-def my_normal(min_val=-0.5, max_val=0.5):
+def my_normal(min_val=-0.5, max_val=0.5) -> float:
     return min(max(np.random.normal(), min_val), max_val)
