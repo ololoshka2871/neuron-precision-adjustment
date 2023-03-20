@@ -63,7 +63,7 @@ class ControllerGrager:
 
         path = sim_metrics['total_path_len']
 
-        adjust_grade = sigmoid_grade(freq_target_distance_rel) if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0
+        adjust_grade = freq_target_distance_rel if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0
         penalty = self._f_penalty(rezonator_metrics['penalty_energy'])
         disbalance = sigmoid_grade(db) if db > 0 else 1.0
         self_grade_accuracy = 1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel)
