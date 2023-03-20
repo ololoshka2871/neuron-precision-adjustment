@@ -241,7 +241,8 @@ class RezonatorModel:
         :param layer_thikness: Толщина слоя серебра [мм]
         :param tfk: температурная чувствительность резонатора Hz/K
         """
-
+        assert layer_thikness > 0.0
+        
         self._tfk = tfk
 
         def consume_rate(current_temperature: float, zone=Zone.NONE) -> float:
