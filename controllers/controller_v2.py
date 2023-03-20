@@ -131,7 +131,7 @@ class NNController:
                 NNController._convert_weights_to_model(wieghts))
         self._model.trainable = False
         if save_history:
-            self._input_history = np.array([[0.0] * NNController._total_inputs])
+            self._input_history = np.empty(shape=(1, NNController._total_inputs), dtype=np.float32)
         else:
             self._input_history = None
 

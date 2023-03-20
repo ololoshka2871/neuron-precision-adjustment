@@ -179,7 +179,8 @@ if __name__ == "__main__":
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
     angle = np.random.random() * 20 - 10
-    print('offset: {}, angle: {}'.format(offset, angle))
+    initial_freq_diff = max(0.05, min(np.random.normal(loc=0.5, scale=0.25), 0.95))
+    print('Offset: {}, angle: {}, fd: {}'.format(offset, angle, initial_freq_diff))
 
     rez = Rezonator.load()
     coord_transformer = CoordinateTransformer(rez, (0, 0), offset, angle)
@@ -196,6 +197,7 @@ if __name__ == "__main__":
                     coord_transformer=coord_transformer,
                     fs_transformer=FSTransformer(255.0, MAX_F),
                     laser_power=LASER_POWER,
+                    initial_freq_diff=initial_freq_diff,
                     freqmeter_period=FREQMETER_PERIOD,
                     modeling_period=SIM_CYCLE_TIME,
                     freq_history_size=F_HISTORY_SIZE,

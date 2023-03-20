@@ -35,29 +35,17 @@ toolbox = base.Toolbox()
 toolbox.register("attr_float", random.random)
 
 # Structure initializers
-toolbox.register("individual", 
+toolbox.register("individual",
                  lambda: creator.Individual(NNController.shuffled_weights()))  # type: ignore
 toolbox.register("population", tools.initRepeat, list,
                  toolbox.individual)  # type: ignore
-
-
-def get_fithess_weights(gen: int) -> np.ndarray:
-    ITERATIONS_PER_EPOCH = 50
-
-    epoch = gen // ITERATIONS_PER_EPOCH
-
-    res = np.array(FITNES_WEIGHTS)
-    #if epoch < len(FITNES_WEIGHTS) - 1:
-    #    res[epoch + 1:] = 0.0
-        
-    return res
 
 
 def eval_rezonator_adjust(individual, gen: int, it: int):
     # Генерируем толщину серебра
     ag_layer_thikness = (np.random.normal() + 0.5) * 0.5e-3
 
-    rezonator_model = RezonatorModel(power_threshold=POWER_THRESHOLD, 
+    rezonator_model = RezonatorModel(power_threshold=POWER_THRESHOLD,
                                      layer_thikness=ag_layer_thikness)
     initial_pos = WorkzoneRelativeCoordinates(0.0, 1.0)
     rez = Rezonator.load()
@@ -65,6 +53,8 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
     # Генерируем случайное смещение и случайный угол поворота
     offset = (np.random.random() * 0.3, np.random.random() * 0.5)
     angle = np.random.random() * 20 - 10
+    initial_freq_diff = max(
+        0.05, min(np.random.normal(loc=0.5, scale=0.25), 0.95))
     coord_transformer = CoordinateTransformer(rez, (0, 0), offset, angle)
 
     controller = NNController(individual)
@@ -74,6 +64,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
                     coord_transformer=coord_transformer,
                     fs_transformer=FSTransformer(255.0, MAX_F),
                     laser_power=LASER_POWER,
+                    initial_freq_diff=initial_freq_diff,
                     freqmeter_period=FREQMETER_PERIOD,
                     modeling_period=SIM_CYCLE_TIME,
                     freq_history_size=F_HISTORY_SIZE,
@@ -90,7 +81,8 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
                                     energy_consumption_pre_1=ENERGY_CONSUMPTION_PRE_1,
                                     energy_income_per_hz=ENERGY_INCOME_PER_HZ,
                                     energy_fixed_tax=ENERGY_FIXED_TAX,
-                                    incum_function=gen_sigmoid(k=5.0, x_offset_to_right=0.2),
+                                    incum_function=gen_sigmoid(
+                                        k=5.0, x_offset_to_right=0.2),
                                     start_timestamp=0.0)
 
     # Случайнное смещение целевой частоты
@@ -99,7 +91,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
                               f_penalty=gen_sigmoid(
                                   k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
                               max_temperature=MAX_T,
-                              grade_weights=get_fithess_weights(gen))
+                              grade_weights=np.array(FITNES_WEIGHTS))
 
     stop_condition = sim.perform_modeling(stop_detector)
 
@@ -114,7 +106,8 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
         'sim_offset': offset,
         'sim_angle': angle,
         'sim_ag_layer_thikness': ag_layer_thikness,
-        'sim_def_freq': def_freq
+        'sim_def_freq': def_freq,
+        'sim_initial_freq_diff': initial_freq_diff,
     }
 
 
@@ -127,13 +120,13 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
 
     fitness = []
     res = dict()
-    
+
     for _ in range(SIM_TRYS):
         res = eval_rezonator_adjust(individual, it=it, gen=gen)
         fitness.append(res['fitness'])
-        #if res['stop_condition'] == StopCondition.TIMEOUT:
+        # if res['stop_condition'] == StopCondition.TIMEOUT:
         #    break
-    
+
     avg_total_grade = np.min(fitness)
     res['fitness'] = avg_total_grade
     return res
@@ -182,7 +175,8 @@ def learn_main(polulation_size: int, max_iterations: int,
         hof_gloabal = tools.HallOfFame(maxsize=1)
         gen_hof = []
         logbook = tools.Logbook()
-        logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])  # type: ignore
+        logbook.header = ['gen', 'nevals'] + \
+            (stats.fields if stats else [])  # type: ignore
 
     it = 0
 
@@ -190,8 +184,9 @@ def learn_main(polulation_size: int, max_iterations: int,
         gen += 1
         it += 1
         # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in population] # ignore valid fitness
-        fitnesses = toolbox.map(functools.partial(toolbox.evaluate, gen=gen, it=it), invalid_ind)  # type: ignore
+        invalid_ind = [ind for ind in population]  # ignore valid fitness
+        fitnesses = toolbox.map(functools.partial(
+            toolbox.evaluate, gen=gen, it=it), invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = (fit['fitness'],)
             ind.grade = fit['grade']
@@ -199,6 +194,7 @@ def learn_main(polulation_size: int, max_iterations: int,
             ind.rezonator_angle = fit['sim_angle']
             ind.adjust_freq = fit['sim_def_freq']
             ind.ag_layer_thikness = fit['sim_ag_layer_thikness']
+            ind.initial_freq_diff = fit['sim_initial_freq_diff']
 
         best = tools.HallOfFame(maxsize=1)
         best.update(population)
@@ -210,7 +206,8 @@ def learn_main(polulation_size: int, max_iterations: int,
         if verbose:
             print(logbook.stream)
 
-        population = toolbox.select(population, k=len(population))  # type: ignore
+        population = toolbox.select(
+            population, k=len(population))  # type: ignore
         population = algorithms.varAnd(
             population, toolbox, cxpb=cxpb, mutpb=mutpb)
 
@@ -235,7 +232,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', type=int, help='Population size', default=5)
     parser.add_argument('-m', type=int, help='Max iterations', default=0)
-    parser.add_argument('file', type=str, help='Simulation history file', nargs='?', default='learn_v2.ckl')
+    parser.add_argument(
+        'file', type=str, help='Simulation history file', nargs='?', default='learn_v2.ckl')
     args = parser.parse_args()
 
-    learn_main(args.p, args.m, checkpoint_file=args.file, gens_for_checkpoint=1)
+    learn_main(args.p, args.m, checkpoint_file=args.file,
+               gens_for_checkpoint=1)

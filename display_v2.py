@@ -178,10 +178,12 @@ if __name__ == "__main__":
 
     # parse argumants
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', type=int, help='item (default: hof)', default='-1')
+    parser.add_argument(
+        '-i', type=int, help='item (default: hof)', default='-1')
     parser.add_argument('-p', type=int, help='Population item')
     parser.add_argument('-r', action=argparse.BooleanOptionalAction)
-    parser.add_argument('file', type=str, help='Simulation history file', default='learn_v2.ckl')
+    parser.add_argument(
+        'file', type=str, help='Simulation history file', default='learn_v2.ckl')
     args = parser.parse_args()
 
     register_finex_max()
@@ -207,14 +209,18 @@ if __name__ == "__main__":
         angle = np.random.random() * 20 - 10
         def_freq = DEST_FREQ_CH
         ag_layer_thikness = (np.random.normal() + 0.5) * 0.5e-3
+        initial_freq_diff = max(
+            0.05, min(np.random.normal(loc=0.5, scale=0.25), 0.95))
     else:
         # Смещение и угол поворота из файла
         offset = individuum.rezonator_offset
         angle = individuum.rezonator_angle
         def_freq = individuum.adjust_freq
         ag_layer_thikness = individuum.ag_layer_thikness
+        initial_freq_diff = individuum.initial_freq_diff
 
-    print('offset: {}, angle: {}, Ag layer: {} [mm]'.format(offset, angle, ag_layer_thikness))
+    print('offset: {}, angle: {}, Ag layer: {} [mm], fd: {}'.format(
+        offset, angle, ag_layer_thikness, initial_freq_diff))
 
     rezonator = RezonatorModel(power_threshold=POWER_THRESHOLD,
                                layer_thikness=ag_layer_thikness)
@@ -232,6 +238,7 @@ if __name__ == "__main__":
                     coord_transformer=coord_transformer,
                     fs_transformer=FSTransformer(255.0, MAX_F),
                     laser_power=LASER_POWER,
+                    initial_freq_diff=initial_freq_diff,
                     freqmeter_period=FREQMETER_PERIOD,
                     modeling_period=SIM_CYCLE_TIME,
                     freq_history_size=F_HISTORY_SIZE,
@@ -248,7 +255,8 @@ if __name__ == "__main__":
                                     energy_consumption_pre_1=ENERGY_CONSUMPTION_PRE_1,
                                     energy_income_per_hz=ENERGY_INCOME_PER_HZ,
                                     energy_fixed_tax=ENERGY_FIXED_TAX,
-                                    incum_function=gen_sigmoid(k=5.0, x_offset_to_right=0.2),
+                                    incum_function=gen_sigmoid(
+                                        k=5.0, x_offset_to_right=0.2),
                                     start_timestamp=0.0)
 
     grader = ControllerGrager(dest_freq_ch=def_freq,
@@ -275,6 +283,7 @@ if __name__ == "__main__":
     sf, ax = plt.subplots(1, 2)
     stop_detector.plot_summary(ax[0])
 
-    ax[1].imshow(controller.history().T, interpolation='none', cmap='gray', origin='lower')  # type: ignore
+    ax[1].imshow(controller.history().T, interpolation='none',
+                 cmap='gray', origin='lower')  # type: ignore
 
     plt.show(block=True)
