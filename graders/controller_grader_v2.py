@@ -115,19 +115,18 @@ class ControllerGrager:
         #                    w[9] = stop_condition_grade
 
         # На основе пройденного пути и времени симуляции
-        w[7] = path_bonus
-        if path > 5.0 and time_rel < 0.8 and time_rel > 0.3:
+        w[7] = path
+        w[1] = penalty
+        if path > 5.0 and penalty < 0.1:
             w[6] = time_rel
             w[8] = energy_left
-            w[1] = penalty
-            if penalty < 0.1:
-                w[0] = adjust_grade
-                if adjust_grade < 0.3:
-                    w[2] = disbalance
-                    if disbalance < 0.3:
-                        w[3] = self_grade_accuracy
-                        w[4] = temp_rel
-                        w[5] = speed_avg
-                        w[9] = stop_condition_grade
+            w[0] = adjust_grade
+            if adjust_grade < 0.3:
+                w[2] = disbalance
+                if disbalance < 0.3:
+                    w[3] = self_grade_accuracy
+                    w[4] = temp_rel
+                    w[5] = speed_avg
+                    w[9] = stop_condition_grade
         
         return (w * self._grade_weights).sum(), w
