@@ -43,7 +43,7 @@ toolbox.register("population", tools.initRepeat, list,
 
 def eval_rezonator_adjust(individual, gen: int, it: int):
     # Генерируем толщину серебра
-    ag_layer_thikness = (my_normal() + 0.5) * 0.5e-3
+    ag_layer_thikness = (my_normal() + 0.51) * 0.5e-3
 
     rezonator_model = RezonatorModel(power_threshold=POWER_THRESHOLD,
                                      layer_thikness=ag_layer_thikness)

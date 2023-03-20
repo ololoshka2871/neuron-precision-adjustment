@@ -206,7 +206,7 @@ if __name__ == "__main__":
         # Генерируем случайное смещение и случайный угол поворота
         offset = (np.random.random() * 0.3, np.random.random() * 0.5)
         angle = np.random.random() * 20 - 10
-        ag_layer_thikness = (my_normal() + 0.5) * 0.5e-3
+        ag_layer_thikness = (my_normal() + 0.51) * 0.5e-3
         initial_freq_diff = my_normal(0.05, 0.95)
         def_freq = DEST_FREQ_CH * initial_freq_diff
     else:
