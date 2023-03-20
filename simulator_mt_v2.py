@@ -214,7 +214,7 @@ if __name__ == "__main__":
                                     energy_consumption_pre_1=ENERGY_CONSUMPTION_PRE_1,
                                     energy_income_per_hz=ENERGY_INCOME_PER_HZ,
                                     energy_fixed_tax=ENERGY_FIXED_TAX,
-                                    incum_function=gen_sigmoid(k=5.0, x_offset_to_right=0.2),
+                                    incum_function=incum_function,
                                     start_timestamp=0.0)
 
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
