@@ -210,7 +210,7 @@ def learn_main(polulation_size: int, max_iterations: int,
             population, toolbox, cxpb=cxpb, mutpb=mutpb)
 
         if gen % gens_for_checkpoint == 0:
-            print(f"Save state >>> {checkpoint_file}")
+            print(f"Save state >> {checkpoint_file}")
 
             # Fill the dictionary using the dict(key=value[, ...]) constructor
             cp = dict(population=population, generation=gen, halloffame=hof_gloabal,

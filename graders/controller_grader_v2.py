@@ -115,7 +115,7 @@ class ControllerGrager:
         w[7] = path
         if path > 10.0:
             w[1] = -penalty * 100.0
-            if adjust_grade < 0.3:
+            if adjust_grade < 0.5:
                 w[0] = (1.0 - adjust_grade) * 5.0
                 w[2] = -disbalance * 2.0
         
