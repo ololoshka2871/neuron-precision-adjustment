@@ -25,8 +25,7 @@ class ControllerGrager:
                      StopCondition.NONE: 0.0
                  },
                  f_penalty=lambda x: x,
-                 max_temperature=1000.0,
-                 grade_weights: np.ndarray = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])):
+                 max_temperature=1000.0):
         """
         :param dest_freq_ch: Зелаемое изменение частоты [Hz]
         :param f_penalty: Функция, преобразующая накопленную штрафную энергию в значение [0..1]
@@ -37,7 +36,6 @@ class ControllerGrager:
         self._f_penalty = f_penalty
         self._max_temperature = max_temperature
         self._grade_stop_condition = grade_stop_condition
-        self._grade_weights = grade_weights
 
     def get_grade(self, rezonator_metrics: Metrics, sim_metrics: dict, stop_condition: StopCondition):
         """
@@ -72,7 +70,6 @@ class ControllerGrager:
         temp_rel = sim_metrics['max_temperature'] / self._max_temperature
         speed_avg = sim_metrics['avg_speed']
         time_rel = sim_metrics['total_duration_rel']
-        path_bonus = path * ((1.0 - adjust_grade * 0.25))
         energy_left = normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10)
         stop_condition_grade = self._grade_stop_condition[stop_condition]
 
@@ -116,17 +113,7 @@ class ControllerGrager:
 
         # На основе пройденного пути и времени симуляции
         w[7] = path
-        w[1] = penalty
-        if path > 5.0 and penalty < 0.1:
-            w[6] = time_rel
-            w[8] = energy_left
-            w[0] = adjust_grade
-            if adjust_grade < 0.3:
-                w[2] = disbalance
-                if disbalance < 0.3:
-                    w[3] = self_grade_accuracy
-                    w[4] = temp_rel
-                    w[5] = speed_avg
-                    w[9] = stop_condition_grade
+        if path > 10.0:
+            w[1] = -penalty * 100.0
         
-        return (w * self._grade_weights).sum(), w
+        return (w).sum(), w

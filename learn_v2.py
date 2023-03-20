@@ -90,8 +90,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
     grader = ControllerGrager(dest_freq_ch=DEST_FREQ_CH,
                               f_penalty=gen_sigmoid(
                                   k=LASER_POWER, x_offset_to_right=0.2),  # экспериментальные параметры
-                              max_temperature=MAX_T,
-                              grade_weights=np.array(FITNES_WEIGHTS))
+                              max_temperature=MAX_T)
 
     stop_condition = sim.perform_modeling(stop_detector)
 
