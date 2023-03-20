@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from constants_v2 import *
+from old.constants_v2 import *
 from misc.Rezonator import Rezonator
 from misc.common import draw_polygon, create_tail, my_normal
 from models.adjust_zone_model import draw_model
@@ -167,7 +167,7 @@ class ControllerInputDisplay:
 if __name__ == "__main__":
     import sys
 
-    from constants_v2 import *
+    from old.constants_v2 import *
 
     manual = len(sys.argv) > 1
 

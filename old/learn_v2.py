@@ -21,7 +21,7 @@ from simulators.simulator_v2 import Simulator
 from deap_elements.fitnes_max import register_finex_max
 from deap_elements.individual import register_individual
 
-from constants_v2 import *
+from old.constants_v2 import *
 
 
 NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)

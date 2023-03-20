@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 
-from constants_v2 import *
+from old.constants_v2 import *
 from misc.Rezonator import Rezonator
 from misc.common import draw_polygon, create_tail, my_normal
 from models.adjust_zone_model import draw_model
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     from deap_elements.fitnes_max import register_finex_max
     from deap_elements.individual import register_individual
 
-    from constants_v2 import *
+    from old.constants_v2 import *
 
     # parse argumants
     parser = argparse.ArgumentParser()
