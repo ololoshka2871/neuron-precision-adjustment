@@ -64,19 +64,53 @@ class ControllerGrager:
         sigmoid_grade = gen_sigmoid(A=2.0, k=5.0, x_offset_to_right=0, vertical_shift=-1.0)
 
         path = sim_metrics['total_path_len']
-        adjust_grade = sigmoid_grade(freq_target_distance_rel) if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0
 
-        w = np.array([
-            adjust_grade,  # настройка
-            self._f_penalty(rezonator_metrics['penalty_energy']),  # штраф за попадание куда не надо
-            sigmoid_grade(db) if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
-            1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel),  # точность самооценки
-            sim_metrics['max_temperature'] / self._max_temperature,  # температура
-            sim_metrics['avg_speed'],  # скорость
-            sim_metrics['total_duration_rel'],  # время
-            path * ((1.0 - adjust_grade * 0.25)),  # длина пути
-            normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10),  # остаток энергии
-            self._grade_stop_condition[stop_condition]  # причина остановки
-        ])
+        adjust_grade = sigmoid_grade(freq_target_distance_rel) if freq_target_distance_rel > 0.0 else -freq_target_distance_rel * 2.0
+        penalty = self._f_penalty(rezonator_metrics['penalty_energy'])
+        disbalance = sigmoid_grade(db) if db > 0 else 1.0
+        self_grade_accuracy = 1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel)
+        temp_rel = sim_metrics['max_temperature'] / self._max_temperature
+        speed_avg = sim_metrics['avg_speed']
+        time_rel = sim_metrics['total_duration_rel']
+        path_bonus = path * ((1.0 - adjust_grade * 0.25))
+        energy_left = normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10)
+        stop_condition_grade = self._grade_stop_condition[stop_condition]
+
+        #w = np.array([
+        #    adjust_grade,  # настройка
+        #    self._f_penalty(rezonator_metrics['penalty_energy']),  # штраф за попадание куда не надо
+        #    sigmoid_grade(db) if db > 0 else 1.0,  # Если дисбаланса вообще нет - скорее всего нет и настройки -> доп штраф!
+        #    1.0 - (sim_metrics['self_grade'] - freq_target_distance_rel),  # точность самооценки
+        #    sim_metrics['max_temperature'] / self._max_temperature,  # температура
+        #    sim_metrics['avg_speed'],  # скорость
+        #    sim_metrics['total_duration_rel'],  # время
+        #    path * ((1.0 - adjust_grade * 0.25)),  # длина пути
+        #    normal_dist(sim_metrics['energy_relative'], mean=0.3, sd=0.10),  # остаток энергии
+        #    self._grade_stop_condition[stop_condition]  # причина остановки
+        #])
+
+        w = np.array([0.0] * 10)
+
+        # Самый важный параметр - настройка
+        w[0] = adjust_grade
+        if adjust_grade < 0.3:
+            # Если настройка хорошая - то штраф за попадание куда не надо уже учитывается
+            w[1] = penalty
+            if penalty < 0.1:
+                # Если штрафа нет - то дисбаланс уже учитывается
+                w[2] = disbalance
+                if disbalance < 0.3:
+                    # Если дисбаланс мал - то уже учитывается самооценка, температура, скорость, время
+                    w[3] = self_grade_accuracy
+                    w[4] = temp_rel
+                    w[5] = speed_avg
+                    w[6] = time_rel
+                    if time_rel < 0.8 and time_rel > 0.3:
+                        # Если время симуляции в пределах 30% - то уже учитывается длина пути и остаток энергии
+                        w[7] = path_bonus
+                        w[8] = energy_left
+                        if energy_left > 0.0:
+                            # Если остаток энергии есть - то уже учитывается причина остановки
+                            w[9] = stop_condition_grade
         
         return (w * self._grade_weights).sum(), w
