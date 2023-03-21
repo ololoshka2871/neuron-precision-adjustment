@@ -129,7 +129,7 @@ if __name__ == "__main__":
 - Penalty: {g[1]:.6f} @ {rm['penalty_energy']},
 - dissbalance: {g[2] * 100:.2f} %,
 - Self grade: {g[3]:.2f},
-- Tmax: AMBIENT + {g[4]:.2f} *C,
+- Tmax grade: {g[4]:.2f},
 - Avarage speed: {g[5]:.2f},
 - Time spent: {SIM_TIMEOUT * g[6]:.2f} s, ({g[6] * 100:.2f} %),
 - Total path: {g[7]:.2f},
