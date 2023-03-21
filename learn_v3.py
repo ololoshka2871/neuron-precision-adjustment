@@ -100,7 +100,7 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     Запустить симуляцию несколько раз для каждого генома с разными начальными условиями
     чтобы исключить фактор "угадывания"
     """
-    SIM_TRYS = 3
+    SIM_TRYS = 4
 
     fitness = []
     res = dict()
@@ -109,8 +109,8 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
         res = eval_rezonator_adjust(individual, it=it, gen=gen)
         fitness.append(res['fitness'])
 
-    avg_total_grade = np.average(fitness)
-    res['fitness'] = avg_total_grade
+    min_total_grade = np.min(fitness)
+    res['fitness'] = min_total_grade
     return res
 
 
