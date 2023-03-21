@@ -14,6 +14,7 @@ AMBIENT_T = 20.0
 SIM_CYCLE_TIME = 0.005
 SIM_TIMEOUT = 10.0
 FREQ_PRECISION = 1.0
+NN_MEAN_LAYERS = 3
 
 
 f_penalty = gen_sigmoid(k=LASER_POWER, x_offset_to_right=0.2,

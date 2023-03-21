@@ -243,7 +243,7 @@ if __name__ == "__main__":
     coord_transformer = CoordinateTransformer(
         rez, (0, 0), params['offset'], params['angle'])
 
-    NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
+    NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE, mean_layers=NN_MEAN_LAYERS)
     weights = individuum
     controller = NNController(weights, save_history=True)
 
@@ -283,7 +283,7 @@ if __name__ == "__main__":
     precision = (1.0 - (adjustment_freq - rm['static_freq_change']) / adjustment_freq) * 100.0
     print(
         f"""Done {stop_condition} Score = {total}:
-- Adjust rgade:{g[0]:.2f} @ {rm['static_freq_change']:.2f} Hz/{adjustment_freq:.2f} Hz: {precision:.2f}%,
+- Adjust rgade: {g[0]:.2f} @ {rm['static_freq_change']:.2f} Hz/{adjustment_freq:.2f} Hz: {precision:.2f}%,
 - Penalty: {g[1]:.6f} @ {rm['penalty_energy']},
 - dissbalance: {g[2] * 100:.2f} %,
 - Self grade: {g[3]:.2f},

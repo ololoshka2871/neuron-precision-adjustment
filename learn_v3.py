@@ -23,7 +23,7 @@ from deap_elements.individual import register_individual
 from parameters_v3 import *
 
 
-NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE)
+NNController.init_model(F_HISTORY_SIZE, MOVE_HISTORY_SIZE, mean_layers=NN_MEAN_LAYERS)
 
 register_finex_max()
 register_individual(creator.FitnessMax)  # type: ignore
