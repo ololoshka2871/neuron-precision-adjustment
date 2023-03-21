@@ -15,6 +15,5 @@ def register_individual(fitnes_max):
                 grade=0.0,
                 rezonator_offset=(0.0, 0.0),
                 rezonator_angle=0.0,
-                adjust_freq=0.0,
                 ag_layer_thikness=0.0,
                 initial_freq_diff=0.0)
