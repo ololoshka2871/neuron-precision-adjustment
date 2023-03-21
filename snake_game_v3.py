@@ -114,7 +114,7 @@ def update_tail_colors(tail: list[Line2D]):
     
 
 if __name__ == '__main__':
-    INITILE_POSITION = (0, 1)
+    INITILE_POSITION = (-1, 1)
     MODEL_TIME_STEP = 0.01
     TAIL_LEN = 10
     
@@ -144,15 +144,10 @@ if __name__ == '__main__':
     plt.show(block=False)
     
     while True:
-        click = plt.ginput(1, timeout=1)
-        if not click:
-            continue
-        
-        new_position = click[0]
-        if min(new_position) < -1 or max(new_position) > 1:
-            continue
-        
-        speed = gen_speed()
+        new_x = current_pos_wz[0] * -1.0
+        new_y = current_pos_wz[1] - gen_step()
+        new_position = (new_x, new_y)
+
         path_wz = movment.interpolate_move(current_pos_wz, new_position, gen_speed(), MODEL_TIME_STEP)
         path_model = ct.array_wrap_from_workzone_to_model(np.array(path_wz[:2]).T).T
         path_real = ct.array_wrap_from_workzone_to_real(np.array(path_wz[:2]).T).T
