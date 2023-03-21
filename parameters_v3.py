@@ -25,6 +25,6 @@ def gen_sim_parameters() -> dict:
     return dict(
         offset=(np.random.random() * 0.3, np.random.random() * 0.5),
         angle=np.random.random() * 20 - 10,
-        initial_freq_diff=(my_normal() + 0.51) * 0.5,
+        initial_freq_diff=(my_normal() + 0.55) * 0.5,
         ag_thikness=my_normal() * 0.0002 + 0.0005,
     )
