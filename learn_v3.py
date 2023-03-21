@@ -143,8 +143,6 @@ def learn_main(polulation_size: int, max_iterations: int,
     it = 0
 
     while True:
-        gen += 1
-        it += 1
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in population]  # ignore valid fitness
         fitnesses = toolbox.map(functools.partial(  # type: ignore
@@ -184,6 +182,9 @@ def learn_main(polulation_size: int, max_iterations: int,
 
         if max_iterations > 0 and it >= max_iterations:
             break
+        
+        gen += 1
+        it += 1
 
 
 if __name__ == '__main__':
