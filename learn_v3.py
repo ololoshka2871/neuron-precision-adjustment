@@ -107,11 +107,11 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
 
     for _ in range(SIM_TRYS):
         res = eval_rezonator_adjust(individual, it=it, gen=gen)
-        fitness.append(res['fitness'])
+        fitness.append(res)
 
-    min_total_grade = np.min(fitness)
-    res['fitness'] = min_total_grade
-    return res
+    gf_only = list(map(lambda f: f['fitness'], fitness))
+    worst_index = gf_only.index(np.min(gf_only))
+    return fitness[worst_index]
 
 
 toolbox.register("evaluate", eval_rezonator_adjust_wrapper)
@@ -194,8 +194,6 @@ def learn_main(polulation_size: int, max_iterations: int,
         population.extend(hof_gloabal)
 
         if gen % gens_for_checkpoint == 0:
-            print(f"Save state >> {checkpoint_file}")
-
             # Fill the dictionary using the dict(key=value[, ...]) constructor
             cp = dict(population=population, generation=gen, halloffame=hof_gloabal,
                       gen_hof=gen_hof, logbook=logbook, rndstate=random.getstate())
