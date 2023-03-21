@@ -166,9 +166,12 @@ def learn_main(polulation_size: int, max_iterations: int,
             print(logbook.stream)
 
         population = toolbox.select(  # type: ignore
-            population, k=len(population)) 
+            population, k=len(population) - len(hof_gloabal)) 
         population = algorithms.varAnd(
             population, toolbox, cxpb=cxpb, mutpb=mutpb)
+        
+        # Элитизм
+        population.extend(hof_gloabal)
 
         if gen % gens_for_checkpoint == 0:
             print(f"Save state >> {checkpoint_file}")
