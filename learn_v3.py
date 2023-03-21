@@ -135,7 +135,7 @@ def learn_main(polulation_size: int, max_iterations: int,
         population = toolbox.population(n=polulation_size)  # type: ignore
         gen = 0
         # Здесь будут геномы самых лучших представителей каждого поколения
-        hof_gloabal = tools.HallOfFame(maxsize=1)
+        hof_gloabal = tools.HallOfFame(maxsize=2)
         gen_hof = []
         logbook = tools.Logbook()
         logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])  # type: ignore
@@ -158,6 +158,7 @@ def learn_main(polulation_size: int, max_iterations: int,
         best = tools.HallOfFame(maxsize=1)
         best.update(population)
         gen_hof.append(best[0])
+        
         hof_gloabal.update(population)
 
         record = stats.compile(population)
