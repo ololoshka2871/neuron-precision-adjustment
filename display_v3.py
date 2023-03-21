@@ -112,7 +112,8 @@ if __name__ == "__main__":
     model = rezonator.get_model_view(params['offset'], params['angle'])
     input_display = ProgressDisplay(
         *ax, rez, model, coord_transformer,  # type: ignore
-        move_history_size=MOVE_HISTORY_SIZE, initial_pos=initial_pos
+        move_history_size=MOVE_HISTORY_SIZE, initial_pos=initial_pos,
+        possible_freq_adjust=rezonator.possible_freq_adjust,
     )
 
     plt.show(block=False)
