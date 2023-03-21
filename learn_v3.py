@@ -95,7 +95,26 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
     }
 
 
-toolbox.register("evaluate", eval_rezonator_adjust)
+def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
+    """
+    Запустить симуляцию несколько раз для каждого генома с разными начальными условиями
+    чтобы исключить фактор "угадывания"
+    """
+    SIM_TRYS = 3
+
+    fitness = []
+    res = dict()
+
+    for _ in range(SIM_TRYS):
+        res = eval_rezonator_adjust(individual, it=it, gen=gen)
+        fitness.append(res['fitness'])
+
+    avg_total_grade = np.average(fitness)
+    res['fitness'] = avg_total_grade
+    return res
+
+
+toolbox.register("evaluate", eval_rezonator_adjust_wrapper)
 toolbox.register("mate", tools.cxBlend, alpha=0.5)
 toolbox.register("mutate", tools.mutGaussian, sigma=0.3, mu=0.0, indpb=0.5)
 toolbox.register("select", tools.selTournament, tournsize=3)
@@ -158,7 +177,7 @@ def learn_main(polulation_size: int, max_iterations: int,
         best = tools.HallOfFame(maxsize=1)
         best.update(population)
         gen_hof.append(best[0])
-        
+
         hof_gloabal.update(population)
 
         record = stats.compile(population)
