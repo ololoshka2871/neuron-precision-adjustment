@@ -115,6 +115,7 @@ class SimStopDetector:
             'max_temperature': self._max_temperature - RezonatorModel.CELSUSS_TO_KELVIN,
             'avg_speed': self._speed_history.mean(),
             'total_path_len': self._path_accum,
+            'avg_laser_power': self._laser_power_history.mean(),
         }
 
     def plot_summary(self, ax: Axes):
