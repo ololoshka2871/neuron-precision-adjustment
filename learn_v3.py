@@ -110,7 +110,7 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     gf_only = list(map(lambda f: f['fitness'], fitness))
     worst_index = gf_only.index(np.min(gf_only))
     f = fitness[worst_index]
-    f['fitness'] = np.mean(gf_only)
+    #f['fitness'] = np.mean(gf_only)
     return f
 
 
@@ -163,7 +163,7 @@ def learn_main(polulation_size: int, max_iterations: int,
 
     while True:
         # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in population]  # ignore valid fitness
+        invalid_ind = [ind for ind in population if not ind.fitness.valid]  # ignore valid fitness
         fitnesses = toolbox.map(functools.partial(  # type: ignore
             toolbox.evaluate, gen=gen, it=it), invalid_ind)  # type: ignore
         for ind, fit in zip(invalid_ind, fitnesses):
