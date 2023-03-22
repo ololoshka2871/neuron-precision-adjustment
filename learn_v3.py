@@ -102,7 +102,6 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
     SIM_TRYS = 4
 
     fitness = []
-    res = dict()
 
     for _ in range(SIM_TRYS):
         res = eval_rezonator_adjust(individual, it=it, gen=gen)
@@ -110,7 +109,9 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
 
     gf_only = list(map(lambda f: f['fitness'], fitness))
     worst_index = gf_only.index(np.min(gf_only))
-    return fitness[worst_index]
+    f = fitness[worst_index]
+    f['fitness'] = np.mean(gf_only)
+    return f
 
 
 toolbox.register("evaluate", eval_rezonator_adjust_wrapper)
