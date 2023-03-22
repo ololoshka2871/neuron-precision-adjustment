@@ -83,12 +83,12 @@ class Simulator:
         """
 
         while True:
-            controller_input = dict(
+            command = self._controller.update(dict(
                 time=self._period_accum / stop_detector.get_time_limit(),
                 freq_history=self._measure_diff_history.peek_all(),
-                move_history=self._move_history.peek_all(),
-            )
-            command = self._controller.update(controller_input)
+                # remove side from controller input
+                move_history=np.array([inputs[1:] for inputs in self._move_history.peek_all()]),
+            ))
 
             last_pos, = self._move_history.peek_last_N(1)
             side = True if last_pos[0] < 0.0 else False  # True - left, False - right # type: ignore
@@ -97,7 +97,11 @@ class Simulator:
                 self._curremt_pos_global)
             new_vp = float(min(max(prew_wz[1] - step, -1.0), 1.0))
             dest_wz = WorkzoneRelativeCoordinates(prew_wz[0] * -1.0, new_vp)
-            display(controller_input, dest_wz)
+            display(dict(
+                time=self._period_accum / stop_detector.get_time_limit(),
+                freq_history=self._measure_diff_history.peek_all(),
+                move_history=self._move_history.peek_all(),
+            ), dest_wz)
             dest_real = \
                 self._coord_transformer.wrap_from_workzone_relative_to_real(
                     dest_wz)

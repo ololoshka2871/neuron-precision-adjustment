@@ -10,7 +10,7 @@ class NNController:
     Контроллер - нейронная сеть
     Входы:
         - freq_history - История измерений freq_history_size
-        - move_history - История перемещений вида (side, step, S, F) длиной move_history_size
+        - move_history - История перемещений вида (step, S, F) длиной move_history_size
         - time - Относительное время до таймаута (0.0..1.0)
 
     Выходы:
@@ -36,7 +36,7 @@ class NNController:
         model = Sequential()
 
         NNController._total_inputs = freq_history_size + \
-            (move_history_size * 4) + NNController.INPUT_COUNT_CONST
+            (move_history_size * 3) + NNController.INPUT_COUNT_CONST
 
         # входы
         model.add(layers.Input(batch_size=1, shape=(NNController._total_inputs,)))
