@@ -95,9 +95,6 @@ class SimStopDetector:
         self._add_metric(t, mm, rm['temperature'] +
                          RezonatorModel.CELSUSS_TO_KELVIN, F_measured)
 
-        if len(self._timestamps) < 2:
-            return StopCondition.NONE
-
         passed = self._timestamps[-1] - self._start_timestamp
         if passed > self._timeout:
             return StopCondition.TIMEOUT
