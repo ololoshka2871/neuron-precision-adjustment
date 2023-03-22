@@ -45,8 +45,7 @@ def eval_rezonator_adjust(individual, gen: int, it: int):
         params = gen_sim_parameters()
         rezonator = RezonatorModel(
             power_threshold=POWER_THRESHOLD, layer_thikness=params['ag_thikness'])
-        adjustment_freq = rezonator.possible_freq_adjust * \
-            params['initial_freq_diff']  # [Hz]
+        adjustment_freq = freq_from_diff(params['initial_freq_diff'])  # [Hz]
         if adjustment_freq > FREQ_PRECISION:
             break
 

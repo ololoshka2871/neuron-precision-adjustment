@@ -10,6 +10,8 @@ MAX_T = 1500.0
 MAX_F = 500.0
 FREQMETER_PERIOD = 0.4  # [s]
 AMBIENT_T = 20.0
+MAX_FREQ_DIFF = 15.0 # [Hz]
+MIN_FREQ_DIFF = 5.0 # [Hz]
 
 SIM_CYCLE_TIME = 0.005
 SIM_TIMEOUT = 10.0
@@ -28,3 +30,6 @@ def gen_sim_parameters() -> dict:
         initial_freq_diff=(my_normal() + 0.55) * 0.5,
         ag_thikness=my_normal() * 0.0002 + 0.0005,
     )
+
+def freq_from_diff(diff: float) -> float:
+    return (MAX_FREQ_DIFF - MIN_FREQ_DIFF) * diff + MIN_FREQ_DIFF
