@@ -131,7 +131,8 @@ if __name__ == "__main__":
 - Avarage speed: {g[5]:.2f},
 - Time spent: {SIM_TIMEOUT * g[6]:.2f} s, ({g[6] * 100:.2f} %),
 - Total path: {g[7]:.2f},
-- Stop condition grade: {g[8]:.2f}"""
+- Speed grade: {g[8]:.2f},
+- Stop condition grade: {g[9]:.2f}"""
     )
 
     sf, ax = plt.subplots(1, 2)
