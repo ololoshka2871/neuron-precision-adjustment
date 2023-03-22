@@ -109,8 +109,8 @@ def eval_rezonator_adjust_wrapper(individual, gen: int, it: int):
         fitness.append(res)
 
     gf_only = list(map(lambda f: f['fitness'], fitness))
-    best_index = gf_only.index(np.max(gf_only))
-    return fitness[best_index]
+    worst_index = gf_only.index(np.min(gf_only))
+    return fitness[worst_index]
 
 
 toolbox.register("evaluate", eval_rezonator_adjust_wrapper)
