@@ -1,2 +1,2 @@
 
-python learn_v3.py -p 250
+python learn_v3.py -p 100
