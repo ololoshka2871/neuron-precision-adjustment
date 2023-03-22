@@ -70,8 +70,7 @@ if __name__ == "__main__":
         )
         rezonator = RezonatorModel(
             power_threshold=POWER_THRESHOLD, layer_thikness=params['ag_thikness'])
-        adjustment_freq = rezonator.possible_freq_adjust * \
-            params['initial_freq_diff']  # [Hz]
+        adjustment_freq = freq_from_diff(params['initial_freq_diff'])  # [Hz]
 
     print('Offset: {}, angle: {}, i_fd: {}, Ag: {} mm'.format(
         params['offset'], params['angle'], params['initial_freq_diff'], params['ag_thikness']))
