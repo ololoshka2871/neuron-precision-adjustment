@@ -133,8 +133,17 @@ class QuartzEnv3(gym.Env):
         """
         Возвращает полную информацию о среде
         """
+        assert self._rezonator_model is not None
+
+        rm = self._rezonator_model.get_metrics()
         return {
-            # TODO
+            "params": self._params,
+            "current_power": self._current_power,
+            "current_speed": self._current_speed,
+            "static_freq_change": rm['freq_change'],
+            "temperature": rm['temperature'],
+            "disbalance": rm['disbalance'],
+            "penalty_energy": rm['penalty_energy'],
         }
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -276,7 +285,7 @@ class QuartzEnv3(gym.Env):
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
-        if self._transform is None and self.render_mode == "human":
+        if self._transform is None and (self.render_mode == "human" or self.render_mode == "rgb_array"):
             model_working_area_x_min = np.min(model_working_area[:, 0])
             model_working_area_x_max = np.max(model_working_area[:, 0])
             model_working_area_y_min = np.min(model_working_area[:, 1])
@@ -287,8 +296,6 @@ class QuartzEnv3(gym.Env):
             self._transform = Affine2D() \
                 .translate(-model_working_area_x_min, -model_working_area_y_min) \
                 .scale(self.window_size / model_working_area_x_size, self.window_size / model_working_area_y_size)
-            # .scale(50) \
-            # .translate(self.window_size / 2.0, self.window_size / 2.0)
 
         canvas = pygame.Surface((self.window_size, self.window_size))
         canvas.fill((255, 255, 255))
