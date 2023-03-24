@@ -35,6 +35,16 @@ class Coordinates:
     
     def abs_path_from(self, other) -> float:
         return math.sqrt((self.point[0] - other.point[0]) ** 2 + (self.point[1] - other.point[1]) ** 2)
+    
+    def add(self, other):
+        self.point[0] += other.point[0]
+        self.point[1] += other.point[1]
+        return self
+    
+    def clip(self, min_x: float, max_x: float, min_y: float, max_y: float):
+        self.point[0] = np.clip(self.point[0], min_x, max_x)
+        self.point[1] = np.clip(self.point[1], min_y, max_y)
+        return self
 
 
 class RealCoordinates(Coordinates):
