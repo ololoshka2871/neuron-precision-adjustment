@@ -34,7 +34,7 @@ total_reward = 0
 info = dict()
 while not done:
     action = env.action_space.sample()
-    action['end'][0] = 0.1
+    action['end'][0] = 0.25
     prev_obs = obs
     obs, rew, terminated, truncated, info = env.step(action)
     done = terminated or truncated

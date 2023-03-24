@@ -510,7 +510,7 @@ class QuartzEnv3(gym.Env):
             case Zone.NONE:
                 zone_penalty = 0.0
             case _:
-                zone_penalty = 10.0
+                zone_penalty = 1.0
 
         rezonator_metrics = self._rezonator_model.get_metrics()
 
@@ -530,5 +530,10 @@ class QuartzEnv3(gym.Env):
 
         adjust_penalty = freq_target_distance_rel if freq_target_distance_rel > 0.0 else - \
             freq_target_distance_rel * 2.0
+        
+        wieghts = np.array([-10.0, -5.0, -100.0, -50.0])
+        values = np.array([adjust_penalty, db, penalty, zone_penalty])
 
-        return -adjust_penalty - db - penalty - zone_penalty
+        res = values * wieghts
+
+        return res.sum()
