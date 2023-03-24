@@ -1,16 +1,56 @@
 #!/usr/bin/env python
 
-import gym
-import gym_quarz
-from gym.utils.env_checker import check_env
+from typing import List
 
-env = gym.make("gym_quarz/QuartzEnv-v3", render_mode='human')
+import numpy as np
+
+import gym
+from gym.utils.play import play, PlayPlot, display_arr
+
+import pygame
+
+import gym_quarz
+
+def callback(obs_t, obs_tp1, action, reward, done, truncated, info):
+    return [reward, obs_tp1['current_frequency_offset'][0], info['static_freq_change'], info['penalty_energy'], info['temperature']]
+
+
+plotter = PlayPlot(callback, 30 * 5, 
+    ["Reward", "Current offset", "Static freq change", "Penalty energy", "Temperature"]
+)
+
+env = gym.make("gym_quarz/QuartzEnv-v3", render_mode='rgb_array')
 
 env.reset()
 
-for _ in range(1000):
-    s, r, done, truncated, info = env.step(env.action_space.sample()) # take a random action
-    if not done:
-        env.render()
+frame = env.render()
+video_size = frame.shape[:2]  # type: ignore
+screen = pygame.display.set_mode(video_size)
+fps = env.metadata.get("render_fps", 30)
 
-env.close()
+clock = pygame.time.Clock()
+done, obs = False, None
+total_reward = 0
+info = dict()
+while not done:
+    action = env.action_space.sample()
+    action['end'][0] = 0.1
+    prev_obs = obs
+    obs, rew, terminated, truncated, info = env.step(action)
+    done = terminated or truncated
+    total_reward += rew
+    plotter.callback(prev_obs, obs, action, rew, terminated, truncated, info)
+    if obs is not None:
+        rendered = env.render()
+        if isinstance(rendered, List):
+            rendered = rendered[-1]
+        assert rendered is not None and isinstance(rendered, np.ndarray)
+        display_arr(screen, rendered, transpose=True, video_size=video_size)  # type: ignore
+
+    pygame.display.flip()
+    clock.tick(fps)
+    
+pygame.quit()
+
+print("Done!")
+print(f"Total adjust: {info['static_freq_change']}, total reward: {total_reward}")

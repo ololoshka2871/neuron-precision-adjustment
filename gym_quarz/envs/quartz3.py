@@ -140,7 +140,7 @@ class QuartzEnv3(gym.Env):
             "params": self._params,
             "current_power": self._current_power,
             "current_speed": self._current_speed,
-            "static_freq_change": rm['freq_change'],
+            "static_freq_change": rm['static_freq_change'],
             "temperature": rm['temperature'],
             "disbalance": rm['disbalance'],
             "penalty_energy": rm['penalty_energy'],
@@ -285,7 +285,7 @@ class QuartzEnv3(gym.Env):
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
-        if self._transform is None and (self.render_mode == "human" or self.render_mode == "rgb_array"):
+        if self._transform is None:
             model_working_area_x_min = np.min(model_working_area[:, 0])
             model_working_area_x_max = np.max(model_working_area[:, 0])
             model_working_area_y_min = np.min(model_working_area[:, 1])
@@ -486,8 +486,9 @@ class QuartzEnv3(gym.Env):
 
                 m = self._rezonator_model.get_metrics()
                 freq_change = self._prev_freq - m['freq_change']
+                self._prev_freq = m['freq_change']
                 if freq_change < 0.0:
-                    total_reward += 1.0
+                    total_reward += -freq_change
 
             f(wait_time)
             self._next_mesure_after -= wait_time
