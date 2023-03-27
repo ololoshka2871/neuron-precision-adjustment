@@ -12,7 +12,7 @@ import pygame
 import gym_quarz
 
 def callback(obs_t, obs_tp1, action, reward, done, truncated, info):
-    return [reward, obs_tp1['current_frequency_offset'][0], info['static_freq_change'], info['penalty_energy'], info['temperature']]
+    return [reward, obs_tp1[4], info['static_freq_change'], info['penalty_energy'], info['temperature']]
 
 
 plotter = PlayPlot(callback, 30 * 5, 
@@ -34,7 +34,6 @@ total_reward = 0
 info = dict()
 while not done:
     action = env.action_space.sample()
-    action['end'][0] = 0.25
     prev_obs = obs
     obs, rew, terminated, truncated, info = env.step(action)
     done = terminated or truncated

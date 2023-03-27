@@ -31,47 +31,39 @@ class QuartzEnv3(gym.Env):
                  modeling_period: float = 0.01,
                  freqmeter_period: float = 0.4,
                  laser_power: float = 30.0,
+                 wait_multiplier: float = 1.0,
                  ):
         self.window_size = 1024  # The size of the PyGame window
 
         """
         Регистрация измеряемых параметров. То, что будет отдавать модель на каждом шаге
-        - laser_position - Текущее положение лазера
-        - frequency - Текущая частота
-        - freq_change - Изменение частоты по сравнению с изначальной
+        - (0, 1): laser_position - Текущее положение лазера
+        - 2: frequency - Текущая частота
+        - 3: freq_change - Изменение частоты по сравнению с изначальной
         """
-        self.observation_space = spaces.Dict(
-            {
-                # x, y
-                "position": spaces.Box(-1.0, 1.0, shape=(2,), dtype=float),
-                # 0..1
-                "power": spaces.Box(0.0, 1.0, shape=(1,), dtype=float),
-                # Hz
-                "current_frequency_offset": spaces.Box(-1e+6, 1e+6, shape=(1,), dtype=float),
-                # Hz
-                "adjust_target": spaces.Box(-1000, 1000, shape=(1,), dtype=float),
-            }
-        )
+        self.observation_space = spaces.Box(
+            np.array([-1.0, -1.0, 0.0, -1e+6, -1000]),  # type: ignore
+            np.array([1.0, 1.0, 1.0, 1e+6, 1000]),  # type: ignore
+            (5,),
+            dtype=np.float32)
 
         """
         Возможные действия
+        - 0: Признак действия:
+            - <1: move - Передвинуть лазер на заданное расстояние
+            - <2: set_power - Изменить мощность лазера
+            - <3: wait - Ожидаение
+            - <4: end - Закончить эпизод
+        - 1: x - Координата x, если move, иначе power или время ожидания
+        - 2: y - Координата y
+        - 3: F - Скорость перемещения
         """
-        self.action_space = spaces.Dict(
-            {
-                # Передвинуть лазер на заданное расстояние
-                # A, x, y, F
-                "move": spaces.Box(-1.0, 1.0, shape=(4,), dtype=float),
-                # Изменить мощность лазера
-                # A, 0..1
-                "set_power": spaces.Box(0.0, 1.0, shape=(2,), dtype=float),
-                # Ожидаение
-                # A, 0..1
-                "wait": spaces.Box(0.0, 1.0, shape=(2,), dtype=float),  # sec
-                # Закончить эпизод
-                # A
-                "end": spaces.Box(0.0, 1.0, shape=(1,), dtype=float),
-            }
-        )
+        self.action_space = spaces.Box(
+            np.array([0.0, -1.0, -1.0, 0.0]),  # type: ignore
+            np.array([1.0, 1.0, 1.0, 1.0]),  # type: ignore
+            (4,),
+            dtype=np.float32)
+        self.action_count = 4
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -98,6 +90,7 @@ class QuartzEnv3(gym.Env):
         self._modeling_period = modeling_period
         self._freqmeter_period = freqmeter_period
         self._laser_power = laser_power
+        self._wait_multiplier = wait_multiplier
 
         self._movement = Movment()
         self._rezonator_model: Optional[RezonatorModel] = None
@@ -122,12 +115,11 @@ class QuartzEnv3(gym.Env):
                 "Rezonator is not initialized, call reset() first!")
 
         rm = self._rezonator_model.get_metrics()
-        return {
-            "position": np.array(self._current_position.tuple(), dtype=float),
-            "power": np.array((self._current_power,), dtype=float),
-            "current_frequency_offset": np.array((rm['freq_change'],), dtype=float),
-            "adjust_target": np.array((self._params['adjust_target'],), dtype=float),
-        }
+        return np.array([
+            *self._current_position,
+            self._current_power,
+            rm['freq_change'],
+            self._params['adjust_target']], dtype=np.float32)
 
     def _get_info(self):
         """
@@ -197,26 +189,29 @@ class QuartzEnv3(gym.Env):
 
         return observation, info
 
-    def step(self, action: OrderedDict[str, np.ndarray]):
-        actions = [(action['move'][0] + 1.0) / 2.0, action['set_power']
-                   [0], action['wait'][0], action['end'][0]]
-        selected_action = np.argmax(actions)
+    def step(self, action: np.ndarray):
+        action_code = action[0] * self.action_count
 
         terminated = False
         reward = 0.0
-        match selected_action:
-            case 0:  # move
-                reward = self._sim_step(*action['move'][1:])
-            case 1:  # set_power
-                self._current_power = action['set_power'][1]
-                reward = -0.5
-            case 2:  # wait
-                reward = self._wait_on(action['wait'][1])
-            case 3:  # end
-                reward = self._finalise()
-                terminated = True
-            case _:
-                raise RuntimeError("Unknown action")
+
+        if action_code < 1:
+            # move
+            reward = self._sim_step(*action[1:])
+        elif action_code < 2:
+            # set_power
+            self._current_power = (action[1] + 1.0) / 2.0
+            reward = -0.5
+        elif action_code < 3:
+            # wait
+            reward = self._wait_on(
+                (action[1] + 1.0) / 2.0 * self._wait_multiplier)
+        elif action_code < 4:
+            # end
+            reward = self._finalise()
+            terminated = True
+        else:
+            raise RuntimeError("Unknown action")
 
         # --------------------
 
@@ -530,7 +525,7 @@ class QuartzEnv3(gym.Env):
 
         adjust_penalty = freq_target_distance_rel if freq_target_distance_rel > 0.0 else - \
             freq_target_distance_rel * 2.0
-        
+
         wieghts = np.array([-10.0, -5.0, -100.0, -50.0])
         values = np.array([adjust_penalty, db, penalty, zone_penalty])
 
