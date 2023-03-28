@@ -91,3 +91,10 @@
 
 # Локальные
 [v] Замена ручной генерации матриц преобразования на `matplotlib.transforms.Affine2D`
+[_] Создать файл requrments.txt
+    * https://github.com/joliveros/keras-rl2.git
+    * alog
+    * keras
+    * gymnasium
+    * numpy
+    * matplotlib

@@ -75,8 +75,8 @@ class EnvBackCompability(gym.Env):
         Returns:
             The rendering of the environment, depending on the render mode
         """
-
-        assert self.env.render_mode == mode
+        if mode is not None:
+            assert self.env.render_mode == mode
         return self.env.render()
 
     def close(self):

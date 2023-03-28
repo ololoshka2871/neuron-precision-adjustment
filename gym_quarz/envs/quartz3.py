@@ -196,6 +196,7 @@ class QuartzEnv3(gym.Env):
         return observation, info
 
     def step(self, action: np.ndarray):
+        assert action[0] >= 0.0 and action[0] <= 1.0
         action_code = action[0] * self.action_count
 
         terminated = False
@@ -216,8 +217,6 @@ class QuartzEnv3(gym.Env):
             # end
             reward = self._finalise()
             terminated = True
-        else:
-            raise RuntimeError("Unknown action")
 
         # --------------------
 

@@ -1,6 +1,6 @@
 ## https://stackoverflow.com/a/58628399
 from keras.models import Model, Sequential
-from keras.layers import Dense, Input, Concatenate, Activation, Flatten
+from keras.layers import Dense, Input, Concatenate, Activation, Flatten, Lambda
 
 from rl.agents import NAFAgent
 from rl.memory import SequentialMemory
@@ -66,7 +66,8 @@ class NNController(NAFAgent):
         mu_model.add(Dense(16))
         mu_model.add(Activation('relu'))
         mu_model.add(Dense(nb_actions))
-        mu_model.add(Activation('linear'))
+        mu_model.add(Activation('tanh'))
+        #mu_model.add(Lambda(lambda i: i[0], i[1])
         print(mu_model.summary())
 
         # observation, action -> L ((nb_actions^2 + nb_actions) // 2 outputs)

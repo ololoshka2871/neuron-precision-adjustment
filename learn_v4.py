@@ -6,7 +6,7 @@ import pickle
 
 import numpy as np
 
-from keras.optimizers import adam_v2
+from keras.optimizers import adam_legacy  # keras 2.12.0
 
 import tensorflow as tf
 import gymnasium as gym
@@ -25,7 +25,7 @@ def learn_main(steps: int,
 
     dqn = NNController(env.observation_space, env.action_space)
 
-    dqn.compile(adam_v2.Adam(learning_rate=learning_rate), metrics=['mse'])
+    dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)
     dqn.fit(env, nb_steps=steps, visualize=False, verbose=2)
 
