@@ -4,8 +4,8 @@ from typing import List
 
 import numpy as np
 
-import gym
-from gym.utils.play import play, PlayPlot, display_arr
+import gymnasium as gym
+from gymnasium.utils.play import play, PlayPlot, display_arr
 
 import pygame
 
@@ -30,14 +30,14 @@ fps = env.metadata.get("render_fps", 30)
 
 clock = pygame.time.Clock()
 done, obs = False, None
-total_reward = 0
+total_reward = 0.0
 info = dict()
 while not done:
     action = env.action_space.sample()
     prev_obs = obs
     obs, rew, terminated, truncated, info = env.step(action)
     done = terminated or truncated
-    total_reward += rew
+    total_reward += rew  # type: ignore
     plotter.callback(prev_obs, obs, action, rew, terminated, truncated, info)
     if obs is not None:
         rendered = env.render()

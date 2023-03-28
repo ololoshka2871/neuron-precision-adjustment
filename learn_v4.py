@@ -8,7 +8,10 @@ import numpy as np
 
 from keras.optimizers import adam_v2
 
-import gym
+import tensorflow as tf
+import gymnasium as gym
+from misc.EnvBackCompability import EnvBackCompability
+
 import gym_quarz
 
 from controllers.controller_v4 import NNController
@@ -18,18 +21,24 @@ def learn_main(steps: int,
                learning_rate=0.001) -> None:
 
     env = gym.make("gym_quarz/QuartzEnv-v3")
-    actions: int = env.action_space.shape[0]  # type: ignore
-    states: int = env.observation_space.shape[0] # type: ignore
-    
-    dqn = NNController(states, actions)
+    env = EnvBackCompability(env)  # type: ignore
+
+    dqn = NNController(env.observation_space, env.action_space)
 
     dqn.compile(adam_v2.Adam(learning_rate=learning_rate), metrics=['mse'])
-    dqn.fit(env, nb_steps=steps, visualize=True, verbose=2)
-
-    scores = dqn.test(env, nb_episodes=3, visualize=True)
-    print(np.mean(scores.history['episode_reward']))
+    tf.compat.v1.experimental.output_all_intermediates(True)
+    dqn.fit(env, nb_steps=steps, visualize=False, verbose=2)
 
     env.close()
+
+    # ------------------------------------
+
+    display_env = gym.make("gym_quarz/QuartzEnv-v3", render_mode='human')
+    display_env = EnvBackCompability(display_env)  # type: ignore
+    scores = dqn.test(display_env, nb_episodes=3, visualize=True)
+    print(np.mean(scores.history['episode_reward']))
+
+    display_env.close()
 
 
 if __name__ == '__main__':
@@ -37,7 +46,7 @@ if __name__ == '__main__':
 
     # parse argumants
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', type=int, help='Max iterations', default=0)
+    parser.add_argument('-m', type=int, help='Max iterations', default=1000)
     parser.add_argument(
         'file', type=str, help='Simulation history file', nargs='?', default='learn_v4.ckl')
     args = parser.parse_args()

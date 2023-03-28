@@ -3,8 +3,8 @@ import numpy as np
 
 from typing import Optional
 
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 
 import pygame
 
@@ -42,9 +42,8 @@ class QuartzEnv3(gym.Env):
         - 3: freq_change - Изменение частоты по сравнению с изначальной
         """
         self.observation_space = spaces.Box(
-            np.array([-1.0, -1.0, 0.0, -1e+6, -1000]),  # type: ignore
-            np.array([1.0, 1.0, 1.0, 1e+6, 1000]),  # type: ignore
-            (5,),
+            np.array([-1.0, -1.0, 0.0, -1e+6, -1000], dtype=np.float32),  # type: ignore
+            np.array([1.0, 1.0, 1.0, 1e+6, 1000], dtype=np.float32),  # type: ignore
             dtype=np.float32)
 
         """
@@ -59,9 +58,8 @@ class QuartzEnv3(gym.Env):
         - 3: F - Скорость перемещения
         """
         self.action_space = spaces.Box(
-            np.array([0.0, -1.0, -1.0, 0.0]),  # type: ignore
-            np.array([1.0, 1.0, 1.0, 1.0]),  # type: ignore
-            (4,),
+            np.array([0.0, -1.0, -1.0, 0.0], dtype=np.float32),  # type: ignore
+            np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32),  # type: ignore
             dtype=np.float32)
         self.action_count = 4
 
@@ -137,7 +135,7 @@ class QuartzEnv3(gym.Env):
         #    rm['penalty_energy'],
         #])
         return {
-            #"params": self._params,
+            "params": self._params,
             "current_power": self._current_power,
             "current_speed": self._current_speed,
             "static_freq_change": rm['static_freq_change'],

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import gym
+import gymnasium as gym
 import gym_quarz
-from gym.utils.env_checker import check_env
+from gymnasium.utils.env_checker import check_env
 
 env = gym.make("gym_quarz/QuartzEnv-v3", render_mode='rgb_array')
 
