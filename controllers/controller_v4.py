@@ -11,12 +11,6 @@ from rl.core import Processor
 
 
 class LaserProcessor(Processor):
-    def process_reward(self, reward):
-        return reward
-    
-    #def process_observation(self, observation):
-    #    return observation[0]
-
     def process_action(self, action):
         """
         action[0] - признак действия [0..1]

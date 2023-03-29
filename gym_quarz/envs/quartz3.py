@@ -401,7 +401,7 @@ class QuartzEnv3(gym.Env):
             time_step=self._modeling_period,
         )
 
-        total_reward = 0.0
+        total_reward = 0.01  # за каждый шаг независимо от того, куда идем
         last_zone = Zone.NONE
         for pos_x, pos_y, _ in zip(*traectory):
             self._next_mesure_after -= self._modeling_period
