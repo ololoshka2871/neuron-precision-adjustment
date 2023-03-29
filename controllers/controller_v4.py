@@ -56,19 +56,19 @@ class NNController(NAFAgent):
         # observation -> V
         V_model = Sequential()
         V_model.add(Flatten(input_shape=(1,) + obs_space.shape))
-        V_model.add(Dense(16, ativation='relu'))
-        V_model.add(Dense(16, ativation='relu'))
-        V_model.add(Dense(16, ativation='relu'))
-        V_model.add(Dense(1, ativation='linear'))
+        V_model.add(Dense(16, activation='relu'))
+        V_model.add(Dense(16, activation='relu'))
+        V_model.add(Dense(16, activation='relu'))
+        V_model.add(Dense(1, activation='linear'))
         print(V_model.summary())
 
         # observation -> action
         mu_model = Sequential()
         mu_model.add(Flatten(input_shape=(1,) + obs_space.shape))
-        mu_model.add(Dense(16, ativation='relu'))
-        mu_model.add(Dense(16, ativation='relu'))
-        mu_model.add(Dense(16, ativation='relu'))
-        mu_model.add(Dense(nb_actions, ativation='tanh'))
+        mu_model.add(Dense(16, activation='relu'))
+        mu_model.add(Dense(16, activation='relu'))
+        mu_model.add(Dense(16, activation='relu'))
+        mu_model.add(Dense(nb_actions, activation='tanh'))
         print(mu_model.summary())
 
         # observation, action -> L ((nb_actions^2 + nb_actions) // 2 outputs)
