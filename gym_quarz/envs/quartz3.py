@@ -126,16 +126,8 @@ class QuartzEnv3(gym.Env):
         assert self._rezonator_model is not None
 
         rm = self._rezonator_model.get_metrics()
-        #return np.array([
-        #    self._current_power,
-        #    self._current_speed,
-        #    rm['static_freq_change'],
-        #    rm['temperature'],
-        #    rm['disbalance'],
-        #    rm['penalty_energy'],
-        #])
         return {
-            "params": self._params,
+            #"params": self._params,
             "current_power": self._current_power,
             "current_speed": self._current_speed,
             "static_freq_change": rm['static_freq_change'],

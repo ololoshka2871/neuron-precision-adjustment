@@ -51,7 +51,7 @@ class EnvBackCompability(gym.Env):
 
         return obs
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict]:
+    def step(self, action: Any) -> Tuple[Any, float, bool, Dict]:
         """Steps through the environment.
 
         Args:
@@ -60,12 +60,17 @@ class EnvBackCompability(gym.Env):
         Returns:
             (observation, reward, terminated, info)
         """
-        r = self.env.step(action)
+        observations, rewards, terminated, truncated, infos = self.env.step(action)
 
         if self.env.render_mode == "human":
             self.render()
 
-        return convert_to_done_step_api(r)  # type: ignore
+        return (
+            observations,
+            rewards,
+            terminated or truncated,
+            infos,
+        )
 
     def render(self, mode: Optional[str] = None) -> Any:
         """Renders the environment.

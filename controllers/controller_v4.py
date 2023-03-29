@@ -1,6 +1,6 @@
 import numpy as np
 
-## https://stackoverflow.com/a/58628399
+# https://stackoverflow.com/a/58628399
 from keras.models import Model, Sequential
 from keras.layers import Dense, Input, Concatenate, Activation, Flatten, Lambda
 
@@ -42,7 +42,11 @@ class NNController(NAFAgent):
         - end: spaces.Box(0.0, 1.0, shape=(1,), dtype=float): Закончить эпизод
     """
 
-    def __init__(self, obs_space, action_space, mem_limit=50000):
+    def __init__(self, obs_space, action_space,
+                 nb_steps_warmup=100,
+                 gamma=0.99, target_model_update=1e-3,
+                 theta=0.15, mu=0.0, sigma=0.3,
+                 mem_limit=50000):
         nb_actions = action_space.shape[0]
 
         # Build all necessary models: V, mu, and L networks.
@@ -66,7 +70,8 @@ class NNController(NAFAgent):
 
         # observation, action -> L ((nb_actions^2 + nb_actions) // 2 outputs)
         action_input = Input(shape=(nb_actions,), name='action_input')
-        observation_input = Input(shape=(1,) + obs_space.shape, name='observation_input')
+        observation_input = Input(
+            shape=(1,) + obs_space.shape, name='observation_input')
         x = Concatenate()([action_input, Flatten()(observation_input)])
         x = Dense(32)(x)
         x = Activation('relu')(x)
@@ -80,9 +85,10 @@ class NNController(NAFAgent):
         print(L_model.summary())
 
         memory = SequentialMemory(limit=mem_limit, window_length=1)
-        random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.3, size=nb_actions)
+        random_process = OrnsteinUhlenbeckProcess(
+            theta=theta, mu=mu, sigma=sigma, size=nb_actions)
         processor = LaserProcessor()
         super().__init__(
             nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_model=mu_model,
-            memory=memory, nb_steps_warmup=100, random_process=random_process,
-            gamma=.99, target_model_update=1e-3, processor=processor)
+            memory=memory, nb_steps_warmup=nb_steps_warmup, random_process=random_process,
+            gamma=gamma, target_model_update=target_model_update, processor=processor)
