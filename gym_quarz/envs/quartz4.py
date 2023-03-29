@@ -215,7 +215,7 @@ class QuartzEnv4(gym.Env):
             return {'Action': 'SetPower', 'Power': rearrange(action[1])}
         elif action_code < 3:
             return {'Action': 'Wait', 'Time': rearrange(action[1]) * self._wait_multiplier}
-        elif action_code < 4:
+        elif action_code <= 4:
             return {'Action': 'End'}
         else:
             raise RuntimeError("Invalid action code")
