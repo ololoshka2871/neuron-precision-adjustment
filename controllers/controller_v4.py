@@ -1,3 +1,5 @@
+import numpy as np
+
 ## https://stackoverflow.com/a/58628399
 from keras.models import Model, Sequential
 from keras.layers import Dense, Input, Concatenate, Activation, Flatten, Lambda
@@ -14,6 +16,17 @@ class LaserProcessor(Processor):
     
     #def process_observation(self, observation):
     #    return observation[0]
+
+    def process_action(self, action):
+        """
+        action[0] - признак действия [0..1]
+        action[1] - x [-1..1]
+        action[2] - y [-1..1]
+        action[3] - speed [0..1]
+        """
+        act = (action[0] + 1.0) / 2.0
+        f = (action[3] + 1.0) / 2.0
+        return np.array([act, *action[1:3], f])
 
 
 class NNController(NAFAgent):
@@ -33,16 +46,9 @@ class NNController(NAFAgent):
     """
 
     def __init__(self, obs_space, action_space, mem_limit=50000):
-        #model = Sequential()
-        #model.add(Flatten(input_shape=(1, states)))
-        #model.add(Dense(24, activation='tanh'))
-        #model.add(Dense(24, activation='linear'))
-        #model.add(Dense(nb_actions, activation='tanh'))
-
         nb_actions = action_space.shape[0]
 
         # Build all necessary models: V, mu, and L networks.
-
         # observation -> V
         V_model = Sequential()
         V_model.add(Flatten(input_shape=(1,) + obs_space.shape))
@@ -67,7 +73,6 @@ class NNController(NAFAgent):
         mu_model.add(Activation('relu'))
         mu_model.add(Dense(nb_actions))
         mu_model.add(Activation('tanh'))
-        #mu_model.add(Lambda(lambda i: i[0], i[1])
         print(mu_model.summary())
 
         # observation, action -> L ((nb_actions^2 + nb_actions) // 2 outputs)

@@ -27,7 +27,7 @@ def learn_main(steps: int,
 
     dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)
-    dqn.fit(env, nb_steps=steps, visualize=False, verbose=2)
+    dqn.fit(env, nb_steps=steps, visualize=False, verbose=1)
 
     env.close()
 
