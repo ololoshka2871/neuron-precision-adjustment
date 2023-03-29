@@ -1,0 +1,6 @@
+alog
+keras
+keras-rl2 @ https://github.com/joliveros/keras-rl2.git
+gymnasium
+numpy
+matplotlib
