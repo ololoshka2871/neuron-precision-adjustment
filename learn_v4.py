@@ -13,6 +13,7 @@ import gym_quarz
 
 from controllers.controller_v4 import NNController
 
+from constants_v4 import *
 
 def learn_main(filename: str,
                steps: int,
@@ -23,7 +24,7 @@ def learn_main(filename: str,
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NNController(env.observation_space, env.action_space)
+    dqn = NNController(env.observation_space, env.action_space, theta=THETA)
 
     dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)

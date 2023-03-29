@@ -12,6 +12,8 @@ import gym_quarz
 
 from controllers.controller_v4 import NNController
 
+from constants_v4 import *
+
 
 def display_main(filename: str,
                  time_limit: float,
@@ -19,7 +21,7 @@ def display_main(filename: str,
     env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='human', time_limit=time_limit)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NNController(env.observation_space, env.action_space)
+    dqn = NNController(env.observation_space, env.action_space, theta=THETA)
     
     # Сначала надо скомпилировать модель, иначе не загрузится веса
     dqn.compile(adam_legacy.Adam(), metrics=['mse'])
