@@ -25,7 +25,11 @@ class LaserProcessor(Processor):
         action[3] - speed [0..1]
         """
         act = (action[0] + 1.0) / 2.0
+        if act > 1 or act < 0:
+            raise ValueError("act = {} ({})".format(act, action[0]))
         f = (action[3] + 1.0) / 2.0
+        if f > 1 or f < 0:
+            raise ValueError("f = {} ({})".format(f, action[3]))
         return np.array([act, *action[1:3], f])
 
 
