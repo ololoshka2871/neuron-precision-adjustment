@@ -1,6 +1,7 @@
-alog
-keras
+alog==1.2
+keras==2.11
 keras-rl2 @ git+https://github.com/joliveros/keras-rl2.git
-gymnasium
-numpy
-matplotlib
+gymnasium==0.27
+numpy==1.24
+matplotlib==3.6
+pygame==2.1
