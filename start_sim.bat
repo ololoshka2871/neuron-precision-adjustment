@@ -1,2 +1,2 @@
 
-python learn_v3.py -p 100
+python learn_v4.py

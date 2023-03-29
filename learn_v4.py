@@ -3,11 +3,11 @@
 
 import numpy as np
 
-from keras.optimizers import adam_legacy  # keras 2.12.0
+from keras.optimizers import adam_legacy  # keras 2.11.0
 
 import tensorflow as tf
 import gymnasium as gym
-from gymnasium.wrappers import TimeLimit
+from gymnasium.wrappers.time_limit import TimeLimit
 from misc.EnvBackCompability import EnvBackCompability
 
 import gym_quarz
