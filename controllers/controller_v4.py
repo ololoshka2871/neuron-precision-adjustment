@@ -23,14 +23,13 @@ class LaserProcessor(Processor):
         action[1] - x [-1..1]
         action[2] - y [-1..1]
         action[3] - speed [0..1]
+        Там добавляется шум, нужно клипать
         """
-        act = (action[0] + 1.0) / 2.0
-        if act > 1 or act < 0:
-            raise ValueError("act = {} ({})".format(act, action[0]))
-        f = (action[3] + 1.0) / 2.0
-        if f > 1 or f < 0:
-            raise ValueError("f = {} ({})".format(f, action[3]))
-        return np.array([act, *action[1:3], f])
+        act = np.clip((action[0] + 1.0) / 2.0, 0.0, 1.0)
+        x = np.clip(action[1], -1.0, 1.0)
+        y = np.clip(action[2], -1.0, 1.0)
+        f = np.clip((action[3] + 1.0) / 2.0, 0.0, 1.0)
+        return np.array([act, x, y, f])
 
 
 class NNController(NAFAgent):
