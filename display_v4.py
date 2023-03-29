@@ -15,7 +15,8 @@ from controllers.controller_v4 import NNController
 
 
 def display_main(filename: str,
-                 max_episode_steps: int) -> None:
+                 max_episode_steps: int,
+                 episodes: int) -> None:
     env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='human')
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
     env = EnvBackCompability(env)  # type: ignore
@@ -32,7 +33,7 @@ def display_main(filename: str,
     # freeze model
     dqn.training = False
 
-    scores = dqn.test(env, nb_episodes=1, visualize=True)
+    scores = dqn.test(env, nb_episodes=episodes, visualize=True)
     print(np.mean(scores.history['episode_reward']))
 
     env.close()
@@ -44,8 +45,9 @@ if __name__ == '__main__':
     # parse argumants
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', type=float, help='Max steps', default=200)
+    parser.add_argument('-e', type=int, help='Episodes', default=1)
     parser.add_argument(
         'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5')  # в .tf не сохраняет
     args = parser.parse_args()
 
-    display_main(args.file, args.s)
+    display_main(args.file, args.s, args.e)
