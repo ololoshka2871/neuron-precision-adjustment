@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     # parse argumants
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', type=int, help='Max iterations', default=100000)
+    parser.add_argument('-i', type=int, help='Max iterations', default=10000)
     parser.add_argument('-s', type=float, help='Max steps', default=200)
     parser.add_argument(
         'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5') # в .tf не сохраняет
