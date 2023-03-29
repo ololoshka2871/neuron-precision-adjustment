@@ -42,9 +42,12 @@ class Coordinates:
         return self
     
     def clip(self, min_x: float, max_x: float, min_y: float, max_y: float):
-        self.point[0] = np.clip(self.point[0], min_x, max_x)
-        self.point[1] = np.clip(self.point[1], min_y, max_y)
-        return self
+        x = np.clip(self.point[0], min_x, max_x)
+        y = np.clip(self.point[1], min_y, max_y)
+        clipped = not (x == self.point[0] and y == self.point[1])
+        self.point[0] = x
+        self.point[1] = y
+        return self, clipped
 
 
 class RealCoordinates(Coordinates):

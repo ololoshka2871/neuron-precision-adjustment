@@ -46,7 +46,7 @@ class NNController(NAFAgent):
                  nb_steps_warmup=100,
                  gamma=0.99, target_model_update=1e-3,
                  theta=0.15, mu=0.0, sigma=0.3,
-                 mem_limit=50000):
+                 mem_limit=5000000):
         nb_actions = action_space.shape[0]
 
         # Build all necessary models: V, mu, and L networks.

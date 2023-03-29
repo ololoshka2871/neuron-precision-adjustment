@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     # parse argumants
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', type=int, help='Max iterations', default=1000)
+    parser.add_argument('-m', type=int, help='Max iterations', default=100000)
     parser.add_argument(
         'file', type=str, help='Simulation history file', nargs='?', default='learn_v4.h5') # в .tf не сохраняет
     args = parser.parse_args()

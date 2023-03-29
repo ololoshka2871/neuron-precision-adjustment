@@ -378,7 +378,7 @@ class QuartzEnv3(gym.Env):
         assert self._coord_transformer is not None
         assert self._prev_freq is not None
 
-        dest_wz = WorkzoneRelativeCoordinates(x, y).add(
+        dest_wz, clipped = WorkzoneRelativeCoordinates(x, y).add(
             self._current_position).clip(-1.0, 1.0, -1.0, 1.0)  # absolute in work zone
         dest_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
             dest_wz)
@@ -393,7 +393,7 @@ class QuartzEnv3(gym.Env):
             time_step=self._modeling_period,
         )
 
-        total_reward = 0.01  # за каждый шаг независимо от того, куда идем
+        total_reward = 0.1 if not clipped else -1.0
         last_zone = Zone.NONE
         for pos_x, pos_y, _ in zip(*traectory):
             self._next_mesure_after -= self._modeling_period
