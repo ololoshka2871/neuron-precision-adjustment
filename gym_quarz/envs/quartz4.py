@@ -34,7 +34,8 @@ class QuartzEnv4(gym.Env):
                  modeling_period: float = 0.01,
                  freqmeter_period: float = 0.4,
                  laser_power: float = 30.0,
-                 wait_multiplier: float = 1.0):
+                 wait_multiplier: float = 1.0,
+                 relative_move = False):
         self.window_size = 1024  # The size of the PyGame window
 
         """
@@ -94,6 +95,7 @@ class QuartzEnv4(gym.Env):
         self._laser_power = laser_power
         self._wait_multiplier = wait_multiplier
         self._time_limit = time_limit
+        self._relative_move = relative_move
 
         self._movement = Movment()
         self._rezonator_model: Optional[RezonatorModel] = None
@@ -422,8 +424,12 @@ class QuartzEnv4(gym.Env):
         assert self._coord_transformer is not None
         assert self._prev_freq is not None
 
-        dest_wz, clipped = WorkzoneRelativeCoordinates(x, y).add(
-            self._current_position).clip(-1.0, 1.0, -1.0, 1.0)  # absolute in work zone
+        if self._relative_move:
+            dest_wz, clipped = WorkzoneRelativeCoordinates(x, y).add(
+                self._current_position).clip(-1.0, 1.0, -1.0, 1.0)  # absolute in work zone
+        else:
+            dest_wz, clipped = WorkzoneRelativeCoordinates(x, y).clip(
+                -1.0, 1.0, -1.0, 1.0)
         dest_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
             dest_wz)
         src_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
