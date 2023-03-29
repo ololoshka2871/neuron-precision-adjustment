@@ -48,5 +48,4 @@ if __name__ == '__main__':
         'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5')  # в .tf не сохраняет
     args = parser.parse_args()
 
-    display_main(args.file,
-                 args.s)
+    display_main(args.file, args.s)

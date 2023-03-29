@@ -31,8 +31,7 @@ class QuartzEnv4(gym.Env):
                  modeling_period: float = 0.01,
                  freqmeter_period: float = 0.4,
                  laser_power: float = 30.0,
-                 wait_multiplier: float = 1.0,
-                 ):
+                 wait_multiplier: float = 1.0):
         self.window_size = 1024  # The size of the PyGame window
 
         """
@@ -103,6 +102,7 @@ class QuartzEnv4(gym.Env):
         self._transform = None
         self._lastact = None
 
+        self._step_counter = 0
         self._current_power = 0.0
         self._current_speed = 0.0
         self._next_mesure_after = 0.0
@@ -178,8 +178,13 @@ class QuartzEnv4(gym.Env):
             offset=self._params['offset'],
             angle=self._params['angle']
         )
+        self._step_counter = 0
         self._current_power = 0.0
         self._current_speed = 0.0
+        self._next_mesure_after = 0.0
+        
+        self._lastact = None
+
         self._prev_freq = self._rezonator_model.get_metrics()['freq_change']
 
         observation = self._get_obs()
@@ -228,6 +233,7 @@ class QuartzEnv4(gym.Env):
                 terminated = True
 
         self._lastact['rev'] = reward
+        self._step_counter += 1
 
         # --------------------
 
@@ -563,14 +569,14 @@ class QuartzEnv4(gym.Env):
         """
 
         if self._lastact is None:
-            return 'None'
+            return '0'
         else:
             match self._lastact['Action']:
                 case 'Move':
-                    return f"Move step: X{self._lastact['X']:.2f} Y{self._lastact['Y']:.2f} F{self._lastact['F']:.2f}, rev={self._lastact['rev']}"
+                    return f"{self._step_counter} Move step: X{self._lastact['X']:.2f} Y{self._lastact['Y']:.2f} F{self._lastact['F']:.2f}, rev={self._lastact['rev']}"
                 case 'SetPower':
-                    return f"SetPower: {self._lastact['Power']:.2f}, rev={self._lastact['rev']}"
+                    return f"{self._step_counter} SetPower: {self._lastact['Power']:.2f}, rev={self._lastact['rev']}"
                 case 'Wait':
-                    return f"Wait: {self._lastact['Time']:.2f} s., rev={self._lastact['rev']}"
+                    return f"{self._step_counter} Wait: {self._lastact['Time']:.2f} s., rev={self._lastact['rev']}"
                 case _:
-                    return 'None'
+                    return 'UNKNOWN'
