@@ -20,7 +20,7 @@ def learn_main(filename: str,
                max_episode_steps: int = 200,
                learning_rate=0.001) -> None:
 
-    env = gym.make("gym_quarz/QuartzEnv-v3")
+    env = gym.make("gym_quarz/QuartzEnv-v4")
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
     env = EnvBackCompability(env)  # type: ignore
 

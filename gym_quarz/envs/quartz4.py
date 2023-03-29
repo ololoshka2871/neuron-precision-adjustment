@@ -16,7 +16,7 @@ from models.movement import Movment
 from models.rezonator_model import ModelView, RezonatorModel, Zone
 
 
-class QuartzEnv3(gym.Env):
+class QuartzEnv4(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 5}
 
     def __init__(self,

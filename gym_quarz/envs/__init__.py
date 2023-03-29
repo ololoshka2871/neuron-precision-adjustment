@@ -1,1 +1,2 @@
-from gym_quarz.envs.quartz3 import QuartzEnv3
+from gym_quarz.envs.quartz4 import QuartzEnv4
+
