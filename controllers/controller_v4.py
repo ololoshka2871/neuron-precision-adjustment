@@ -2,7 +2,7 @@ import numpy as np
 
 # https://stackoverflow.com/a/58628399
 from keras.models import Model, Sequential
-from keras.layers import Dense, Input, Concatenate, Activation, Flatten, Lambda
+from keras.layers import Dense, Input, Concatenate, Activation, Flatten
 
 from rl.agents import NAFAgent
 from rl.memory import SequentialMemory
@@ -30,16 +30,17 @@ class NNController(NAFAgent):
     """
     Контроллер - нейронная сеть
     Входы:
-        - position: spaces.Box(-1.0, 1.0, shape=(2,), dtype=float)
-        - power: spaces.Box(0.0, 1.0, shape=(1,), dtype=float)
-        - current_frequency_offset: spaces.Box(-1e+6, 1e+6, shape=(1,), dtype=float)
-        - adjust_target: spaces.Box(-1000, 1000, shape=(1,), dtype=float)
+        - position: spaces.Box(-1.0, 1.0, shape=(2,), dtype=np.float32)
+        - power: spaces.Box(0.0, 1.0, shape=(1,), dtype=np.float32)
+        - current_frequency_offset: spaces.Box(-1e+6, 1e+6, shape=(1,), dtype=np.float32)
+        - adjust_target: spaces.Box(-1000, 1000, shape=(1,), dtype=np.float32)
+        - time: spaces.Box(0.0, 100.0, shape=(1,), dtype=np.float32)
 
     Выходы:
-        - "move": spaces.Box(-1.0, 1.0, shape=(4,), dtype=float): Передвинуть лазер на заданное расстояние
-        - "set_power": spaces.Box(0.0, 1.0, shape=(2,), dtype=float): Изменить мощность лазера
-        - wait: spaces.Box(0.0, 1.0, shape=(2,), dtype=float): Ожидаение
-        - end: spaces.Box(0.0, 1.0, shape=(1,), dtype=float): Закончить эпизод
+        - "move": spaces.Box(-1.0, 1.0, shape=(4,), dtype=np.float32): Передвинуть лазер на заданное расстояние
+        - "set_power": spaces.Box(0.0, 1.0, shape=(2,), dtype=np.float32): Изменить мощность лазера
+        - wait: spaces.Box(0.0, 1.0, shape=(2,), dtype=np.float32): Ожидаение
+        - end: spaces.Box(0.0, 1.0, shape=(1,), dtype=np.float32): Закончить эпизод
     """
 
     def __init__(self, obs_space, action_space,
@@ -53,18 +54,18 @@ class NNController(NAFAgent):
         # observation -> V
         V_model = Sequential()
         V_model.add(Flatten(input_shape=(1,) + obs_space.shape))
-        V_model.add(Dense(16, activation='relu'))
-        V_model.add(Dense(16, activation='relu'))
-        V_model.add(Dense(16, activation='relu'))
+        V_model.add(Dense(16, activation='tanh'))
+        V_model.add(Dense(16, activation='linear'))
+        V_model.add(Dense(16, activation='linear'))
         V_model.add(Dense(1, activation='linear'))
         print(V_model.summary())
 
         # observation -> action
         mu_model = Sequential()
         mu_model.add(Flatten(input_shape=(1,) + obs_space.shape))
-        mu_model.add(Dense(16, activation='relu'))
-        mu_model.add(Dense(16, activation='relu'))
-        mu_model.add(Dense(16, activation='relu'))
+        mu_model.add(Dense(16, activation='tanh'))
+        mu_model.add(Dense(16, activation='linear'))
+        mu_model.add(Dense(16, activation='linear'))
         mu_model.add(Dense(nb_actions, activation='tanh'))
         print(mu_model.summary())
 

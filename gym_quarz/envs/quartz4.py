@@ -1,3 +1,5 @@
+import math
+
 from matplotlib.transforms import Affine2D
 import numpy as np
 
@@ -21,6 +23,7 @@ class QuartzEnv4(gym.Env):
 
     def __init__(self,
                  render_mode=None,
+                 time_limit: float = math.inf,
                  rezonator_thickness: float = 0.23,
                  heat_dissipation_rate: float = 0.9,
                  ambient_temperatire: float = 0.0,
@@ -41,9 +44,9 @@ class QuartzEnv4(gym.Env):
         - 3: freq_change - Изменение частоты по сравнению с изначальной
         """
         self.observation_space = spaces.Box(
-            np.array([-1.0, -1.0, 0.0, -1e+6, -1000],
+            np.array([-1.0, -1.0, 0.0, 0.0, -math.inf, 0.0],
                      dtype=np.float32),  # type: ignore
-            np.array([1.0, 1.0, 1.0, 1e+6, 1000],
+            np.array([1.0, 1.0, 1.0, math.inf, math.inf, math.inf],
                      dtype=np.float32),  # type: ignore
             dtype=np.float32)
 
@@ -90,6 +93,7 @@ class QuartzEnv4(gym.Env):
         self._freqmeter_period = freqmeter_period
         self._laser_power = laser_power
         self._wait_multiplier = wait_multiplier
+        self._time_limit = time_limit
 
         self._movement = Movment()
         self._rezonator_model: Optional[RezonatorModel] = None
@@ -120,7 +124,8 @@ class QuartzEnv4(gym.Env):
             *self._current_position,
             self._current_power,
             rm['freq_change'],
-            self._params['adjust_target']], dtype=np.float32)
+            self._params['adjust_target'],
+            self._time_elapsed], dtype=np.float32)
 
     def _get_info(self):
         """
@@ -182,7 +187,8 @@ class QuartzEnv4(gym.Env):
         self._current_power = 0.0
         self._current_speed = 0.0
         self._next_mesure_after = 0.0
-        
+        self._time_elapsed = 0.0
+
         self._lastact = None
         self._transform = None
 
@@ -227,6 +233,7 @@ class QuartzEnv4(gym.Env):
             case 'SetPower':
                 self._current_power = self._lastact['Power']
                 reward = -0.5
+                self._time_elapsed += 0.1
             case 'Wait':
                 reward = self._wait_on(self._lastact['Time'])
             case 'End':
@@ -244,7 +251,9 @@ class QuartzEnv4(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, reward, terminated, False, info
+        trancated = self._time_elapsed >= self._time_limit
+
+        return observation, reward, terminated, trancated, info
 
     def render(self):
         """
@@ -379,7 +388,8 @@ class QuartzEnv4(gym.Env):
         x, y = self._current_position
         font = pygame.font.SysFont('Arial', 20)
         text = font.render(
-            f"Current: x: {x:.2f}, y: {y:.2f}, S: {self._current_power:.2f}, F:{self._current_speed:.2f}", True, (0, 0, 0, 0))
+            f"Current: x: {x:.2f}, y: {y:.2f}, S: {self._current_power:.2f}, F:{self._current_speed:.2f}, T: {self._time_elapsed:.2f} s.",
+            True, (0, 0, 0, 0))
         canvas.blit(text, (10, 10))
         text = font.render(f"Act: {self._lastact_str()}", True, (0, 0, 0, 0))
         canvas.blit(text, (10, 35))
@@ -465,6 +475,7 @@ class QuartzEnv4(gym.Env):
 
         self._prev_position = self._current_position
         self._current_position = dest_wz  # обновляем текущую позицию
+        self._time_elapsed += traectory[2][-1]
 
         return total_reward
 
@@ -498,6 +509,8 @@ class QuartzEnv4(gym.Env):
                     zone, pos, laser_power, t)
             case _:
                 def f(t): return self._rezonator_model.idle(t)  # type: ignore
+
+        self._time_elapsed += wait_time
 
         if wait_time < self._next_mesure_after:
             f(wait_time)

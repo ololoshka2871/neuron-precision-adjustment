@@ -21,6 +21,7 @@
             "justMyCode": true,
             "args": [
                 "none",
+                "-l1.0",
                 "-e2"
             ]
         },
