@@ -184,6 +184,7 @@ class QuartzEnv4(gym.Env):
         self._next_mesure_after = 0.0
         
         self._lastact = None
+        self._transform = None
 
         self._prev_freq = self._rezonator_model.get_metrics()['freq_change']
 

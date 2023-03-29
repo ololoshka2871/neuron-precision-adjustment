@@ -16,12 +16,12 @@
             "name": "Python: display",
             "type": "python",
             "request": "launch",
-            "program": "display_v3.py",
+            "program": "display_v4.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                // "/media/pub/Кожевников/точная настройка/learn/learn_v23-30.ckl"
-                "learn_v3.ckl"
+                "none",
+                "-e2"
             ]
         },
     ]
