@@ -490,9 +490,13 @@ class QuartzEnv4(gym.Env):
         Стоит на месте в течение `wait_time` секунд
         """
 
+        WAIT_PENALTY = -0.1
+
         assert self._coord_transformer is not None
         assert self._rezonator_model is not None
         assert self._prev_freq is not None
+
+        total_reward = WAIT_PENALTY * wait_time
 
         model_pos = self._coord_transformer.wrap_from_workzone_relative_to_model(
             self._current_position).tuple()
@@ -521,9 +525,7 @@ class QuartzEnv4(gym.Env):
         if wait_time < self._next_mesure_after:
             f(wait_time)
             self._next_mesure_after -= wait_time
-            return 0.0
         else:
-            total_reward = 0.0
             while wait_time > self._next_mesure_after:
                 f(self._next_mesure_after)
                 wait_time -= self._next_mesure_after
@@ -537,7 +539,8 @@ class QuartzEnv4(gym.Env):
 
             f(wait_time)
             self._next_mesure_after -= wait_time
-            return total_reward
+            
+        return total_reward
 
     def _finalise(self) -> float:
         """
