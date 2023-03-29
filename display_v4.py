@@ -14,23 +14,26 @@ import gym_quarz
 from controllers.controller_v4 import NNController
 
 
-def learn_main(filename: str,
-               steps: int,
-               max_episode_steps: int = 200,
-               learning_rate=0.001) -> None:
-
-    env = gym.make("gym_quarz/QuartzEnv-v4")
+def display_main(filename: str,
+                 max_episode_steps: int) -> None:
+    env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='human')
     env = TimeLimit(env, max_episode_steps=max_episode_steps)
     env = EnvBackCompability(env)  # type: ignore
 
     dqn = NNController(env.observation_space, env.action_space)
-
-    dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
+    
+    # Сначала надо скомпилировать модель, иначе не загрузится веса
+    dqn.compile(adam_legacy.Adam(learning_rate=0.001), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)
-    dqn.fit(env, nb_steps=steps, visualize=False, verbose=1)
+    
+    if filename != 'none':
+        dqn.load_weights(filename)
+    
+    # freeze model
+    dqn.training = False
 
-    # After training is done, we save the final weights.
-    dqn.save_weights(filename, overwrite=True)
+    scores = dqn.test(env, nb_episodes=1, visualize=True)
+    print(np.mean(scores.history['episode_reward']))
 
     env.close()
 
@@ -40,13 +43,10 @@ if __name__ == '__main__':
 
     # parse argumants
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', type=int, help='Max iterations', default=100000)
     parser.add_argument('-s', type=float, help='Max steps', default=200)
     parser.add_argument(
-        'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5') # в .tf не сохраняет
+        'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5')  # в .tf не сохраняет
     args = parser.parse_args()
 
-    learn_main(args.file,
-               args.i,
-               args.s,
-               learning_rate=0.0005)
+    display_main(args.file,
+                 args.s)

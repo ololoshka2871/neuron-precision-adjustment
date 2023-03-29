@@ -42,8 +42,10 @@ class QuartzEnv4(gym.Env):
         - 3: freq_change - Изменение частоты по сравнению с изначальной
         """
         self.observation_space = spaces.Box(
-            np.array([-1.0, -1.0, 0.0, -1e+6, -1000], dtype=np.float32),  # type: ignore
-            np.array([1.0, 1.0, 1.0, 1e+6, 1000], dtype=np.float32),  # type: ignore
+            np.array([-1.0, -1.0, 0.0, -1e+6, -1000],
+                     dtype=np.float32),  # type: ignore
+            np.array([1.0, 1.0, 1.0, 1e+6, 1000],
+                     dtype=np.float32),  # type: ignore
             dtype=np.float32)
 
         """
@@ -99,6 +101,7 @@ class QuartzEnv4(gym.Env):
         self._f_s_transformer = None
         self._prev_freq = None
         self._transform = None
+        self._lastact = None
 
         self._current_power = 0.0
         self._current_speed = 0.0
@@ -127,7 +130,7 @@ class QuartzEnv4(gym.Env):
 
         rm = self._rezonator_model.get_metrics()
         return {
-            #"params": self._params,
+            # "params": self._params,
             "current_power": self._current_power,
             "current_speed": self._current_speed,
             "static_freq_change": rm['static_freq_change'],
@@ -187,28 +190,44 @@ class QuartzEnv4(gym.Env):
 
         return observation, info
 
-    def step(self, action: np.ndarray):
+    def _decode_action(self, action: np.ndarray) -> dict:
         assert action[0] >= 0.0 and action[0] <= 1.0
         action_code = action[0] * self.action_count
+
+        def rearrange(x: float):
+            return (x + 1.0) / 2.0
+
+        if action_code < 1:
+            return {'Action': 'Move', 'X': action[1], 'Y': action[2], 'F': rearrange(action[3])}
+        elif action_code < 2:
+            return {'Action': 'SetPower', 'Power': rearrange(action[1])}
+        elif action_code < 3:
+            return {'Action': 'Wait', 'Time': rearrange(action[1]) * self._wait_multiplier}
+        elif action_code < 4:
+            return {'Action': 'End'}
+        else:
+            raise RuntimeError("Invalid action code")
+
+    def step(self, action: np.ndarray):
+        self._lastact = self._decode_action(action)
 
         terminated = False
         reward = 0.0
 
-        if action_code < 1:
-            # move
-            reward = self._sim_step(*action[1:])
-        elif action_code < 2:
-            # set_power
-            self._current_power = (action[1] + 1.0) / 2.0
-            reward = -0.5
-        elif action_code < 3:
-            # wait
-            reward = self._wait_on(
-                (action[1] + 1.0) / 2.0 * self._wait_multiplier)
-        elif action_code < 4:
-            # end
-            reward = self._finalise()
-            terminated = True
+        match self._lastact['Action']:
+            case 'Move':
+                reward = self._sim_step(
+                    self._lastact['X'], self._lastact['Y'], self._lastact['F'])
+            case 'SetPower':
+                self._current_power = self._lastact['Power']
+                reward = -0.5
+            case 'Wait':
+                reward = self._wait_on(self._lastact['Time'])
+            case 'End':
+                reward = self._finalise()
+                terminated = True
+
+        self._lastact['rev'] = reward
 
         # --------------------
 
@@ -334,12 +353,12 @@ class QuartzEnv4(gym.Env):
         dest = self._transform.transform(  # type: ignore
             self._coord_transformer.wrap_from_workzone_relative_to_model(
                 self._current_position).tuple())
-        pygame.draw.circle(canvas, center=src, radius=2,  # type: ignore
+        pygame.draw.circle(canvas, center=src, radius=5,  # type: ignore
                            width=0, color=color)
-        pygame.draw.circle(canvas, center=dest, radius=2,  # type: ignore
+        pygame.draw.circle(canvas, center=dest, radius=5,  # type: ignore
                            width=0, color=color)
         pygame.draw.line(canvas, start_pos=src, end_pos=dest,  # type: ignore
-                         width=1, color=color)
+                         width=2, color=color)
 
         # pygame.draw.line(canvas, start_pos=self._transform.transform(  # type: ignore
         #    (0, -5)), end_pos=self._transform.transform((0, 5)), width=1, color='black')  # type: ignore
@@ -349,6 +368,14 @@ class QuartzEnv4(gym.Env):
         pygame.Surface.unlock(canvas)
 
         canvas = pygame.transform.flip(canvas, False, True)
+
+        x, y = self._current_position
+        font = pygame.font.SysFont('Arial', 20)
+        text = font.render(
+            f"Current: x: {x:.2f}, y: {y:.2f}, S: {self._current_power:.2f}, F:{self._current_speed:.2f}", True, (0, 0, 0, 0))
+        canvas.blit(text, (10, 10))
+        text = font.render(f"Act: {self._lastact_str()}", True, (0, 0, 0, 0))
+        canvas.blit(text, (10, 35))
 
         if self.render_mode == "human":
             # The following line copies our drawings from `canvas` to the visible window
@@ -529,3 +556,21 @@ class QuartzEnv4(gym.Env):
         res = values * wieghts
 
         return res.sum()
+
+    def _lastact_str(self) -> str:
+        """
+        Возвращает строку с последним действием
+        """
+
+        if self._lastact is None:
+            return 'None'
+        else:
+            match self._lastact['Action']:
+                case 'Move':
+                    return f"Move step: X{self._lastact['X']:.2f} Y{self._lastact['Y']:.2f} F{self._lastact['F']:.2f}, rev={self._lastact['rev']}"
+                case 'SetPower':
+                    return f"SetPower: {self._lastact['Power']:.2f}, rev={self._lastact['rev']}"
+                case 'Wait':
+                    return f"Wait: {self._lastact['Time']:.2f} s., rev={self._lastact['rev']}"
+                case _:
+                    return 'None'
