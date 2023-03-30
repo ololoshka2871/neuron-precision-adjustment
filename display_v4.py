@@ -18,7 +18,8 @@ from constants_v4 import *
 def display_main(filename: str,
                  time_limit: float,
                  episodes: int) -> None:
-    env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='human', time_limit=time_limit)
+    env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='human', 
+                   time_limit=time_limit, relative=RELATIVE)
     env = EnvBackCompability(env)  # type: ignore
 
     dqn = NNController(env.observation_space, env.action_space, theta=THETA, batch_size=BATCH_SIZE)

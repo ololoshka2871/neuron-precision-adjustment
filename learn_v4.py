@@ -36,7 +36,9 @@ def learn_main(filename: str,
                checkpoint_every: int = 100,
                learning_rate=0.001) -> None:
 
-    env = gym.make("gym_quarz/QuartzEnv-v4", time_limit=time_limit)
+    env = gym.make("gym_quarz/QuartzEnv-v4", 
+                   time_limit=time_limit,
+                   relative=RELATIVE)
     env = EnvBackCompability(env)  # type: ignore
 
     dqn = NNController(env.observation_space, env.action_space,
