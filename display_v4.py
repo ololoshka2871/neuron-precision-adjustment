@@ -55,7 +55,8 @@ class MyCallback(Callback):
 - Adjustment {info['static_freq_change']:.2f} Hz/{info['adjust_target']:.2f} Hz: {precision:.2f}%,
 - Penalty energy: {info['penalty_energy']},
 - dissbalance: {info['disbalance'] * 100:.2f} %,
-- Time: {info['time_elapsed']:.2f} s
+- Time: {info['time_elapsed']:.2f} s,
+- Stop reason: {info['stop_reason']}
 """)
 
 

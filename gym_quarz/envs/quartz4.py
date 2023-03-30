@@ -120,6 +120,7 @@ class QuartzEnv4(gym.Env):
         self._prev_freq = None
         self._transform = None
         self._lastact = DefaultDict(float)
+        self._stop_reason = None
 
         self._step_counter = 0
         self._current_power = 0.0
@@ -162,6 +163,7 @@ class QuartzEnv4(gym.Env):
             "penalty_energy": rm['penalty_energy'],
             "adjust_target": self._params['adjust_target'],
             "time_elapsed": self._time_elapsed,
+            "stop_reason": self._stop_reason,
         }
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -260,6 +262,7 @@ class QuartzEnv4(gym.Env):
                 reward, cliped = self._sim_step(act['X'], act['Y'], act['F'])
                 if cliped and self._lastact['cliped']:
                     terminated = True  # два раза подряд не получилось сделать шаг - конец
+                    self._stop_reason = 'Double Cliped'
 
                 # Сбрасываем счетчики штрафов за повторение действий
                 self._lastact['SetPowerCounter'] = 0.0
@@ -275,6 +278,7 @@ class QuartzEnv4(gym.Env):
             case 'End':
                 reward = self._finalise()
                 terminated = True
+                self._stop_reason = 'End'
 
         self._lastact['rev'] = reward
         self._lastact['cliped'] = cliped
@@ -289,6 +293,8 @@ class QuartzEnv4(gym.Env):
             self._render_frame()
 
         trancated = self._time_elapsed >= self._time_limit
+        if trancated:
+            self._stop_reason = 'TimeLimit'
 
         return observation, reward, terminated, trancated, info
 
