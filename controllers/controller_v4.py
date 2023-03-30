@@ -38,8 +38,8 @@ class LaserProcessor(Processor):
         Там добавляется шум, нужно клипать операнды
         """
         move = action[0]
-        x = np.clip(action[1], -1.0, 1.0)
-        y = np.clip(action[2], -1.0, 1.0)
+        x = action[1]
+        y = action[2]
         f = np.clip((action[3] + 1.0) / 2.0, 0.0, 1.0)
         set_power = action[4]
         S = np.clip((action[5] + 1.0) / 2.0, 1.0e-3, 1.0)
