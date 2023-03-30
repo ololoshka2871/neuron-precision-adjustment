@@ -40,11 +40,11 @@ class LaserProcessor(Processor):
         move = action[0]
         x = action[1]
         y = action[2]
-        f = np.clip((action[3] + 1.0) / 2.0, 1.0e-3, 1.0)
+        f = action[3]
         set_power = action[4]
-        S = np.clip((action[5] + 1.0) / 2.0, 0.0, 1.0)
+        S = action[5]
         wait = action[6]
-        T = np.clip((action[5] + 1.0) / 2.0, 0.0, 1.0)
+        T = action[5]
         end = action[7]
         return np.array([move, x, y, f, set_power, S, wait, T, end])
 

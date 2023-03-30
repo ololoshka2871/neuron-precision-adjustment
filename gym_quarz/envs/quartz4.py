@@ -67,9 +67,9 @@ class QuartzEnv4(gym.Env):
         - 8: Вероятность закончить эпизод
         """
         self.action_space = spaces.Box(
-            np.array([-1.0, -1.0, -1.0, 0.0, 0.0,  # move
-                      -1.0, 0.0,  # set S
-                      -1.0, 0.0,  # wait
+            np.array([-1.0, -1.0, -1.0, -1.0, -1.0,  # move
+                      -1.0, -1.0,  # set S
+                      -1.0, -1.0,  # wait
                       -1.0,  # end
                       ], dtype=np.float32),  # type: ignore
             np.array([1.0, 1.0, 1.0, 1.0, 1.0,  # move
@@ -230,16 +230,16 @@ class QuartzEnv4(gym.Env):
         max_action = max(actions)
         action_index = actions.index(max_action)
 
-        def rearrange(x: float):
-            return (x + 1.0) / 2.0
+        def rearrange(x: float, _min: float = 0.0):
+            return max((x + 1.0) / 2.0, _min)
 
         match action_index:
             case 0:
-                return {'Action': 'Move', 'X': action[1], 'Y': action[2], 'F': rearrange(action[3])}
+                return {'Action': 'Move', 'X': action[1], 'Y': action[2], 'F': rearrange(action[3], 1e-3)}
             case 1:
                 return {'Action': 'SetPower', 'Power': rearrange(action[5])}
             case 2:
-                return {'Action': 'Wait', 'Time': rearrange(action[7]) * self._wait_multiplier}
+                return {'Action': 'Wait', 'Time': rearrange(action[7], 0.1) * self._wait_multiplier}
             case 3:
                 return {'Action': 'End'}
             case _:
