@@ -35,6 +35,7 @@ class QuartzEnv4(gym.Env):
                  freqmeter_period: float = 0.4,
                  laser_power: float = 30.0,
                  wait_multiplier: float = 1.0,
+                 action_repeat_penalty: float = 0.5,
                  relative_move=False):
         self.window_size = 1024  # The size of the PyGame window
 
@@ -98,6 +99,7 @@ class QuartzEnv4(gym.Env):
         self._wait_multiplier = wait_multiplier
         self._time_limit = time_limit
         self._relative_move = relative_move
+        self._action_repeat_penalty = action_repeat_penalty
 
         self._movement = Movment()
         self._rezonator_model: Optional[RezonatorModel] = None
@@ -229,11 +231,17 @@ class QuartzEnv4(gym.Env):
             raise RuntimeError("Invalid action code")
 
     def step(self, action: np.ndarray):
-        self._lastact = self._decode_action(action)
+        act = self._decode_action(action)
+
+        reward = 0.0
+        if self._lastact is not None \
+            and self._lastact['Action'] == act['Action'] \
+            and act['Action'] != 'Move':
+            reward -= self._action_repeat_penalty
+
+        self._lastact = act
 
         terminated = False
-        reward = 0.0
-
         match self._lastact['Action']:
             case 'Move':
                 reward = self._sim_step(
