@@ -21,7 +21,7 @@ def display_main(filename: str,
     env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='human', time_limit=time_limit)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NNController(env.observation_space, env.action_space, theta=THETA)
+    dqn = NNController(env.observation_space, env.action_space, theta=THETA, batch_size=BATCH_SIZE)
     
     # Сначала надо скомпилировать модель, иначе не загрузится веса
     dqn.compile(adam_legacy.Adam(), metrics=['mse'])

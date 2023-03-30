@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "display_v4.py",
             "console": "integratedTerminal",
-            "justMyCode": true,
+            "justMyCode": false,
             "args": [
                 "none",
                 "-l1.0",

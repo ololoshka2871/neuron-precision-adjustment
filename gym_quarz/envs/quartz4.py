@@ -41,8 +41,10 @@ class QuartzEnv4(gym.Env):
         """
         Регистрация измеряемых параметров. То, что будет отдавать модель на каждом шаге
         - (0, 1): laser_position - Текущее положение лазера
-        - 2: frequency - Текущая частота
-        - 3: freq_change - Изменение частоты по сравнению с изначальной
+        - 2: laser_power - текущая мощность лазера
+        - 3: freq_change - Текущее измение частоты [Hz]
+        - 4: freq_change_target - цель изменения частоты по сравнению с изначальной [Hz]
+        - 5: Время симуляции (если указан лимит, то относительное)
         """
         self.observation_space = spaces.Box(
             np.array([-1.0, -1.0, 0.0, 0.0, -math.inf, 0.0],
@@ -122,12 +124,16 @@ class QuartzEnv4(gym.Env):
                 "Rezonator is not initialized, call reset() first!")
 
         rm = self._rezonator_model.get_metrics()
+        if self._time_limit < math.inf:
+            elapsed = self._time_elapsed / self._time_limit
+        else:
+            elapsed = self._time_elapsed
         return np.array([
             *self._current_position,
             self._current_power,
             rm['freq_change'],
             self._params['adjust_target'],
-            self._time_elapsed], dtype=np.float32)
+            elapsed], dtype=np.float32)
 
     def _get_info(self):
         """
@@ -306,12 +312,13 @@ class QuartzEnv4(gym.Env):
         model_working_area = self._coord_transformer.array_wrap_from_real_to_model(
             real_working_area)
 
+        if self.window is None and (self.render_mode == "human" or self.render_mode == "rgb_array"):
+            pygame.init()  # need to use fonts
+
         if self.window is None and self.render_mode == "human":
-            pygame.init()
             pygame.display.init()
             self.window = pygame.display.set_mode(
                 (self.window_size, self.window_size))
-        if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
         if self._transform is None:
@@ -596,10 +603,10 @@ class QuartzEnv4(gym.Env):
         else:
             match self._lastact['Action']:
                 case 'Move':
-                    return f"{self._step_counter} Move step: X{self._lastact['X']:.2f} Y{self._lastact['Y']:.2f} F{self._lastact['F']:.2f}, rev={self._lastact['rev']}"
+                    return f"{self._step_counter} Move step: X{self._lastact['X']:.2f} Y{self._lastact['Y']:.2f} F{self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
                 case 'SetPower':
-                    return f"{self._step_counter} SetPower: {self._lastact['Power']:.2f}, rev={self._lastact['rev']}"
+                    return f"{self._step_counter} SetPower: {self._lastact['Power']:.2f}, rev={self._lastact['rev']:.2f}"
                 case 'Wait':
-                    return f"{self._step_counter} Wait: {self._lastact['Time']:.2f} s., rev={self._lastact['rev']}"
+                    return f"{self._step_counter} Wait: {self._lastact['Time']:.2f} s., rev={self._lastact['rev']:.2f}"
                 case _:
-                    return 'UNKNOWN'
+                    return 'NA'

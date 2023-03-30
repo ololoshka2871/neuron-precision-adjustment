@@ -19,7 +19,7 @@ plotter = PlayPlot(callback, 30 * 5,
     ["Reward", "Current offset", "Static freq change", "Penalty energy", "Temperature"]
 )
 
-env = gym.make("gym_quarz/QuartzEnv-v3", render_mode='rgb_array')
+env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='rgb_array')
 
 env.reset()
 

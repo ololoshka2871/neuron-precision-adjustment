@@ -15,16 +15,17 @@ from controllers.controller_v4 import NNController
 
 from constants_v4 import *
 
+
 def learn_main(filename: str,
                steps: int,
-               max_episode_steps: int = 200,
+               time_limit: float = 10.0,
                learning_rate=0.001) -> None:
 
-    env = gym.make("gym_quarz/QuartzEnv-v4")
-    env = TimeLimit(env, max_episode_steps=max_episode_steps)
+    env = gym.make("gym_quarz/QuartzEnv-v4", time_limit=time_limit)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NNController(env.observation_space, env.action_space, theta=THETA)
+    dqn = NNController(env.observation_space, env.action_space,
+                       theta=THETA, batch_size=BATCH_SIZE)
 
     dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)
@@ -41,10 +42,10 @@ if __name__ == '__main__':
 
     # parse argumants
     parser = argparse.ArgumentParser()
+    parser.add_argument('-l', type=float, help='Time limit (s.)', default=10.0)
     parser.add_argument('-i', type=int, help='Max iterations', default=10000)
-    parser.add_argument('-s', type=float, help='Max steps', default=200)
     parser.add_argument(
-        'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5') # в .tf не сохраняет
+        'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5')  # в .tf не сохраняет
     args = parser.parse_args()
 
-    learn_main(args.file, args.i, args.s, learning_rate=0.0005)
+    learn_main(args.file, args.i, args.l, learning_rate=0.0005)
