@@ -19,7 +19,7 @@ from models.rezonator_model import ModelView, RezonatorModel, Zone
 
 
 class QuartzEnv4(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
 
     def __init__(self,
                  render_mode=None,
@@ -35,7 +35,7 @@ class QuartzEnv4(gym.Env):
                  freqmeter_period: float = 0.4,
                  laser_power: float = 30.0,
                  wait_multiplier: float = 1.0,
-                 relative_move = False):
+                 relative_move=False):
         self.window_size = 1024  # The size of the PyGame window
 
         """
@@ -239,9 +239,7 @@ class QuartzEnv4(gym.Env):
                 reward = self._sim_step(
                     self._lastact['X'], self._lastact['Y'], self._lastact['F'])
             case 'SetPower':
-                self._current_power = self._lastact['Power']
-                reward = -0.5
-                self._time_elapsed += 0.1
+                reward = self._set_power(self._lastact['Power'])
             case 'Wait':
                 reward = self._wait_on(self._lastact['Time'])
             case 'End':
@@ -262,6 +260,17 @@ class QuartzEnv4(gym.Env):
         trancated = self._time_elapsed >= self._time_limit
 
         return observation, reward, terminated, trancated, info
+
+    def _set_power(self, S: float) -> float:
+        if S == self._current_power:
+            penalty = -1.0
+        elif abs(S - self._current_power) < 0.05:
+            penalty = -0.5
+        else:
+            penalty = -0.25
+        reward = self._wait_on(0.1) + penalty
+        self._current_power = S
+        return reward
 
     def render(self):
         """
@@ -450,7 +459,8 @@ class QuartzEnv4(gym.Env):
             time_step=self._modeling_period,
         )
 
-        total_reward = dest_real.abs_path_from(src_real) * 0.1 if not clipped else -1.0
+        total_reward = dest_real.abs_path_from(
+            src_real) * 0.1 if not clipped else -1.0
         last_zone = Zone.NONE
         for pos_x, pos_y, _ in zip(*traectory):
             self._next_mesure_after -= self._modeling_period
@@ -546,7 +556,7 @@ class QuartzEnv4(gym.Env):
 
             f(wait_time)
             self._next_mesure_after -= wait_time
-            
+
         return total_reward
 
     def _finalise(self) -> float:

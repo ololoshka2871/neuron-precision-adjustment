@@ -19,6 +19,7 @@ from constants_v4 import *
 def learn_main(filename: str,
                steps: int,
                time_limit: float = 10.0,
+               checkpoint_every: int = 100,
                learning_rate=0.001) -> None:
 
     env = gym.make("gym_quarz/QuartzEnv-v4", time_limit=time_limit)
@@ -29,10 +30,15 @@ def learn_main(filename: str,
 
     dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)
-    dqn.fit(env, nb_steps=steps, visualize=False, verbose=1)
 
-    # After training is done, we save the final weights.
-    dqn.save_weights(filename, overwrite=True)
+    for i in range(steps // checkpoint_every):
+        dqn.fit(env, nb_steps=checkpoint_every, visualize=False, verbose=1)
+        dqn.save_weights(f"cp{i:04}-{filename}", overwrite=True)
+    
+    if steps % checkpoint_every != 0:
+        dqn.fit(env, nb_steps=steps - (steps // checkpoint_every)
+                * checkpoint_every, visualize=False, verbose=1)
+        dqn.save_weights(f"end-{filename}", overwrite=True)
 
     env.close()
 
@@ -44,8 +50,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', type=float, help='Time limit (s.)', default=10.0)
     parser.add_argument('-i', type=int, help='Max iterations', default=10000)
+    parser.add_argument('-c', type=int, help='Сheckpoint evry', default=1000)
     parser.add_argument(
-        'file', type=str, help='Weigth file', nargs='?', default='learn_v4.h5')  # в .tf не сохраняет
+        'file', type=str, help='Weigth file base (chX-filename.h5)', nargs='?', default='learn_v4.h5')  # в .tf не сохраняет
     args = parser.parse_args()
 
-    learn_main(args.file, args.i, args.l, learning_rate=0.0005)
+    learn_main(args.file, args.i, args.l, args.c, learning_rate=0.0005)

@@ -34,7 +34,6 @@ def display_main(filename: str,
     dqn.training = False
 
     scores = dqn.test(env, nb_episodes=episodes, visualize=True)
-    print(np.mean(scores.history['episode_reward']))
 
     env.close()
 
