@@ -459,8 +459,11 @@ class QuartzEnv4(gym.Env):
             time_step=self._modeling_period,
         )
 
-        total_reward = dest_real.abs_path_from(
-            src_real) * 0.1 if not clipped else -1.0
+        path = dest_real.abs_path_from(src_real)
+        if path == 0.0: # безделие - штраф
+            return self._wait_on(0.1) - 2.5
+
+        total_reward = path * 0.1 if not clipped else -1.0
         last_zone = Zone.NONE
         for pos_x, pos_y, _ in zip(*traectory):
             self._next_mesure_after -= self._modeling_period
