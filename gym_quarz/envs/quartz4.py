@@ -3,7 +3,7 @@ import math
 from matplotlib.transforms import Affine2D
 import numpy as np
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import gymnasium as gym
 from gymnasium import spaces
@@ -242,9 +242,12 @@ class QuartzEnv4(gym.Env):
         self._lastact = act
 
         terminated = False
+        cliped = False
         match act['Action']:
             case 'Move':
-                reward = self._sim_step(act['X'], act['Y'], act['F'])
+                reward, cliped = self._sim_step(act['X'], act['Y'], act['F'])
+                if cliped and self._lastact['cliped']:
+                    terminated = True  # два раза подряд не получилось сделать шаг - конец
             case 'SetPower':
                 reward = self._set_power(act['Power'])
             case 'Wait':
@@ -254,6 +257,7 @@ class QuartzEnv4(gym.Env):
                 terminated = True
 
         self._lastact['rev'] = reward
+        self._lastact['cliped'] = cliped
         self._step_counter += 1
 
         # --------------------
@@ -433,7 +437,7 @@ class QuartzEnv4(gym.Env):
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
 
-    def _sim_step(self, x: float, y: float, F: float) -> float:
+    def _sim_step(self, x: float, y: float, F: float) -> Tuple[float, bool]:
         """
         Выполняет один шаг симуляции
         :param x: координата x
@@ -468,7 +472,7 @@ class QuartzEnv4(gym.Env):
 
         path = dest_real.abs_path_from(src_real)
         if path == 0.0:  # безделие - штраф
-            return self._wait_on(0.1) - 2.5
+            return self._wait_on(0.1) - 2.5, clipped
 
         total_reward = path * 0.1 if not clipped else -1.0
         last_zone = Zone.NONE
@@ -510,7 +514,7 @@ class QuartzEnv4(gym.Env):
         self._current_position = dest_wz  # обновляем текущую позицию
         self._time_elapsed += traectory[2][-1]
 
-        return total_reward
+        return total_reward, clipped
 
     def _wait_on(self, wait_time: float) -> float:
         """
