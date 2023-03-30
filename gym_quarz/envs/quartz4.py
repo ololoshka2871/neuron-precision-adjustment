@@ -3,7 +3,7 @@ import math
 from matplotlib.transforms import Affine2D
 import numpy as np
 
-from typing import Optional, Tuple
+from typing import DefaultDict, Optional, Tuple
 
 import gymnasium as gym
 from gymnasium import spaces
@@ -110,7 +110,7 @@ class QuartzEnv4(gym.Env):
         self._f_s_transformer = None
         self._prev_freq = None
         self._transform = None
-        self._lastact = None
+        self._lastact = DefaultDict(float)
 
         self._step_counter = 0
         self._current_power = 0.0
@@ -199,7 +199,7 @@ class QuartzEnv4(gym.Env):
         self._next_mesure_after = 0.0
         self._time_elapsed = 0.0
 
-        self._lastact = None
+        self._lastact = DefaultDict(float)
         self._transform = None
 
         self._prev_freq = self._rezonator_model.get_metrics()['freq_change']
@@ -239,7 +239,7 @@ class QuartzEnv4(gym.Env):
                 and act['Action'] != 'Move':
             reward -= self._action_repeat_penalty
 
-        self._lastact = act
+        self._lastact.update(act)
 
         terminated = False
         cliped = False
@@ -248,10 +248,18 @@ class QuartzEnv4(gym.Env):
                 reward, cliped = self._sim_step(act['X'], act['Y'], act['F'])
                 if cliped and self._lastact['cliped']:
                     terminated = True  # два раза подряд не получилось сделать шаг - конец
+
+                # Сбрасываем счетчики штрафов за повторение действий
+                self._lastact['SetPowerCounter'] = 0.0
+                self._lastact['WaitCounter'] = 0.0
             case 'SetPower':
                 reward = self._set_power(act['Power'])
+                self._lastact['SetPowerCounter'] += 1.0
+                reward *= self._lastact['SetPowerCounter']
             case 'Wait':
                 reward = self._wait_on(act['Time'])
+                self._lastact['WaitCounter'] += 1.0
+                reward *= self._lastact['WaitCounter']
             case 'End':
                 reward = self._finalise()
                 terminated = True

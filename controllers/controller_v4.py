@@ -95,24 +95,25 @@ class NNController(NAFAgent):
 
         input_shape = (1,) + \
             processor.transform_observation_space(obs_space.shape)
-        dens_neurons = 16 + processor.history_len
+        v_mu_dens_neurons = 16 + processor.history_len
+        L_dense_neurons = 32 + processor.history_len // 2
 
         # Build all necessary models: V, mu, and L networks.
         # observation -> V
         V_model = Sequential()
         V_model.add(Flatten(input_shape=input_shape, name='V'))
-        V_model.add(Dense(dens_neurons, activation='tanh'))
-        V_model.add(Dense(dens_neurons, activation='linear'))
-        V_model.add(Dense(dens_neurons, activation='linear'))
+        V_model.add(Dense(v_mu_dens_neurons, activation='tanh'))
+        V_model.add(Dense(v_mu_dens_neurons, activation='linear'))
+        V_model.add(Dense(v_mu_dens_neurons, activation='linear'))
         V_model.add(Dense(1, activation='linear'))
         print(V_model.summary())
 
         # observation -> action
         mu_model = Sequential()
         mu_model.add(Flatten(input_shape=input_shape, name='mu'))
-        mu_model.add(Dense(dens_neurons, activation='tanh'))
-        mu_model.add(Dense(dens_neurons, activation='linear'))
-        mu_model.add(Dense(dens_neurons, activation='linear'))
+        mu_model.add(Dense(v_mu_dens_neurons, activation='tanh'))
+        mu_model.add(Dense(v_mu_dens_neurons, activation='linear'))
+        mu_model.add(Dense(v_mu_dens_neurons, activation='linear'))
         mu_model.add(Dense(nb_actions, activation='tanh'))
         print(mu_model.summary())
 
@@ -120,11 +121,11 @@ class NNController(NAFAgent):
         action_input = Input(shape=(nb_actions,), name='action_input')
         observation_input = Input(shape=input_shape, name='observation_input')
         x = Concatenate()([action_input, Flatten()(observation_input)])
-        x = Dense(32)(x)
+        x = Dense(L_dense_neurons)(x)
         x = Activation('relu')(x)
-        x = Dense(32)(x)
+        x = Dense(L_dense_neurons)(x)
         x = Activation('relu')(x)
-        x = Dense(32)(x)
+        x = Dense(L_dense_neurons)(x)
         x = Activation('relu')(x)
         x = Dense(((nb_actions * nb_actions + nb_actions) // 2))(x)
         x = Activation('linear')(x)

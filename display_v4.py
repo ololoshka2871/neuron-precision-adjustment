@@ -31,18 +31,22 @@ class MyCallback(Callback):
         super(MyCallback, self).__init__()
         self.plot = PlayPlot(MyCallback.filter, points,
                              ["Reward", "Current offset", "Static freq change", "Penalty energy", "Temperature"])
-        self.prev_obs = None
+
+    def on_episode_begin(self, episode, logs):
+        for data_series in self.plot.data:
+            data_series.clear()
+
+        return super().on_episode_begin(episode, logs)
 
     def on_step_end(self, step, logs={}):
         """Called at end of each step"""
         self.plot.callback(
-            self.prev_obs,
+            None,
             logs['observation'],
             logs['action'],
             logs['reward'],
             False, False,
             logs['info'])
-        self.prev_obs = logs['observation']
 
 
 def display_main(filename: str,
