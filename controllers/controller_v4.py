@@ -15,14 +15,14 @@ class LaserProcessor(Processor):
         super().__init__()
 
         self._history_len = history_len
-        self._measure_history = np.array([])
+        self._history = np.array([])
 
     @property
-    def history_len(self) -> int:
-        return self._history_len
+    def history_size(self) -> int:
+        return self._history_len * 4
 
     def transform_observation_space(self, observation_space):
-        return (observation_space[0] + self._history_len - 1,)
+        return (observation_space[0] - 4 + self._history_len * 4,)
 
     def process_action(self, action):
         """
@@ -58,20 +58,19 @@ class LaserProcessor(Processor):
         freq_change_rel = freq_change / freq_change_target
         freq_chang_target_inv = 1.0 / freq_change_target  # Чтобы было меньше 1
 
-        if self._measure_history.size == 0:
-            self._measure_history = np.repeat(
-                freq_change_rel, self._history_len)
+        if self._history.size == 0:
+            self._history = np.array(
+                [*pos, F, freq_change_rel] * self._history_len)
         else:
-            self._measure_history = np.append(
-                self._measure_history, freq_change_rel)
-            self._measure_history = self._measure_history[1:]
+            self._history = np.append(
+                self._history, [*pos, F, freq_change_rel])
+            self._history = self._history[4:]
 
-        return np.array(
-            [*pos, F, freq_chang_target_inv, sym_time, *self._measure_history])
+        return np.array([freq_chang_target_inv, sym_time, *self._history])
 
     def process_step(self, observation, reward, done, info):
         if done:
-            self._measure_history = np.array([])  # reset history
+            self._history = np.array([])  # reset history
 
         return self.process_observation(observation), reward, done, info
 
@@ -105,8 +104,8 @@ class NNController(NAFAgent):
 
         input_shape = (1,) + \
             processor.transform_observation_space(obs_space.shape)
-        v_mu_dens_neurons = 16 + processor.history_len
-        L_dense_neurons = 32 + processor.history_len // 2
+        v_mu_dens_neurons = 16 + processor.history_size
+        L_dense_neurons = 32 + processor.history_size // 2
 
         # Build all necessary models: V, mu, and L networks.
         # observation -> V
