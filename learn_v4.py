@@ -38,7 +38,7 @@ def learn_main(filename: str,
 
     env = gym.make("gym_quarz/QuartzEnv-v4", 
                    time_limit=time_limit,
-                   relative=RELATIVE)
+                   relative_move=RELATIVE)
     env = EnvBackCompability(env)  # type: ignore
 
     dqn = NNController(env.observation_space, env.action_space,
