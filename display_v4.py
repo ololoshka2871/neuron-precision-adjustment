@@ -37,8 +37,6 @@ class MyCallback(Callback):
             data_series.clear()
             self.plot.t = 0
 
-        return super().on_episode_begin(episode, logs)
-
     def on_step_end(self, step, logs={}):
         """Called at end of each step"""
         self.plot.callback(
@@ -48,6 +46,17 @@ class MyCallback(Callback):
             logs['reward'],
             False, False,
             logs['info'])
+        
+    def on_episode_end(self, episode, logs):
+        info = logs['info']
+        precision = info['static_freq_change'] / info['adjust_target'] * 100
+        print(
+        f"""
+- Adjustment {info['static_freq_change']:.2f} Hz/{info['adjust_target']:.2f} Hz: {precision:.2f}%,
+- Penalty energy: {info['penalty_energy']},
+- dissbalance: {info['disbalance'] * 100:.2f} %,
+- Time: {info['time_elapsed']:.2f} s
+""")
 
 
 def display_main(filename: str,

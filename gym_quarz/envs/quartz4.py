@@ -154,13 +154,14 @@ class QuartzEnv4(gym.Env):
 
         rm = self._rezonator_model.get_metrics()
         return {
-            # "params": self._params,
             "current_power": self._current_power,
             "current_speed": self._current_speed,
             "static_freq_change": rm['static_freq_change'],
             "temperature": rm['temperature'],
             "disbalance": rm['disbalance'],
             "penalty_energy": rm['penalty_energy'],
+            "adjust_target": self._params['adjust_target'],
+            "time_elapsed": self._time_elapsed,
         }
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
