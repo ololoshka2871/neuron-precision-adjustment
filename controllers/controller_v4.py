@@ -26,17 +26,27 @@ class LaserProcessor(Processor):
 
     def process_action(self, action):
         """
-        action[0] - признак действия [0..1]
-        action[1] - x [-1..1]
-        action[2] - y [-1..1]
-        action[3] - speed [0..1]
-        Там добавляется шум, нужно клипать
+        - 0: Вероятность сделать движение
+        - 1: x - Координата x, если move, иначе power или время ожидания
+        - 2: y - Координата y
+        - 3: F - Скорость перемещения
+        - 4: Вероятность установить мощность лазера
+        - 5: S - Мощность лазера
+        - 6: Вероятность ожидания
+        - 7: T - Время ожидания
+        - 8: Вероятность закончить эпизод
+        Там добавляется шум, нужно клипать операнды
         """
-        act = np.clip((action[0] + 1.0) / 2.0, 0.0, 1.0)
+        move = action[0]
         x = np.clip(action[1], -1.0, 1.0)
         y = np.clip(action[2], -1.0, 1.0)
         f = np.clip((action[3] + 1.0) / 2.0, 0.0, 1.0)
-        return np.array([act, x, y, f])
+        set_power = action[4]
+        S = np.clip((action[5] + 1.0) / 2.0, 1.0e-3, 1.0)
+        wait = action[6]
+        T = np.clip((action[5] + 1.0) / 2.0, 0.0, 1.0)
+        end = action[7]
+        return np.array([move, x, y, f, set_power, S, wait, T, end])
 
     def process_observation(self, observation):
         pos = observation[:2]

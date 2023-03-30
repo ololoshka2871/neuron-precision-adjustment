@@ -56,18 +56,27 @@ class QuartzEnv4(gym.Env):
 
         """
         Возможные действия
-        - 0: Признак действия:
-            - <1: move - Передвинуть лазер на заданное расстояние
-            - <2: set_power - Изменить мощность лазера
-            - <3: wait - Ожидаение
-            - <4: end - Закончить эпизод
+        - 0: Вероятность сделать движение
         - 1: x - Координата x, если move, иначе power или время ожидания
         - 2: y - Координата y
         - 3: F - Скорость перемещения
+        - 4: Вероятность установить мощность лазера
+        - 5: S - Мощность лазера
+        - 6: Вероятность ожидания
+        - 7: T - Время ожидания
+        - 8: Вероятность закончить эпизод
         """
         self.action_space = spaces.Box(
-            np.array([0.0, -1.0, -1.0, 0.0], dtype=np.float32),  # type: ignore
-            np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32),  # type: ignore
+            np.array([-1.0, -1.0, -1.0, 0.0, 0.0,  # move
+                      -1.0, 0.0,  # set S
+                      -1.0, 0.0,  # wait
+                      -1.0,  # end
+                      ], dtype=np.float32),  # type: ignore
+            np.array([1.0, 1.0, 1.0, 1.0, 1.0,  # move
+                      1.0, 1.0,  # set S
+                      1.0, 1.0,  # wait
+                      1.0  # end
+                      ], dtype=np.float32),  # type: ignore
             dtype=np.float32)
         self.action_count = 4
 
@@ -213,22 +222,24 @@ class QuartzEnv4(gym.Env):
         return observation, info
 
     def _decode_action(self, action: np.ndarray) -> dict:
-        assert action[0] >= 0.0 and action[0] <= 1.0
-        action_code = action[0] * self.action_count
+        actions = [action[0], action[4], action[6], action[8]]
+        max_action = max(actions)
+        action_index = actions.index(max_action)
 
         def rearrange(x: float):
             return (x + 1.0) / 2.0
 
-        if action_code < 1:
-            return {'Action': 'Move', 'X': action[1], 'Y': action[2], 'F': rearrange(action[3])}
-        elif action_code < 2:
-            return {'Action': 'SetPower', 'Power': rearrange(action[1])}
-        elif action_code < 3:
-            return {'Action': 'Wait', 'Time': rearrange(action[1]) * self._wait_multiplier}
-        elif action_code <= 4:
-            return {'Action': 'End'}
-        else:
-            raise RuntimeError("Invalid action code")
+        match action_index:
+            case 0:
+                return {'Action': 'Move', 'X': action[1], 'Y': action[2], 'F': rearrange(action[3])}
+            case 1:
+                return {'Action': 'SetPower', 'Power': rearrange(action[5])}
+            case 2:
+                return {'Action': 'Wait', 'Time': rearrange(action[7]) * self._wait_multiplier}
+            case 3:
+                return {'Action': 'End'}
+            case _:
+                raise RuntimeError("Invalid action code")
 
     def step(self, action: np.ndarray):
         act = self._decode_action(action)
@@ -619,7 +630,8 @@ class QuartzEnv4(gym.Env):
             freq_target_distance_rel * 2.0
 
         wieghts = np.array([-10.0, -5.0, -100.0, -50.0], dtype=np.float32)
-        values = np.array([adjust_penalty, db, penalty, zone_penalty], dtype=np.float32)
+        values = np.array([adjust_penalty, db, penalty,
+                          zone_penalty], dtype=np.float32)
 
         res = values * wieghts
 
