@@ -42,7 +42,9 @@ def learn_main(filename: str,
 
     cp_saver = ModelIntervalCheckpoint(f"step{{step:08}}-{filename}", interval=checkpoint_every)
     dqn.fit(env, nb_steps=steps, callbacks=[cp_saver], visualize=False, verbose=1)
-    dqn.save_weights(f"end-{filename}", overwrite=True)
+
+    if steps % checkpoint_every != 0:
+        dqn.save_weights(f"end-{filename}", overwrite=True)
 
     env.close()
 
