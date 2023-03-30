@@ -35,6 +35,7 @@ class MyCallback(Callback):
     def on_episode_begin(self, episode, logs):
         for data_series in self.plot.data:
             data_series.clear()
+            self.plot.t = 0
 
         return super().on_episode_begin(episode, logs)
 
