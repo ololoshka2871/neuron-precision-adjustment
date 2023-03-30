@@ -295,8 +295,9 @@ class QuartzEnv4(gym.Env):
 
         trancated = self._time_elapsed >= self._time_limit
         if trancated:
+            reward = self._finalise()
             self._stop_reason = 1
-
+        
         return observation, reward, terminated, trancated, info
 
     def _set_power(self, S: float) -> float:
