@@ -235,21 +235,20 @@ class QuartzEnv4(gym.Env):
 
         reward = 0.0
         if self._lastact is not None \
-            and self._lastact['Action'] == act['Action'] \
-            and act['Action'] != 'Move':
+                and self._lastact['Action'] == act['Action'] \
+                and act['Action'] != 'Move':
             reward -= self._action_repeat_penalty
 
         self._lastact = act
 
         terminated = False
-        match self._lastact['Action']:
+        match act['Action']:
             case 'Move':
-                reward = self._sim_step(
-                    self._lastact['X'], self._lastact['Y'], self._lastact['F'])
+                reward = self._sim_step(act['X'], act['Y'], act['F'])
             case 'SetPower':
-                reward = self._set_power(self._lastact['Power'])
+                reward = self._set_power(act['Power'])
             case 'Wait':
-                reward = self._wait_on(self._lastact['Time'])
+                reward = self._wait_on(act['Time'])
             case 'End':
                 reward = self._finalise()
                 terminated = True
@@ -468,7 +467,7 @@ class QuartzEnv4(gym.Env):
         )
 
         path = dest_real.abs_path_from(src_real)
-        if path == 0.0: # безделие - штраф
+        if path == 0.0:  # безделие - штраф
             return self._wait_on(0.1) - 2.5
 
         total_reward = path * 0.1 if not clipped else -1.0
@@ -607,8 +606,8 @@ class QuartzEnv4(gym.Env):
         adjust_penalty = freq_target_distance_rel if freq_target_distance_rel > 0.0 else - \
             freq_target_distance_rel * 2.0
 
-        wieghts = np.array([-10.0, -5.0, -100.0, -50.0])
-        values = np.array([adjust_penalty, db, penalty, zone_penalty])
+        wieghts = np.array([-10.0, -5.0, -100.0, -50.0], dtype=np.float32)
+        values = np.array([adjust_penalty, db, penalty, zone_penalty], dtype=np.float32)
 
         res = values * wieghts
 

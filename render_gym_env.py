@@ -38,7 +38,7 @@ while not done:
     obs, rew, terminated, truncated, info = env.step(action)
     done = terminated or truncated
     total_reward += rew  # type: ignore
-    plotter.callback(prev_obs, obs, action, rew, terminated, truncated, info)
+    plotter.callback(prev_obs, obs, action, rew, terminated, truncated, info)  # type: ignore
     if obs is not None:
         rendered = env.render()
         if isinstance(rendered, List):

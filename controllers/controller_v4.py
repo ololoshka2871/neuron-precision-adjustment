@@ -57,7 +57,7 @@ class LaserProcessor(Processor):
             self._measure_history = self._measure_history[1:]
 
         return np.array(
-            [*pos, F, *self._measure_history, freq_chang_target_inv, sym_time])
+            [*pos, F, freq_chang_target_inv, sym_time, *self._measure_history])
 
     def process_step(self, observation, reward, done, info):
         if done:
