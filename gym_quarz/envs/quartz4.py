@@ -263,11 +263,11 @@ class QuartzEnv4(gym.Env):
 
     def _set_power(self, S: float) -> float:
         if S == self._current_power:
-            penalty = -1.0
+            penalty = -0.1
         elif abs(S - self._current_power) < 0.05:
-            penalty = -0.5
+            penalty = -0.05
         else:
-            penalty = -0.25
+            penalty = -0.025
         reward = self._wait_on(0.1) + penalty
         self._current_power = S
         return reward
