@@ -643,7 +643,11 @@ class QuartzEnv4(gym.Env):
 
         res = values * wieghts
 
-        return res.sum()
+        if freq_change == 0.0 and penalty == 0.0:
+            # Если даже не тронули резонатор, то штрафовать сильно!
+            return -1000.0
+        else:
+            return res.sum()
 
     def _lastact_str(self) -> str:
         """
