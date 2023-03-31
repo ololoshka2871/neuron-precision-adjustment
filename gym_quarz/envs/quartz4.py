@@ -493,6 +493,7 @@ class QuartzEnv4(gym.Env):
             self._current_position)
 
         self._current_speed = np.clip(F, 1e-3, 1.0)  # speed mast be > 0
+        assert self._current_speed > 0.0  # just ensure
         traectory = self._movement.interpolate_move(
             src=src_real.tuple(),
             dst=dest_real.tuple(),
