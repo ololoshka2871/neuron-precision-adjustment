@@ -68,7 +68,9 @@ def display_main(filename: str,
     env = EnvBackCompability(env)  # type: ignore
 
     dqn = NNController(env.observation_space, env.action_space,
-                       theta=THETA, batch_size=BATCH_SIZE)
+                       sigma=SIGMA,
+                       theta=THETA, 
+                       batch_size=BATCH_SIZE)
 
     # Сначала надо скомпилировать модель, иначе не загрузится веса
     dqn.compile(adam_legacy.Adam(), metrics=['mse'])

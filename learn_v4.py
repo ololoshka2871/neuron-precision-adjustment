@@ -31,7 +31,10 @@ def learn_main(filename: str,
     env = EnvBackCompability(env)  # type: ignore
 
     dqn = NNController(env.observation_space, env.action_space,
-                       theta=THETA, batch_size=BATCH_SIZE)
+                       target_model_update=100,
+                       sigma=SIGMA,
+                       theta=THETA, 
+                       batch_size=BATCH_SIZE)
 
     dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)
