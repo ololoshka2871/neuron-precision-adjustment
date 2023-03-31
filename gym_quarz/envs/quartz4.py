@@ -273,11 +273,11 @@ class QuartzEnv4(gym.Env):
             case 'SetPower':
                 reward = self._set_power(act['Power'])
                 self._lastact['SetPowerCounter'] += 1.0
-                reward += self._lastact['SetPowerCounter'] * self._wait_penalty_multiplier
+                reward -= self._lastact['SetPowerCounter'] * self._wait_penalty_multiplier
             case 'Wait':
                 reward = self._wait_on(act['Time'])
                 self._lastact['WaitCounter'] += 1.0
-                reward += self._lastact['WaitCounter'] * self._wait_penalty_multiplier
+                reward -= self._lastact['WaitCounter'] * self._wait_penalty_multiplier
             case 'End':
                 reward = self._finalise()
                 terminated = True
