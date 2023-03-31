@@ -73,6 +73,9 @@ class LaserProcessor(Processor):
             self._history = np.array([])  # reset history
 
         return self.process_observation(observation), reward, done, info
+    
+    def process_reward(self, reward):
+        return reward / 1000.0  # rescale reward
 
 
 class NAFNNController(NAFAgent):
@@ -177,9 +180,10 @@ class DDPGNNController(DDPGAgent):
         actor = Sequential()
         actor.add(Flatten(input_shape=input_shape, name='Actor'))
         actor.add(Dense(actor_neurons, activation='tanh'))
-        actor.add(Dense(actor_neurons, activation='relu'))
-        actor.add(Dense(actor_neurons, activation='relu'))
-        actor.add(Dense(actor_neurons, activation='relu'))
+        actor.add(Dense(actor_neurons, activation='linear'))
+        actor.add(Dense(actor_neurons, activation='linear'))
+        actor.add(Dense(actor_neurons, activation='linear'))
+        actor.add(Dense(actor_neurons, activation='linear'))
         actor.add(Dense(nb_actions, activation='tanh'))
         print(actor.summary())
 
@@ -188,11 +192,13 @@ class DDPGNNController(DDPGAgent):
         observation_input = Input(shape=input_shape, name='observation_input')
         x = Concatenate()([action_input, Flatten()(observation_input)])
         x = Dense(critic_neurons)(x)
-        x = Activation('relu')(x)
+        x = Activation('tanh')(x)
         x = Dense(critic_neurons)(x)
-        x = Activation('relu')(x)
+        x = Activation('linear')(x)
         x = Dense(critic_neurons)(x)
-        x = Activation('relu')(x)
+        x = Activation('linear')(x)
+        x = Dense(critic_neurons)(x)
+        x = Activation('linear')(x)
         x = Dense(1)(x)
         x = Activation('linear')(x)
         critic = Model(inputs=[action_input, observation_input], outputs=x)
