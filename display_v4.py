@@ -17,7 +17,7 @@ from misc.EnvBackCompability import EnvBackCompability
 
 import gym_quarz
 
-from controllers.controller_v4 import NAFNNController
+from controllers.controller_v4 import DDPGNNController as Controller
 
 from constants_v4 import *
 
@@ -67,10 +67,9 @@ def display_main(filename: str,
                    time_limit=time_limit, relative_move=RELATIVE)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NAFNNController(env.observation_space, env.action_space,
-                          sigma=SIGMA,
-                          theta=THETA,
-                          batch_size=BATCH_SIZE)
+    dqn = Controller(env.observation_space, env.action_space,
+                     sigma=SIGMA,
+                     theta=THETA)
 
     # Сначала надо скомпилировать модель, иначе не загрузится веса
     dqn.compile(adam_legacy.Adam(), metrics=['mse'])

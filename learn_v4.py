@@ -13,7 +13,7 @@ from misc.EnvBackCompability import EnvBackCompability
 
 import gym_quarz
 
-from controllers.controller_v4 import NAFNNController
+from controllers.controller_v4 import DDPGNNController as Controller
 
 from constants_v4 import *
 
@@ -30,11 +30,9 @@ def learn_main(filename: str,
                    relative_move=RELATIVE)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NAFNNController(env.observation_space, env.action_space,
-                          target_model_update=100,
-                          sigma=SIGMA,
-                          theta=THETA,
-                          batch_size=BATCH_SIZE)
+    dqn = Controller(env.observation_space, env.action_space,
+                     sigma=SIGMA,
+                     theta=THETA)
 
     dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)

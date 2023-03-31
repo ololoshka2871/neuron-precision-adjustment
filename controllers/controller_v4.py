@@ -205,4 +205,5 @@ class DDPGNNController(DDPGAgent):
         super().__init__(
             nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
             memory=memory, nb_steps_warmup_critic=nb_steps_warmup_critic, nb_steps_warmup_actor=nb_steps_warmup_actor,
-            random_process=random_process, gamma=gamma, target_model_update=target_model_update)
+            random_process=random_process, gamma=gamma, target_model_update=target_model_update,
+            processor=processor)
