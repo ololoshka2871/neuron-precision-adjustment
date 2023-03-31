@@ -17,7 +17,7 @@ from misc.EnvBackCompability import EnvBackCompability
 
 import gym_quarz
 
-from controllers.controller_v4 import NNController
+from controllers.controller_v4 import NAFNNController
 
 from constants_v4 import *
 
@@ -46,12 +46,12 @@ class MyCallback(Callback):
             logs['reward'],
             False, False,
             logs['info'])
-        
+
     def on_episode_end(self, episode, logs):
         info = logs['info']
         precision = info['static_freq_change'] / info['adjust_target'] * 100
         print(
-        f"""
+            f"""
 - Adjustment {info['static_freq_change']:.2f} Hz/{info['adjust_target']:.2f} Hz: {precision:.2f}%,
 - Penalty energy: {info['penalty_energy']},
 - dissbalance: {info['disbalance'] * 100:.2f} %,
@@ -67,10 +67,10 @@ def display_main(filename: str,
                    time_limit=time_limit, relative_move=RELATIVE)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NNController(env.observation_space, env.action_space,
-                       sigma=SIGMA,
-                       theta=THETA, 
-                       batch_size=BATCH_SIZE)
+    dqn = NAFNNController(env.observation_space, env.action_space,
+                          sigma=SIGMA,
+                          theta=THETA,
+                          batch_size=BATCH_SIZE)
 
     # Сначала надо скомпилировать модель, иначе не загрузится веса
     dqn.compile(adam_legacy.Adam(), metrics=['mse'])

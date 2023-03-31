@@ -13,7 +13,7 @@ from misc.EnvBackCompability import EnvBackCompability
 
 import gym_quarz
 
-from controllers.controller_v4 import NNController
+from controllers.controller_v4 import NAFNNController
 
 from constants_v4 import *
 
@@ -25,16 +25,16 @@ def learn_main(filename: str,
                checkpoint_every: int = 100,
                learning_rate=0.001) -> None:
 
-    env = gym.make("gym_quarz/QuartzEnv-v4", 
+    env = gym.make("gym_quarz/QuartzEnv-v4",
                    time_limit=time_limit,
                    relative_move=RELATIVE)
     env = EnvBackCompability(env)  # type: ignore
 
-    dqn = NNController(env.observation_space, env.action_space,
-                       target_model_update=100,
-                       sigma=SIGMA,
-                       theta=THETA, 
-                       batch_size=BATCH_SIZE)
+    dqn = NAFNNController(env.observation_space, env.action_space,
+                          target_model_update=100,
+                          sigma=SIGMA,
+                          theta=THETA,
+                          batch_size=BATCH_SIZE)
 
     dqn.compile(adam_legacy.Adam(learning_rate=learning_rate), metrics=['mse'])
     tf.compat.v1.experimental.output_all_intermediates(True)
@@ -43,8 +43,10 @@ def learn_main(filename: str,
         print(f">>> Load initial weights from {initial_file}")
         dqn.load_weights(initial_file)
 
-    cp_saver = ModelIntervalCheckpoint(f"step{{step:08}}-{filename}", interval=checkpoint_every)
-    dqn.fit(env, nb_steps=steps, callbacks=[cp_saver], visualize=False, verbose=1)
+    cp_saver = ModelIntervalCheckpoint(
+        f"step{{step:08}}-{filename}", interval=checkpoint_every)
+    dqn.fit(env, nb_steps=steps, callbacks=[
+            cp_saver], visualize=False, verbose=1)
 
     if steps % checkpoint_every != 0:
         dqn.save_weights(f"end-{filename}", overwrite=True)
@@ -59,7 +61,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', type=float, help='Time limit (s.)', default=10.0)
     parser.add_argument('-i', type=int, help='Max iterations', default=10000)
-    parser.add_argument('-c', type=int, help='Сheckpoint every c steps', default=1000)
+    parser.add_argument(
+        '-c', type=int, help='Сheckpoint every c steps', default=1000)
     parser.add_argument('-s', type=str, help='Initial weights file .h5')
     parser.add_argument(
         'file', type=str, help='Weigth file base (stepX-filename.h5)', nargs='?', default='learn_v4.h5')  # в .tf не сохраняет

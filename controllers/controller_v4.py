@@ -4,7 +4,7 @@ import numpy as np
 from keras.models import Model, Sequential
 from keras.layers import Dense, Input, Concatenate, Activation, Flatten
 
-from rl.agents import NAFAgent
+from rl.agents import NAFAgent, DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 from rl.core import Processor
@@ -75,7 +75,7 @@ class LaserProcessor(Processor):
         return self.process_observation(observation), reward, done, info
 
 
-class NNController(NAFAgent):
+class NAFNNController(NAFAgent):
     """
     Контроллер - нейронная сеть
     Входы:
@@ -150,3 +150,59 @@ class NNController(NAFAgent):
             V_model=V_model, L_model=L_model, mu_model=mu_model,
             memory=memory, nb_steps_warmup=nb_steps_warmup, random_process=random_process,
             gamma=gamma, target_model_update=target_model_update, processor=processor)
+
+
+class DDPGNNController(DDPGAgent):
+    """
+    Контроллер - нейронная сеть
+    Все как выше но с DDPG
+    """
+
+    def __init__(self, obs_space, action_space,
+                 history_len=32,
+                 nb_steps_warmup_critic=100,
+                 nb_steps_warmup_actor=100,
+                 theta=0.15, mu=0.0, sigma=0.3,
+                 gamma=0.99, target_model_update=1e-3,
+                 mem_limit=5000000):
+        nb_actions = action_space.shape[0]
+        processor = LaserProcessor(history_len=history_len)
+
+        input_shape = (1,) + \
+            processor.transform_observation_space(obs_space.shape)
+        actor_neurons = 16 + processor.history_size
+        critic_neurons = 32 + processor.history_size // 2
+
+        # observation -> action
+        actor = Sequential()
+        actor.add(Flatten(input_shape=input_shape, name='Actor'))
+        actor.add(Dense(actor_neurons, activation='tanh'))
+        actor.add(Dense(actor_neurons, activation='relu'))
+        actor.add(Dense(actor_neurons, activation='relu'))
+        actor.add(Dense(actor_neurons, activation='relu'))
+        actor.add(Dense(nb_actions, activation='tanh'))
+        print(actor.summary())
+
+        # observation, action -> critic value (1)
+        action_input = Input(shape=(nb_actions,), name='action_input')
+        observation_input = Input(shape=input_shape, name='observation_input')
+        x = Concatenate()([action_input, Flatten()(observation_input)])
+        x = Dense(critic_neurons)(x)
+        x = Activation('relu')(x)
+        x = Dense(critic_neurons)(x)
+        x = Activation('relu')(x)
+        x = Dense(critic_neurons)(x)
+        x = Activation('relu')(x)
+        x = Dense(1)(x)
+        x = Activation('linear')(x)
+        critic = Model(inputs=[action_input, observation_input], outputs=x)
+        print(critic.summary())
+
+        memory = SequentialMemory(limit=mem_limit, window_length=1)
+        random_process = OrnsteinUhlenbeckProcess(
+            theta=theta, mu=mu, sigma=sigma, size=nb_actions)
+
+        super().__init__(
+            nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
+            memory=memory, nb_steps_warmup_critic=nb_steps_warmup_critic, nb_steps_warmup_actor=nb_steps_warmup_actor,
+            random_process=random_process, gamma=gamma, target_model_update=target_model_update)
