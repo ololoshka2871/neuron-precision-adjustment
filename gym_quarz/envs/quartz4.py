@@ -126,7 +126,7 @@ class QuartzEnv4(gym.Env):
 
         self._step_counter = 0
         self._current_power = 0.0
-        self._current_speed = 0.0
+        self._current_speed = 1e-3
         self._next_mesure_after = 0.0
 
     def _get_obs(self):
@@ -209,7 +209,7 @@ class QuartzEnv4(gym.Env):
         )
         self._step_counter = 0
         self._current_power = 0.0
-        self._current_speed = 0.0
+        self._current_speed = 1e-3
         self._next_mesure_after = 0.0
         self._time_elapsed = 0.0
 
@@ -493,7 +493,7 @@ class QuartzEnv4(gym.Env):
             self._current_position)
 
         self._current_speed = np.clip(F, 1e-3, 1.0)  # speed mast be > 0
-        if self._current_speed <= 0.0:
+        if not (self._current_speed > 0.0):
             raise ValueError(f"clip({F}, 1e-3, 1.0) failed")
         
         traectory = self._movement.interpolate_move(
