@@ -125,7 +125,7 @@ class QuartzEnv4(gym.Env):
         self._stop_reason = 0
 
         self._step_counter = 0
-        self._current_power = 0.0
+        self._current_power = 0.5
         self._current_speed = 1e-3
         self._next_mesure_after = 0.0
 
@@ -208,7 +208,7 @@ class QuartzEnv4(gym.Env):
             angle=self._params['angle']
         )
         self._step_counter = 0
-        self._current_power = 0.0
+        self._current_power = 0.5
         self._current_speed = 1e-3
         self._next_mesure_after = 0.0
         self._time_elapsed = 0.0
