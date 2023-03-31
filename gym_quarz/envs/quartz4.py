@@ -36,6 +36,7 @@ class QuartzEnv4(gym.Env):
                  laser_power: float = 30.0,
                  wait_multiplier: float = 1.0,
                  action_repeat_penalty: float = 0.5,
+                 wait_penalty_multiplier: float = 0.5,
                  relative_move=False):
         self.window_size = 1024  # The size of the PyGame window
 
@@ -109,6 +110,7 @@ class QuartzEnv4(gym.Env):
         self._time_limit = time_limit
         self._relative_move = relative_move
         self._action_repeat_penalty = action_repeat_penalty
+        self._wait_penalty_multiplier = wait_penalty_multiplier
 
         self._movement = Movment()
         self._rezonator_model: Optional[RezonatorModel] = None
@@ -271,11 +273,11 @@ class QuartzEnv4(gym.Env):
             case 'SetPower':
                 reward = self._set_power(act['Power'])
                 self._lastact['SetPowerCounter'] += 1.0
-                reward *= self._lastact['SetPowerCounter']
+                reward += self._lastact['SetPowerCounter'] * self._wait_penalty_multiplier
             case 'Wait':
                 reward = self._wait_on(act['Time'])
                 self._lastact['WaitCounter'] += 1.0
-                reward *= self._lastact['WaitCounter']
+                reward += self._lastact['WaitCounter'] * self._wait_penalty_multiplier
             case 'End':
                 reward = self._finalise()
                 terminated = True
