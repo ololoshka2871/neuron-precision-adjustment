@@ -12,21 +12,21 @@ import pygame
 import gym_quarz
 
 def callback(obs_t, obs_tp1, action, reward, done, truncated, info):
-    return [reward, obs_tp1[4], info['static_freq_change'], info['penalty_energy'], info['temperature']]
+    return [reward, obs_tp1[1], info['static_freq_change'], info['penalty_energy'], info['temperature']]
 
 
 plotter = PlayPlot(callback, 30 * 5, 
     ["Reward", "Current offset", "Static freq change", "Penalty energy", "Temperature"]
 )
 
-env = gym.make("gym_quarz/QuartzEnv-v4", render_mode='rgb_array')
+env = gym.make("gym_quarz/QuartzEnv-v5", render_mode='rgb_array')
 
 env.reset()
 
 frame = env.render()
 video_size = frame.shape[:2]  # type: ignore
 screen = pygame.display.set_mode(video_size)
-fps = env.metadata.get("render_fps", 30)
+fps = env.metadata.get("render_fps", 10)
 
 clock = pygame.time.Clock()
 done, obs = False, None
