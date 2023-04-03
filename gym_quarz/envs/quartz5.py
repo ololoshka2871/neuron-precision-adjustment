@@ -483,7 +483,7 @@ class QuartzEnv5(gym.Env):
         m = self._rezonator_model.get_metrics()
         current_freq_change = m['freq_change']
         if current_freq_change > self._params['adjust_target']:
-            return -0.25
+            return self._params['adjust_target'] - current_freq_change
         else:
             freq_change = self._prev_freq - current_freq_change
             self._prev_freq = current_freq_change
