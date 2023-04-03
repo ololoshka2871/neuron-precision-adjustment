@@ -23,8 +23,9 @@ class QuartzEnv5(gym.Env):
 
     def __init__(self,
                  render_mode = None,
+                 speed: float = 1.0,
                  vertical_steps: int = 33,
-                 laser_power_relative: float = 0.5,
+                 laser_power_relative: float = 0.25,
                  time_limit: float = math.inf,
                  rezonator_thickness: float = 0.23,
                  heat_dissipation_rate: float = 0.9,
@@ -59,9 +60,8 @@ class QuartzEnv5(gym.Env):
         Возможные действия
         - 0: Ни чего не делать
         - 1: Сдвинуть лазер на 1 шаг вниз
-        - 2: Сделать горизонатльный проход (сильный F=0.5)
-        - 3: Сделать горизонатльный проход (слабый F=1.0)
-        - 4: Закончить эпизод
+        - 2: Сделать горизонатльный проход
+        - 3: Закончить эпизод
         """
         self.action_space = spaces.Discrete(4)
 
@@ -110,7 +110,7 @@ class QuartzEnv5(gym.Env):
 
         self._step_counter = 0
         self._power = laser_power_relative
-        self._speed = 0.0
+        self._speed = speed
         self._next_mesure_after = 0.0
 
     def _get_obs(self):
@@ -214,24 +214,16 @@ class QuartzEnv5(gym.Env):
 
         match action:
             case 0:  # Ни чего не делать
-                F = 0.0
                 reward = self._wait_on(0.1)
             case 1:  # Сдвинуть лазер на 1 шаг вниз
-                F = 1.0
-                reward, terminated = self._sim_step(False, F=F)
+                reward, terminated = self._sim_step(False)
             case 2:  # Сделать горизонатльный проход силный
-                F = 0.5
-                reward, terminated = self._sim_step(True, F=F)
-            case 3:  # Сделать горизонатльный проход слабый
-                F = 1.0
-                reward, terminated = self._sim_step(True, F=F)
+                reward, terminated = self._sim_step(True)
             case 4:  # Закончить эпизод
-                F = 0.0
                 terminated = True
             case _:  # Неизвестное действие
                 raise ValueError(f"Unknown action: {action}")
 
-        self._lastact['F'] = F
         self._lastact['rev'] = reward
         self._step_counter += 1
 
@@ -399,7 +391,7 @@ class QuartzEnv5(gym.Env):
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
 
-    def _sim_step(self, act: bool, F: float) -> Tuple[float, bool]:
+    def _sim_step(self, act: bool) -> Tuple[float, bool]:
         """
         Выполняет один шаг симуляции
         :param act: True - выполнить горизонтальный проход, False - сдвинуться вниз на 1 шаг
@@ -425,7 +417,6 @@ class QuartzEnv5(gym.Env):
         src_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
             self._current_position)
 
-        self._speed = F
         traectory = self._movement.interpolate_move(
             src=src_real.tuple(),
             dst=dest_real.tuple(),
