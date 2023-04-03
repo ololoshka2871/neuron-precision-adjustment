@@ -16,13 +16,12 @@
             "name": "Python: display",
             "type": "python",
             "request": "launch",
-            "program": "display_v4.py",
+            "program": "display_v5.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
                 "none",
                 "-l1.0",
-                "-e2"
             ]
         },
     ]
