@@ -22,7 +22,7 @@ class QuartzEnv5(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
 
     def __init__(self,
-                 render_mode=None,
+                 render_mode = None,
                  vertical_steps: int = 33,
                  laser_power_relative: float = 0.5,
                  time_limit: float = math.inf,
@@ -441,11 +441,7 @@ class QuartzEnv5(gym.Env):
                 self._next_mesure_after -= self._modeling_period
                 if self._next_mesure_after <= 0.0:
                     self._next_mesure_after = self._freqmeter_period
-
-                    m = self._rezonator_model.get_metrics()
-                    freq_change = self._prev_freq - m['freq_change']
-                    if freq_change > 0.0:
-                        total_reward += 0.25
+                    total_reward += self._calc_measure_reward()
 
                 model_pos = self._coord_transformer.wrap_from_real_to_model(
                     RealCoordinates(pos_x, pos_y)).tuple()
@@ -480,6 +476,22 @@ class QuartzEnv5(gym.Env):
         self._current_position = dest_wz
 
         return total_reward, False
+
+    def _calc_measure_reward(self) -> float:
+        assert self._rezonator_model is not None
+        assert self._prev_freq is not None
+
+        m = self._rezonator_model.get_metrics()
+        current_freq_change = m['freq_change']
+        if current_freq_change > self._params['adjust_target']:
+            return -0.25
+        else:
+            freq_change = self._prev_freq - current_freq_change
+            self._prev_freq = current_freq_change
+            if freq_change > 0.0:
+                return self._hit_reward
+            else:
+                return 0.0
 
     def _wait_on(self, wait_time: float) -> float:
         """
@@ -526,12 +538,7 @@ class QuartzEnv5(gym.Env):
                 f(self._next_mesure_after)
                 wait_time -= self._next_mesure_after
                 self._next_mesure_after = self._freqmeter_period
-
-                m = self._rezonator_model.get_metrics()
-                freq_change = self._prev_freq - m['freq_change']
-                self._prev_freq = m['freq_change']
-                if freq_change > 0.0:
-                    total_reward += self._hit_reward
+                total_reward += self._calc_measure_reward()
 
             f(wait_time)
             self._next_mesure_after -= wait_time
