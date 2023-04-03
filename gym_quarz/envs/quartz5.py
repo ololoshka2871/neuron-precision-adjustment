@@ -444,8 +444,8 @@ class QuartzEnv5(gym.Env):
 
                     m = self._rezonator_model.get_metrics()
                     freq_change = self._prev_freq - m['freq_change']
-                    if freq_change < 0.0:
-                        total_reward += 1.0
+                    if freq_change > 0.0:
+                        total_reward += 0.25
 
                 model_pos = self._coord_transformer.wrap_from_real_to_model(
                     RealCoordinates(pos_x, pos_y)).tuple()
