@@ -214,18 +214,24 @@ class QuartzEnv5(gym.Env):
 
         match action:
             case 0:  # Ни чего не делать
+                F = 0.0
                 reward = self._wait_on(0.1)
             case 1:  # Сдвинуть лазер на 1 шаг вниз
-                reward, terminated = self._sim_step(False, F=1.0)
+                F = 1.0
+                reward, terminated = self._sim_step(False, F=F)
             case 2:  # Сделать горизонатльный проход силный
-                reward, terminated = self._sim_step(True, F=0.5)
+                F = 0.5
+                reward, terminated = self._sim_step(True, F=F)
             case 3:  # Сделать горизонатльный проход слабый
-                reward, terminated = self._sim_step(True, F=1.0)
+                F = 1.0
+                reward, terminated = self._sim_step(True, F=F)
             case 4:  # Закончить эпизод
+                F = 0.0
                 terminated = True
             case _:  # Неизвестное действие
                 raise ValueError(f"Unknown action: {action}")
 
+        self._lastact['F'] = F
         self._lastact['rev'] = reward
         self._step_counter += 1
 
@@ -370,15 +376,14 @@ class QuartzEnv5(gym.Env):
 
         canvas = pygame.transform.flip(canvas, False, True)
 
-        # TODO: update text
-        #x, y = self._current_position
-        #font = pygame.font.SysFont('Arial', 20)
-        # text = font.render(
-        #    f"Current: x: {x:.2f}, y: {y:.2f}, S: {self._power:.2f}, F:{self._speed:.2f}, T: {self._time_elapsed:.2f} s.",
-        #    True, (0, 0, 0, 0))
-        #canvas.blit(text, (10, 10))
-        #text = font.render(f"Act: {self._lastact_str()}", True, (0, 0, 0, 0))
-        #canvas.blit(text, (10, 35))
+        _, y = self._current_position
+        font = pygame.font.SysFont('Arial', 20)
+        text = font.render(
+            f"Current: y: {y:.2f}, F:{self._speed:.2f}, T: {self._time_elapsed:.2f} s.",
+            True, (0, 0, 0, 0))
+        canvas.blit(text, (10, 10))
+        text = font.render(f"Act: {self._lastact_str()}", True, (0, 0, 0, 0))
+        canvas.blit(text, (10, 35))
 
         if self.render_mode == "human":
             # The following line copies our drawings from `canvas` to the visible window
@@ -582,20 +587,20 @@ class QuartzEnv5(gym.Env):
         else:
             return res.sum()
 
-    # def _lastact_str(self) -> str:
-    #    """
-    #    Возвращает строку с последним действием
-    #    """
-    #
-    #    if self._lastact is None:
-    #        return '0'
-    #    else:
-    #        match self._lastact['Action']:
-    #            case 'Move':
-    #                return f"{self._step_counter} Move step: X{self._lastact['X']:.2f} Y{self._lastact['Y']:.2f} F{self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
-    #            case 'SetPower':
-    #                return f"{self._step_counter} SetPower: {self._lastact['Power']:.2f}, rev={self._lastact['rev']:.2f}"
-    #            case 'Wait':
-    #                return f"{self._step_counter} Wait: {self._lastact['Time']:.2f} s., rev={self._lastact['rev']:.2f}"
-    #            case _:
-    #                return 'NA'
+    def _lastact_str(self) -> str:
+       """
+       Возвращает строку с последним действием
+       """
+    
+       if self._lastact is None:
+           return '0'
+       else:
+           match self._lastact['Action']:
+               case 0: 
+                   return f"{self._step_counter} Wait: rev={self._lastact['rev']:.2f}"
+               case 1:
+                   return f"{self._step_counter} HStep: F{self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
+               case 2, 3:
+                   return f"{self._step_counter} VStep: {self._lastact['Power']:.2f}, rev={self._lastact['rev']:.2f}"
+               case _:
+                   return 'NA'
