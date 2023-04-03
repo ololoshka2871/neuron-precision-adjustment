@@ -19,7 +19,7 @@ from models.rezonator_model import ModelView, RezonatorModel, Zone
 
 
 class QuartzEnv5(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 2}
 
     def __init__(self,
                  render_mode=None,
