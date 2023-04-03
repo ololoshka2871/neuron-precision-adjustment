@@ -154,21 +154,21 @@ class QuartzEnv5(gym.Env):
         # We need the following line to seed self.np_random
         super().reset(seed=seed, options=options)
 
-        self._params['offset'] = (
-            options is not None and 'offset' in options) or (np.random.random() * 0.3, np.random.random() * 0.5)
-        self._params['angle'] = (
-            options is not None and 'angle' in options) or np.random.random() * 20 - 10
-        self._params['layer_thikness'] = (
-            options is not None and 'layer_thikness' in options) or np.clip(self.np_random.normal(
+        self._params['offset'] = options['offset'] if (
+            options is not None and 'offset' in options) else (np.random.random() * 0.3 - 0.15, np.random.random() * 0.5)
+        self._params['angle'] = options['angle'] if (
+            options is not None and 'angle' in options) else np.random.random() * 20.0 - 10.0  # +/- 20 deg
+        self._params['layer_thikness'] = options['layer_thikness'] if  (
+            options is not None and 'layer_thikness' in options) else np.clip(self.np_random.normal(
                 self.layer_thikness_mean, 0.1e-3), a_min=0.4e-3, a_max=0.6e-3)
-        self._params['adjust_target'] = (
-            options is not None and 'adjust_target' in options) or np.clip(
+        self._params['adjust_target'] = options['adjust_target'] if (
+            options is not None and 'adjust_target' in options) else np.clip(
                 self.np_random.normal(
                     self.adjust_mean, self.adjust_mean * 0.1),
                 a_min=self.adjust_mean * 0.5, a_max=self.adjust_mean * 1.5)
 
-        max_s = options is not None and 'max_s' in options or 255.0
-        max_f = options is not None and 'max_f' in options or 1000.0
+        max_s = options['max_s'] if (options is not None and 'max_s' in options) else 255.0
+        max_f = options['max_f'] if (options is not None and 'max_f' in options) else 1000.0
 
         self._f_s_transformer = FSTransformer(max_s, max_f)
         self._current_position = WorkzoneRelativeCoordinates(-1.0, 1.0)

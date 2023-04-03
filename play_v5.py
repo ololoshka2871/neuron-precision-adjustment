@@ -90,7 +90,6 @@ class PlayPlot:
         self.cur_plot[4][0].set_data(xrange, list(self.data[5]))  # temperature
 
         for ax in self.ax:
-            #ax.set_xlim(xmin, xmax)
             ax.relim()
             ax.autoscale_view()
 
