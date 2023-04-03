@@ -25,7 +25,6 @@ class QuartzEnv5(gym.Env):
                  render_mode=None,
                  vertical_steps: int = 33,
                  laser_power_relative: float = 0.5,
-                 laser_speed_relative: float = 1.0,
                  time_limit: float = math.inf,
                  rezonator_thickness: float = 0.23,
                  heat_dissipation_rate: float = 0.9,
@@ -38,7 +37,8 @@ class QuartzEnv5(gym.Env):
                  freqmeter_period: float = 0.4,
                  laser_power: float = 30.0,
                  wait_multiplier: float = 1.0,
-                 wait_penalty_multiplier: float = 0.5
+                 wait_penalty_multiplier: float = 0.5,
+                 hit_reward: float = 0.25,
                  ):
         self.window_size = 1024  # The size of the PyGame window
 
@@ -59,8 +59,9 @@ class QuartzEnv5(gym.Env):
         Возможные действия
         - 0: Ни чего не делать
         - 1: Сдвинуть лазер на 1 шаг вниз
-        - 2: Сделать горизонатльный проход
-        - 3: Закончить эпизод
+        - 2: Сделать горизонатльный проход (сильный F=0.5)
+        - 3: Сделать горизонатльный проход (слабый F=1.0)
+        - 4: Закончить эпизод
         """
         self.action_space = spaces.Discrete(4)
 
@@ -91,6 +92,7 @@ class QuartzEnv5(gym.Env):
         self._laser_power = laser_power
         self._wait_multiplier = wait_multiplier
         self._vertical_step = 1.0 / vertical_steps
+        self._hit_reward = hit_reward
 
         self._time_limit = time_limit
         self._wait_penalty_multiplier = wait_penalty_multiplier
@@ -105,11 +107,10 @@ class QuartzEnv5(gym.Env):
         self._prev_freq = None
         self._transform = None
         self._lastact = DefaultDict(float)
-        self._stop_reason = 0
 
         self._step_counter = 0
         self._power = laser_power_relative
-        self._speed = laser_speed_relative
+        self._speed = 0.0
         self._next_mesure_after = 0.0
 
     def _get_obs(self):
@@ -147,7 +148,6 @@ class QuartzEnv5(gym.Env):
             "penalty_energy": rm['penalty_energy'],
             "adjust_target": self._params['adjust_target'],
             "time_elapsed": self._time_elapsed,
-            "stop_reason": self._stop_reason,
         }
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -195,7 +195,6 @@ class QuartzEnv5(gym.Env):
 
         self._lastact = DefaultDict(float)
         self._transform = None
-        self._stop_reason = 0
 
         self._prev_freq = self._rezonator_model.get_metrics()['freq_change']
 
@@ -217,10 +216,12 @@ class QuartzEnv5(gym.Env):
             case 0:  # Ни чего не делать
                 reward = self._wait_on(0.1)
             case 1:  # Сдвинуть лазер на 1 шаг вниз
-                reward, terminated = self._sim_step(False)
-            case 2:  # Сделать горизонатльный проход
-                reward, terminated = self._sim_step(True)
-            case 3:  # Закончить эпизод
+                reward, terminated = self._sim_step(False, F=1.0)
+            case 2:  # Сделать горизонатльный проход силный
+                reward, terminated = self._sim_step(True, F=0.5)
+            case 3:  # Сделать горизонатльный проход слабый
+                reward, terminated = self._sim_step(True, F=1.0)
+            case 4:  # Закончить эпизод
                 terminated = True
             case _:  # Неизвестное действие
                 raise ValueError(f"Unknown action: {action}")
@@ -393,7 +394,7 @@ class QuartzEnv5(gym.Env):
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
 
-    def _sim_step(self, act: bool) -> Tuple[float, bool]:
+    def _sim_step(self, act: bool, F: float) -> Tuple[float, bool]:
         """
         Выполняет один шаг симуляции
         :param act: True - выполнить горизонтальный проход, False - сдвинуться вниз на 1 шаг
@@ -419,6 +420,7 @@ class QuartzEnv5(gym.Env):
         src_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
             self._current_position)
 
+        self._speed = F
         traectory = self._movement.interpolate_move(
             src=src_real.tuple(),
             dst=dest_real.tuple(),
@@ -523,8 +525,8 @@ class QuartzEnv5(gym.Env):
                 m = self._rezonator_model.get_metrics()
                 freq_change = self._prev_freq - m['freq_change']
                 self._prev_freq = m['freq_change']
-                if freq_change < 0.0:
-                    total_reward += -freq_change
+                if freq_change > 0.0:
+                    total_reward += self._hit_reward
 
             f(wait_time)
             self._next_mesure_after -= wait_time

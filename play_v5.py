@@ -108,7 +108,10 @@ screen = pygame.display.set_mode(video_size)
 fps = env.metadata.get("render_fps", 60)
 
 
-mapping = {(pygame.K_ESCAPE,): 0, (pygame.K_DOWN,): 1,
-           (pygame.K_SPACE,): 2, (pygame.K_END,): 3}
+mapping = {(pygame.K_ESCAPE,): 0, 
+           (pygame.K_DOWN,): 1,
+           (pygame.K_SPACE,): 2, 
+           (pygame.K_LALT,): 3,
+           (pygame.K_END,): 4}
 play(env, callback=plotter.callback,
      keys_to_action=mapping, noop=0)  # type: ignore
