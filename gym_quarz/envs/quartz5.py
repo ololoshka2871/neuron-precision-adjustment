@@ -468,8 +468,7 @@ class QuartzEnv5(gym.Env):
                 last_zone = zone
             self._time_elapsed += traectory[2][-1]
         else:
-            self._wait_on(max(traectory[2][-1], 0.1))
-            total_reward += 0.1
+            total_reward += 0.1 + self._wait_on(max(traectory[2][-1], 0.1))
 
         # обновляем позиции
         self._prev_position = self._current_position
