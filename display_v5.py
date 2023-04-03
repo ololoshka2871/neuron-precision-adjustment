@@ -3,7 +3,6 @@
 from keras.optimizers import adam_legacy
 
 import gymnasium as gym
-from gymnasium.utils.play import PlayPlot
 
 from rl.callbacks import Callback
 
@@ -12,19 +11,15 @@ from misc.EnvBackCompability import EnvBackCompability
 import gym_quarz
 
 from controllers.controller_v5 import DQNController as Controller
+from misc.MyPlayPlot_v5 import MyPlayPlot_v5
 
 from constants_v5 import *
 
 
 class MyCallback(Callback):
-    @staticmethod
-    def filter(obs_t, obs_tp1, action, reward, done, truncated, info):
-        return [reward, obs_tp1[5], info['static_freq_change'], info['penalty_energy'], info['temperature']]
-
     def __init__(self, points=150):
         super(MyCallback, self).__init__()
-        self.plot = PlayPlot(MyCallback.filter, points,
-                             ["Reward", "Current offset", "Static freq change", "Penalty energy", "Temperature"])
+        self.plot = MyPlayPlot_v5(points)
 
     def on_episode_begin(self, episode, logs):
         for data_series in self.plot.data:
