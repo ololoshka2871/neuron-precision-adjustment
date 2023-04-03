@@ -19,7 +19,7 @@ from models.rezonator_model import ModelView, RezonatorModel, Zone
 
 
 class QuartzEnv5(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 2}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
 
     def __init__(self,
                  render_mode=None,
@@ -472,7 +472,7 @@ class QuartzEnv5(gym.Env):
                 last_zone = zone
             self._time_elapsed += traectory[2][-1]
         else:
-            self._wait_on(traectory[2][-1])
+            self._wait_on(max(traectory[2][-1], 0.1))
             total_reward += 0.1
 
         # обновляем позиции
