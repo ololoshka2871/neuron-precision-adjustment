@@ -12,6 +12,8 @@ from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 
 
 class LaserProcessor(Processor):
+    NORM_FACTOR = 50.0
+
     def __init__(self, history_len=32) -> None:
         super().__init__()
 
@@ -26,22 +28,22 @@ class LaserProcessor(Processor):
         return (observation_space[0] - 2 + self._history_len * 2,)
 
     def process_observation(self, observation):
-        y, freq_change, freq_change_target, sym_time = observation
+        y, freq_change_clipped, freq_change_target, sym_time = observation
 
-        if freq_change == 0:
-            freq_change = 1e-1
-        freq_change_rel_inv = math.log(freq_change, 15.0)
-        freq_chang_target_inv = math.log(freq_change_target, 15.0)  # Чтобы было меньше 1
+        freq_change_clipped = np.clip(freq_change_clipped, -LaserProcessor.NORM_FACTOR,
+                                      LaserProcessor.NORM_FACTOR)
+        freq_change_normed = freq_change_clipped / LaserProcessor.NORM_FACTOR
+        freq_chang_target_normed = freq_change_target / LaserProcessor.NORM_FACTOR
 
         if self._history.size == 0:
             self._history = np.array(
-                [y, freq_change_rel_inv] * self._history_len)
+                [y, freq_change_normed] * self._history_len)
         else:
             self._history = np.append(
-                self._history, [y, freq_change_rel_inv])
+                self._history, [y, freq_change_normed])
             self._history = self._history[2:]
 
-        return np.array([freq_chang_target_inv, sym_time, *self._history])
+        return np.array([freq_chang_target_normed, sym_time, *self._history])
 
     def process_step(self, observation, reward, done, info):
         if done:
@@ -88,7 +90,7 @@ class DQNController(DQNAgent):
 
         memory = SequentialMemory(limit=mem_limit, window_length=WINDOW_LENGTH)
         policy = LinearAnnealedPolicy(EpsGreedyQPolicy(),
-                                      attr='eps', value_max=1., 
+                                      attr='eps', value_max=1.,
                                       value_min=.1, value_test=.05,
                                       nb_steps=1000000)
 

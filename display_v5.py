@@ -13,7 +13,7 @@ from misc.EnvBackCompability import EnvBackCompability
 
 import gym_quarz
 
-from controllers.controller_v5 import DQNController as Controller
+from controllers.controller_v5 import DQNController as Controller, LaserProcessor
 from misc.MyPlayPlot_v5 import MyPlayPlot_v5
 
 from constants_v5 import *
@@ -32,8 +32,8 @@ class MyCallback(Callback):
     def on_step_end(self, step, logs={}):
         """Called at end of each step"""
         obs = logs['observation']
-        tfc = math.pow(15.0, obs[0])
-        cfc = math.pow(15.0, obs[-1])
+        tfc = obs[0] * LaserProcessor.NORM_FACTOR
+        cfc = obs[-1] * LaserProcessor.NORM_FACTOR
         non_mod_obs = np.array([obs[-2], cfc, tfc, obs[1]])
         self.plot.callback(
             None,
