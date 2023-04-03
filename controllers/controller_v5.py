@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 # https://stackoverflow.com/a/58628399
 from keras.models import Sequential
@@ -27,15 +28,17 @@ class LaserProcessor(Processor):
     def process_observation(self, observation):
         y, freq_change, freq_change_target, sym_time = observation
 
-        freq_change_rel = freq_change / freq_change_target
-        freq_chang_target_inv = 1.0 / freq_change_target  # Чтобы было меньше 1
+        if freq_change == 0:
+            freq_change = 1e-1
+        freq_change_rel_inv = math.log(freq_change, 15.0)
+        freq_chang_target_inv = math.log(freq_change_target, 15.0)  # Чтобы было меньше 1
 
         if self._history.size == 0:
             self._history = np.array(
-                [y, freq_change_rel] * self._history_len)
+                [y, freq_change_rel_inv] * self._history_len)
         else:
             self._history = np.append(
-                self._history, [y, freq_change_rel])
+                self._history, [y, freq_change_rel_inv])
             self._history = self._history[2:]
 
         return np.array([freq_chang_target_inv, sym_time, *self._history])

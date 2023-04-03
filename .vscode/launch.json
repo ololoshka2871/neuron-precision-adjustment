@@ -20,8 +20,9 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "none",
-                "-l1.0",
+                "/media/pub/Кожевников/точная настройка/learn/step00125000-learn_v5.h5",
+                //"none",
+                "-l10.0",
             ]
         },
     ]

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import math
+
 from keras.optimizers import adam_legacy
 
 import gymnasium as gym
@@ -30,7 +32,9 @@ class MyCallback(Callback):
     def on_step_end(self, step, logs={}):
         """Called at end of each step"""
         obs = logs['observation']
-        non_mod_obs = np.array([obs[2], obs[3], 1.0 / obs[0], obs[1]])
+        tfc = math.pow(15.0, obs[0])
+        cfc = math.pow(15.0, obs[-1])
+        non_mod_obs = np.array([obs[-2], cfc, tfc, obs[1]])
         self.plot.callback(
             None,
             non_mod_obs,

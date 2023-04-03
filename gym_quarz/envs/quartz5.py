@@ -210,7 +210,7 @@ class QuartzEnv5(gym.Env):
         reward = 0.0
         terminated = False
 
-        self._lastact.update({'Action': action * 1.0})  # type: ignore
+        self._lastact.update({'Action': action})  # type: ignore
 
         match action:
             case 0:  # Ни чего не делать
@@ -599,8 +599,8 @@ class QuartzEnv5(gym.Env):
                case 0: 
                    return f"{self._step_counter} Wait: rev={self._lastact['rev']:.2f}"
                case 1:
-                   return f"{self._step_counter} HStep: F{self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
-               case 2, 3:
-                   return f"{self._step_counter} VStep: {self._lastact['Power']:.2f}, rev={self._lastact['rev']:.2f}"
+                   return f"{self._step_counter} VStep: F{self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
+               case 2 | 3:
+                   return f"{self._step_counter} HStep: {self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
                case _:
                    return 'NA'
