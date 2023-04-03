@@ -219,7 +219,7 @@ class QuartzEnv5(gym.Env):
                 reward, terminated = self._sim_step(False)
             case 2:  # Сделать горизонатльный проход силный
                 reward, terminated = self._sim_step(True)
-            case 4:  # Закончить эпизод
+            case 3:  # Закончить эпизод
                 terminated = True
             case _:  # Неизвестное действие
                 raise ValueError(f"Unknown action: {action}")
@@ -597,7 +597,7 @@ class QuartzEnv5(gym.Env):
                    return f"{self._step_counter} Wait: rev={self._lastact['rev']:.2f}"
                case 1:
                    return f"{self._step_counter} VStep: F{self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
-               case 2 | 3:
+               case 2:
                    return f"{self._step_counter} HStep: {self._lastact['F']:.2f}, rev={self._lastact['rev']:.2f}"
                case _:
                    return 'NA'
