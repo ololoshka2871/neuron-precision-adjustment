@@ -40,6 +40,7 @@ class QuartzEnv5(gym.Env):
                  wait_multiplier: float = 1.0,
                  wait_penalty_multiplier: float = 0.5,
                  hit_reward: float = 0.25,
+                 render_callback=None,
                  ):
         self.window_size = 1024  # The size of the PyGame window
 
@@ -93,6 +94,7 @@ class QuartzEnv5(gym.Env):
         self._wait_multiplier = wait_multiplier
         self._vertical_step = 1.0 / vertical_steps
         self._hit_reward = hit_reward
+        self._render_callback = render_callback
 
         self._time_limit = time_limit
         self._wait_penalty_multiplier = wait_penalty_multiplier
@@ -365,6 +367,9 @@ class QuartzEnv5(gym.Env):
                          width=2, color=color)
 
         pygame.Surface.unlock(canvas)
+
+        if self._render_callback is not None and (self.render_mode == "human" or self.render_mode == "rgb_array"):
+            self._render_callback(canvas, self._transform)
 
         canvas = pygame.transform.flip(canvas, False, True)
 

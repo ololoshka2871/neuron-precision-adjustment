@@ -4,7 +4,7 @@ from matplotlib.lines import Line2D
 
 
 from collections import deque
-from typing import List
+from typing import List, SupportsFloat
 
 
 class MyPlayPlot_v5:
@@ -39,7 +39,7 @@ class MyPlayPlot_v5:
         obs_t: ObsType,
         obs_tp1: ObsType,
         action: ActType,
-        rew: float,
+        rew: SupportsFloat,
         terminated: bool,
         truncated: bool,
         info: dict,
