@@ -70,7 +70,7 @@ class QuartzEnv6(gym.Env):
                  wait_multiplier: float = 1.0,
                  wait_penalty_multiplier: float = 0.5,
                  hit_reward: float = 0.25,
-                 max_angle: float = 45.0,
+                 max_angle: float = 25.0,
                  render_callback=None,
                  ):
         self.window_size = 1024  # The size of the PyGame window
@@ -426,6 +426,10 @@ class QuartzEnv6(gym.Env):
                            width=0, color=color)
         pygame.draw.line(canvas, start_pos=src, end_pos=dest,  # type: ignore
                          width=2, color=color)
+        c = self._transform.transform(self._coord_transformer.wrap_from_workzone_relative_to_model(
+            WorkzoneRelativeCoordinates(0, self._horisontal_y_offset)).tuple())  # type: ignore
+        pygame.draw.circle(canvas, center=c, radius=5,  # type: ignore
+                           width=0, color=(0, 255, 0))
 
         pygame.Surface.unlock(canvas)
 
@@ -469,22 +473,24 @@ class QuartzEnv6(gym.Env):
 
         match act:
             case MoveAction.MOVE_HORIZONTAL:
-                # исходная позиция X: self._current_position[0]
-                # проходит через точку (0, self._horisontal_y_offset)
-                # Точка назначения (self._current_position[0] * -1.0, Y)
-
                 # Прямая проходящая через точки (0, self._horisontal_y_offset) под углом self._horisontal_angle
-                k = (
-                    self._current_position[1] - self._horisontal_y_offset) / self._current_position[0]
-                b = self._current_position[1] - k * self._current_position[0]
+                # y = kx + b
+                k = math.tan(math.radians(self._horisontal_angle))
+                b = self._horisontal_y_offset  # - k * 0.0
+
                 # точка назначения поучается
                 dest_wz = WorkzoneRelativeCoordinates(
                     self._current_position[0] * -1.0,  k * self._current_position[0] * -1.0 + b)
+                # исходная точка получается
+                src_point = WorkzoneRelativeCoordinates(
+                    self._current_position[0],  k * self._current_position[0] + b)
             case MoveAction.MOVE_DOWN:
+                src_point = self._current_position
                 dest_wz = WorkzoneRelativeCoordinates(
                     self._current_position[0], self._current_position[1] - self._vertical_step)
                 self._horisontal_y_offset -= self._vertical_step
             case MoveAction.MOVE_UP:
+                src_point = self._current_position
                 dest_wz = WorkzoneRelativeCoordinates(
                     self._current_position[0], self._current_position[1] + self._vertical_step)
                 self._horisontal_y_offset += self._vertical_step
@@ -495,7 +501,7 @@ class QuartzEnv6(gym.Env):
         dest_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
             dest_wz)
         src_real = self._coord_transformer.wrap_from_workzone_relative_to_real(
-            self._current_position)
+            src_point)
 
         traectory = self._movement.interpolate_move(
             src=src_real.tuple(),
@@ -542,7 +548,7 @@ class QuartzEnv6(gym.Env):
             total_reward += 0.1 + self._wait_on(max(traectory[2][-1], 0.1))
 
         # обновляем позиции
-        self._prev_position = self._current_position
+        self._prev_position = src_point
         self._current_position = dest_wz
 
         return total_reward, False

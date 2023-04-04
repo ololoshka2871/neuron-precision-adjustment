@@ -29,8 +29,8 @@ mapping = {(pygame.K_ESCAPE,): 0,
            (pygame.K_DOWN,): 1,
            (pygame.K_UP,): 2, 
            (pygame.K_SPACE,): 3,
-           (pygame.K_RIGHT,): 4,
-           (pygame.K_LEFT,): 5,
-           (pygame.K_END,): 7,}
+           (pygame.K_LEFT,): 4,
+           (pygame.K_RIGHT,): 5,
+           (pygame.K_END,): 6,}
 play(env, callback=plotter.callback,
      keys_to_action=mapping, noop=0)  # type: ignore
