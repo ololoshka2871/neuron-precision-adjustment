@@ -11,7 +11,7 @@ import pygame
 
 import gym_quarz
 
-from controllers.controller_v5_algo import AlgorithmicController as Controller
+from controllers.controller_v6_algo import AlgorithmicController as Controller
 from misc.MyPlayPlot_v5 import MyPlayPlot_v5
 
 
@@ -29,12 +29,15 @@ def _get_video_size(env, zoom: Optional[float] = None) -> Tuple[int, int]:
 
 
 def display_main() -> None:
-    env = gym.make("gym_quarz/QuartzEnv-v5", render_mode='rgb_array')
+    env = gym.make("gym_quarz/QuartzEnv-v6", render_mode='rgb_array')
 
-    ctrl = Controller(env.observation_space, env.action_space)
+    ctrl = Controller()
     plotter = MyPlayPlot_v5(30 * 5)
 
-    obs, info = env.reset()
+    obs, info = env.reset(options={
+        "offset": (0, 0),
+        "angle": 0,
+    })
 
     video_size = _get_video_size(env, zoom=None)
     screen = pygame.display.set_mode(video_size, pygame.RESIZABLE)
