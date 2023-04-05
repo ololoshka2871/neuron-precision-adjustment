@@ -23,6 +23,9 @@ class States(Enum):
     # определяем касание правой стороны (отрицательный угол)
     DETECT_RIGHT_SIDE = 3
 
+    # поворот на угол на 1 шаг больший чем правая сторона
+    MOVE_RIGHT_SIDE_ONE_LEFT = 4
+
     # pause
     PAUSE = 90
 
@@ -96,6 +99,8 @@ class AlgorithmicController:
                 return self._detect_side(prev_observation, observation, angle=self._angle_limit)
             case States.DETECT_RIGHT_SIDE:
                 return self._detect_side(prev_observation, observation, angle=-self._angle_limit)
+            case States.MOVE_RIGHT_SIDE_ONE_LEFT:
+                return self._move_right_side_one_left(prev_observation, observation)
             case States.PAUSE:
                 return ActionSpace.DO_NOTHING.value
             case States.DONE:
@@ -160,15 +165,15 @@ class AlgorithmicController:
                 if self._detect_touch(prev_observation, observation):
                     side_data = {'angle': observation[4], 'offset': observation[0]}
                     if angle > 0.0:
-                        # right side
-                        self._right_side = side_data
+                        # left side
+                        self._left_side = side_data
                         self._state = States.DETECT_RIGHT_SIDE
                         self._finde_side_op = FindSideOp.ROTATE
                         return ActionSpace.DO_NOTHING.value
                     else:
-                        # left side
-                        self._left_side = side_data
-                        self._state = States.PAUSE
+                        # right side
+                        self._right_side = side_data
+                        self._state = States.MOVE_RIGHT_SIDE_ONE_LEFT
                         return ActionSpace.DO_NOTHING.value
                 else:
                     self._find_side_wait_count += 1
@@ -176,13 +181,22 @@ class AlgorithmicController:
                         # not found
                         zero_side_data = {'angle': 0.0, 'offset': observation[0]}
                         if angle > 0.0:
-                            self._right_side = zero_side_data
+                            self._left_side = zero_side_data
                             self._state = States.DETECT_RIGHT_SIDE
                             self._finde_side_op = FindSideOp.ROTATE
                         else:
-                            self._left_side = zero_side_data
-                            self._state = States.PAUSE
+                            self._right_side = zero_side_data
+                            self._state = States.MOVE_RIGHT_SIDE_ONE_LEFT
                     return ActionSpace.DO_NOTHING.value
+                
+    def _move_right_side_one_left(self, prev_observation, observation):
+        assert self._right_side is not None
+
+        if observation[4] < self._right_side['angle'] + self._angle_change_step:
+            return ActionSpace.INCRESE_ANGLE.value
+        else:
+            self._state = States.PAUSE
+            return ActionSpace.MOVE_HORIZONTAL.value
 
     def render_callback(self, canvas, world_transform: Affine2D, ct: CoordinateTransformer):
         def draw_line(linedata, color):
