@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 from matplotlib.transforms import Affine2D
 import numpy as np
 import math
@@ -30,6 +31,9 @@ class States(Enum):
     # Угол предыдущего шага и есть примерно равный угру наклона резонатора
     ROTATE_LEFT_FIND_REACTION = 5
 
+    # Наклон резонатора найден, производим обработку до получения требуемого результата
+    WORK_STEPS = 6
+
     # pause
     PAUSE = 90
 
@@ -55,6 +59,13 @@ class RLFindReactionOp(Enum):
     ROTATE = 2
 
 
+class WorkStepsOp(Enum):
+    MOVE_DOWN = 0
+    MOVE_HORISONTAL = 1
+    MOVE_WAIT = 2
+    COOLING = 3
+
+
 class AlgorithmicController:
     """
     Контроллер алгоритмический
@@ -63,14 +74,29 @@ class AlgorithmicController:
     def __init__(self,
                  angle_change_step: float,
                  angle_limit: float,
+                 acuracy_hz: float = 0.1,
                  wait_count_betwen_measurements: int = 4,
                  freq_minimal_change: float = 0.1,
-                 retreat_steps: int = 2,):
+                 freq_minimal_change_cooling: Optional[float] = None,
+                 retreat_steps: int = 2,
+                 work_steps_hor_per1_vert: int = 1):
+        """
+        :param angle_change_step: шаг изменения угла в градусах мделью
+        :param angle_limit: максимальный угол в градусах наклона оси реза
+        :param acuracy_hz: требуемая точность настройки в Гц
+        :param wait_count_betwen_measurements: количество шагов ожидания чтобы получить новое измерение
+        :param freq_minimal_change: минимальное изменение частоты считаемое за изменеие
+        :param retreat_steps: количество шагов отступа вверх после обнаружения уголка
+        :param work_steps_hor_per1_vert: количество шагов в горизонтальном направлении на 1 шаг в вертикальном при обработке
+        """
         self._wait_count_betwen_measurements = wait_count_betwen_measurements
         self._freq_minimal_change = freq_minimal_change
         self._angle_change_step = angle_change_step
+        self._freq_minimal_change_cooling = freq_minimal_change_cooling if freq_minimal_change_cooling is not None else freq_minimal_change
         self._angle_limit = angle_limit
         self._retreat_steps = retreat_steps
+        self._work_steps_hor_per1_vert = work_steps_hor_per1_vert
+        self._acuracy_hz = acuracy_hz
 
         AlgorithmicController.reset(self)
 
@@ -86,6 +112,10 @@ class AlgorithmicController:
 
         self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_HORISONTAL
         self._rotate_left_find_reaction_wait_count = 0
+
+        self._work_steps_op = WorkStepsOp.MOVE_DOWN
+        self._work_steps_wait_count = 0
+        self._work_steps_hor_steps = 0
 
         self._corner_level = None
         self._left_side = None
@@ -106,6 +136,8 @@ class AlgorithmicController:
                 return self._move_right_side_one_left(prev_observation, observation)
             case States.ROTATE_LEFT_FIND_REACTION:
                 return self._rotate_left_find_reaction(prev_observation, observation)
+            case States.WORK_STEPS:
+                return self._work_steps(prev_observation, observation)
             case States.PAUSE:
                 return ActionSpace.DO_NOTHING.value
             case States.DONE:
@@ -113,13 +145,20 @@ class AlgorithmicController:
             case _:
                 ValueError("Unknown state")
 
-    def _detect_touch(self, prev_observation, observation) -> bool:
-        freq_change_change = observation[1] - prev_observation[1]
-        # Если частота упала больше чем на _freq_minimal_change, значит мы коснулись резонатора
-        return freq_change_change < -self._freq_minimal_change
+    def _detect_touch(self, prev_observation, observation) -> tuple[bool, bool]:
+        if observation[1] == prev_observation[1]:
+            return False, False
+        else:
+            freq_change_change = observation[1] - prev_observation[1]
+            # Если частота упала больше чем на _freq_minimal_change, значит мы коснулись резонатора
+            return freq_change_change < -self._freq_minimal_change, True
 
     def _find_cornet_step(self, prev_observation, observation):
-        if self._detect_touch(prev_observation, observation):
+        detected, updated = self._detect_touch(prev_observation, observation)
+        if not updated:
+            return ActionSpace.DO_NOTHING.value
+
+        if detected:
             self._state = States.RETREAT
             self._corner_level = observation[0]
             return ActionSpace.DO_NOTHING.value
@@ -167,7 +206,11 @@ class AlgorithmicController:
                 self._finde_side_op = FindSideOp.MOVE_WAIT
                 return ActionSpace.MOVE_HORIZONTAL.value
             case FindSideOp.MOVE_WAIT:
-                if self._detect_touch(prev_observation, observation):
+                detected, updated = self._detect_touch(
+                    prev_observation, observation)
+                if not updated:
+                    return ActionSpace.DO_NOTHING.value
+                if detected:
                     side_data = {
                         'angle': observation[4], 'offset': observation[0]}
                     if angle > 0.0:
@@ -218,10 +261,14 @@ class AlgorithmicController:
                 else:
                     self._rezonator_pos = {
                         'angle': observation[4], 'offset': observation[0]}
-                    self._state = States.PAUSE
+                    self._state = States.WORK_STEPS
                     return ActionSpace.DO_NOTHING.value
             case RLFindReactionOp.MOVE_WAIT:
-                if self._detect_touch(prev_observation, observation):
+                detected, updated = self._detect_touch(
+                    prev_observation, observation)
+                if not updated:
+                    return ActionSpace.DO_NOTHING.value
+                if detected:
                     # found
                     if self._right_side['angle'] != 0.0:
                         # still found
@@ -230,13 +277,13 @@ class AlgorithmicController:
                         # was zero, and found - end
                         self._rezonator_pos = {
                             'angle': observation[4], 'offset': observation[0]}
-                        self._state = States.PAUSE
+                        self._state = States.WORK_STEPS
                 else:
                     if self._right_side['angle'] != 0.0:
                         # not found but was not zero - end
                         self._rezonator_pos = {
                             'angle': observation[4], 'offset': observation[0]}
-                        self._state = States.PAUSE
+                        self._state = States.WORK_STEPS
                     else:
                         # not found and was zero - continue
                         self._rotate_left_find_reaction_wait_count += 1
@@ -247,6 +294,49 @@ class AlgorithmicController:
             case RLFindReactionOp.ROTATE:
                 self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_HORISONTAL
                 return ActionSpace.INCRESE_ANGLE.value
+
+    def _work_steps(self, prev_observation, observation):
+        match self._work_steps_op:
+            case WorkStepsOp.MOVE_DOWN:
+                self._work_steps_op = WorkStepsOp.MOVE_HORISONTAL
+                self._work_steps_hor_steps = 0
+                return ActionSpace.MOVE_DOWN.value
+            case WorkStepsOp.MOVE_HORISONTAL:
+                self._work_steps_op = WorkStepsOp.MOVE_WAIT
+                self._work_steps_wait_count = 0
+                self._work_steps_hor_steps += 1
+                return ActionSpace.MOVE_HORIZONTAL.value
+            case WorkStepsOp.MOVE_WAIT:
+                detected, updated = self._detect_touch(
+                    prev_observation, observation)
+                if not updated:
+                    return ActionSpace.DO_NOTHING.value
+                if detected:
+                    # hit! Ждем охлаждение
+                    self._work_steps_op = WorkStepsOp.COOLING
+                else:
+                    # не дошли
+                    self._work_steps_wait_count += 1
+                    if self._work_steps_wait_count > self._wait_count_betwen_measurements:
+                        # next step
+                        self._work_steps_op = WorkStepsOp.MOVE_DOWN
+                return ActionSpace.DO_NOTHING.value
+            case WorkStepsOp.COOLING:
+                current_freq_change = observation[1]
+                freq_change_change = current_freq_change - prev_observation[1]
+                target = observation[2]
+                if current_freq_change > target:
+                    # уже перебор! Стоп!
+                    self._state = States.DONE
+                elif freq_change_change < self._freq_minimal_change_cooling:
+                    # охлаждение закончено
+                    if target - current_freq_change < self._acuracy_hz:  # достаточно точно?
+                        self._state = States.DONE
+                    else:
+                        self._work_steps_op = WorkStepsOp.MOVE_DOWN \
+                            if self._work_steps_hor_steps == self._work_steps_hor_per1_vert \
+                            else WorkStepsOp.MOVE_HORISONTAL
+                return ActionSpace.DO_NOTHING.value
 
     def render_callback(self, canvas, world_transform: Affine2D, ct: CoordinateTransformer):
         def draw_line(linedata, color):
@@ -261,9 +351,6 @@ class AlgorithmicController:
 
         pygame.Surface.lock(canvas)
 
-        # if self._corner_level is not None:
-        #    draw_line({'k': 0, 'b': self._corner_level}, (0, 0, 255, 100))
-
         if self._right_side is not None:
             draw_line(self._right_side, (0, 255, 32))
 
@@ -274,3 +361,7 @@ class AlgorithmicController:
             draw_line(self._rezonator_pos, (150, 128, 0))
 
         pygame.Surface.unlock(canvas)
+
+    @property
+    def rezonator_angle(self):
+        return self._rezonator_pos['angle'] if self._rezonator_pos is not None else None

@@ -164,7 +164,7 @@ class QuartzEnv6(gym.Env):
             elapsed = self._time_elapsed
         return np.array([
             self._horisontal_y_offset,
-            rm['freq_change'],
+            rm['freq_change'] + self._add_niose(),
             self._params['adjust_target'],
             elapsed,
             self._horisontal_angle], dtype=np.float32)
@@ -188,7 +188,11 @@ class QuartzEnv6(gym.Env):
             "horisontal_angle_step": self._params['horisontal_angle_step'],
             "max_angle": self._max_angle,
             "horisontal_y_offset": self._horisontal_y_offset,
+            "actual_rezonator_angle": self._params['angle'],
         }
+    
+    def _add_niose(self):
+        return self.np_random.normal(0, 0.005)
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         # We need the following line to seed self.np_random

@@ -38,7 +38,10 @@ def display_main() -> None:
     )
 
     ctrl = Controller(
-        angle_change_step=info['horisontal_angle_step'], angle_limit=info['max_angle'])
+        angle_change_step=info['horisontal_angle_step'], 
+        angle_limit=info['max_angle'],
+        freq_minimal_change_cooling=0.020
+    )
     
     env.set_render_callback(ctrl.render_callback)  # type: ignore
     plotter = MyPlayPlot_v5(30 * 5)
@@ -71,7 +74,12 @@ def display_main() -> None:
         pygame.display.flip()
         clock.tick(fps)
 
-    # TODO
+    print(f"""Done!
+- Detected resonator angle: {ctrl.rezonator_angle:.2f} (actual: {info['actual_rezonator_angle']:.2f}),
+- Adjusted {obs[1]:.3f} / {obs[2]:.3f} Hz ({obs[1] / obs[2] * 100:.2f}%),
+- Disbalance: {info['disbalance'] * 100:.2f}%.
+- Total time: {info['time_elapsed']:.2f} s.
+""")
 
     env.close()
 
