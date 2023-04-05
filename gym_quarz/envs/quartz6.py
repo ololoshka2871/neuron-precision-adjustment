@@ -70,8 +70,7 @@ class QuartzEnv6(gym.Env):
                  wait_multiplier: float = 1.0,
                  wait_penalty_multiplier: float = 0.5,
                  hit_reward: float = 0.25,
-                 max_angle: float = 25.0,
-                 ):
+                 max_angle: float = 25.0,):
         self.window_size = 1024  # The size of the PyGame window
 
         """
@@ -208,7 +207,7 @@ class QuartzEnv6(gym.Env):
                     self.adjust_mean, self.adjust_mean * 0.1),
                 a_min=self.adjust_mean * 0.5, a_max=self.adjust_mean * 1.5)
         self._params['horisontal_angle_step'] = options['horisontal_angle_step'] if (
-            options is not None and 'horisontal_angle_step' in options) else 5.0
+            options is not None and 'horisontal_angle_step' in options) else 2.5
 
         max_s = options['max_s'] if (
             options is not None and 'max_s' in options) else 255.0
@@ -501,7 +500,7 @@ class QuartzEnv6(gym.Env):
                 # точка назначения поучается
                 current_x = self._current_position[0]
                 dest_wz = WorkzoneRelativeCoordinates(
-                    -current_x, k * -current_x + b)
+                    -current_x, k * -current_x + b)  # type: ignore 
                 # исходная точка получается
                 src_point = WorkzoneRelativeCoordinates(
                     current_x,  k * current_x + b)
