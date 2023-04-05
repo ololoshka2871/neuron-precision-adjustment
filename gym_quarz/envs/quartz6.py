@@ -71,7 +71,6 @@ class QuartzEnv6(gym.Env):
                  wait_penalty_multiplier: float = 0.5,
                  hit_reward: float = 0.25,
                  max_angle: float = 25.0,
-                 render_callback=None,
                  ):
         self.window_size = 1024  # The size of the PyGame window
 
@@ -81,11 +80,12 @@ class QuartzEnv6(gym.Env):
         - 1: freq_change - Текущее измение частоты [Hz]
         - 2: freq_change_target - цель изменения частоты по сравнению с изначальной [Hz]
         - 3: Время симуляции (если указан лимит, то относительное)
+        - 4: Угол поворота лазера
         """
         self.observation_space = spaces.Box(
-            np.array([-1.0, -math.inf, 0.0, 0.0],
+            np.array([-1.0, -math.inf, 0.0, 0.0, -max_angle],
                      dtype=np.float32),  # type: ignore
-            np.array([1.0, math.inf, math.inf, 1.0],
+            np.array([1.0, math.inf, math.inf, 1.0, max_angle],
                      dtype=np.float32),  # type: ignore
             dtype=np.float32)
 
@@ -119,7 +119,6 @@ class QuartzEnv6(gym.Env):
         self._wait_multiplier = wait_multiplier
         self._vertical_step = 1.0 / vertical_steps
         self._hit_reward = hit_reward
-        self._render_callback = render_callback
         self._max_angle = max_angle
 
         self._time_limit = time_limit
@@ -136,6 +135,7 @@ class QuartzEnv6(gym.Env):
         self._prev_position = WorkzoneRelativeCoordinates(
             -1.0, self._horisontal_y_offset)
 
+        self._render_callback = None
         self._params = {}
         self._f_s_transformer = None
         self._prev_freq = None
@@ -146,6 +146,9 @@ class QuartzEnv6(gym.Env):
         self._power = laser_power_relative
         self._speed = speed
         self._next_mesure_after = 0.0
+
+    def set_render_callback(self, cb):
+        self._render_callback = cb
 
     def _get_obs(self):
         """
@@ -164,7 +167,8 @@ class QuartzEnv6(gym.Env):
             self._current_position[1],
             rm['freq_change'],
             self._params['adjust_target'],
-            elapsed], dtype=np.float32)
+            elapsed,
+            self._horisontal_angle], dtype=np.float32)
 
     def _get_info(self):
         """
@@ -182,6 +186,9 @@ class QuartzEnv6(gym.Env):
             "penalty_energy": rm['penalty_energy'],
             "adjust_target": self._params['adjust_target'],
             "time_elapsed": self._time_elapsed,
+            "horisontal_angle_step": self._params['horisontal_angle_step'],
+            "max_angle": self._max_angle,
+            "horisontal_y_offset": self._horisontal_y_offset,
         }
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -434,7 +441,7 @@ class QuartzEnv6(gym.Env):
         pygame.Surface.unlock(canvas)
 
         if self._render_callback is not None and (self.render_mode == "human" or self.render_mode == "rgb_array"):
-            self._render_callback(canvas, self._transform)
+            self._render_callback(canvas, self._transform, self._coord_transformer)
 
         canvas = pygame.transform.flip(canvas, False, True)
 

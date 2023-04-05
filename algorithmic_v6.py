@@ -31,13 +31,17 @@ def _get_video_size(env, zoom: Optional[float] = None) -> Tuple[int, int]:
 def display_main() -> None:
     env = gym.make("gym_quarz/QuartzEnv-v6", render_mode='rgb_array')
 
-    ctrl = Controller()
-    plotter = MyPlayPlot_v5(30 * 5)
+    obs, info = env.reset(
+    #    options={
+    #        "offset": (0, 0),
+    #        "angle": 0,}
+    )
 
-    obs, info = env.reset(options={
-        "offset": (0, 0),
-        "angle": 0,
-    })
+    ctrl = Controller(
+        angle_change_step=info['horisontal_angle_step'], angle_limit=info['max_angle'])
+    
+    env.set_render_callback(ctrl.render_callback)  # type: ignore
+    plotter = MyPlayPlot_v5(30 * 5)
 
     video_size = _get_video_size(env, zoom=None)
     screen = pygame.display.set_mode(video_size, pygame.RESIZABLE)
@@ -58,7 +62,7 @@ def display_main() -> None:
             if isinstance(rendered, List):
                 rendered = rendered[-1]
             assert rendered is not None and isinstance(rendered, np.ndarray)
-            display_arr(screen, rendered, # type: ignore
+            display_arr(screen, rendered,  # type: ignore
                         transpose=True, video_size=video_size)
 
         # process pygame events
