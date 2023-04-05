@@ -164,7 +164,7 @@ class QuartzEnv6(gym.Env):
         else:
             elapsed = self._time_elapsed
         return np.array([
-            self._current_position[1],
+            self._horisontal_y_offset,
             rm['freq_change'],
             self._params['adjust_target'],
             elapsed,
@@ -422,26 +422,39 @@ class QuartzEnv6(gym.Env):
         # Рисуем траекторию
         color = pygame.color.Color(
             int(self._speed * 255), 0, 0, int(self._power * 255))
-        src = self._transform.transform(  # type: ignore
-            self._coord_transformer.wrap_from_workzone_relative_to_model(self._prev_position).tuple())
-        dest = self._transform.transform(  # type: ignore
-            self._coord_transformer.wrap_from_workzone_relative_to_model(
-                self._current_position).tuple())
-        pygame.draw.circle(canvas, center=src, radius=5,  # type: ignore
-                           width=0, color=color)
-        pygame.draw.circle(canvas, center=dest, radius=5,  # type: ignore
-                           width=0, color=color)
-        pygame.draw.line(canvas, start_pos=src, end_pos=dest,  # type: ignore
-                         width=2, color=color)
+        lastact = self._lastact['Action']
+        if lastact == ActionSpace.MOVE_DOWN.value or \
+                lastact == ActionSpace.MOVE_UP.value or \
+                lastact == ActionSpace.MOVE_HORIZONTAL.value:
+
+            src = self._transform.transform(  # type: ignore
+                self._coord_transformer.wrap_from_workzone_relative_to_model(self._prev_position).tuple())
+            dest = self._transform.transform(  # type: ignore
+                self._coord_transformer.wrap_from_workzone_relative_to_model(
+                    self._current_position).tuple())
+            pygame.draw.circle(canvas, center=src, radius=5,  # type: ignore
+                               width=0, color=color)
+            pygame.draw.circle(canvas, center=dest, radius=5,  # type: ignore
+                               width=0, color=color)
+            pygame.draw.line(canvas, start_pos=src, end_pos=dest,  # type: ignore
+                             width=2, color=color)
+        else:
+            # only current point
+            cp = self._transform.transform(  # type: ignore
+                self._coord_transformer.wrap_from_workzone_relative_to_model(self._current_position).tuple())
+            pygame.draw.circle(canvas, center=cp, radius=5,  # type: ignore
+                               width=0, color=color)
+
         c = self._transform.transform(self._coord_transformer.wrap_from_workzone_relative_to_model(
             WorkzoneRelativeCoordinates(0, self._horisontal_y_offset)).tuple())  # type: ignore
         pygame.draw.circle(canvas, center=c, radius=5,  # type: ignore
-                           width=0, color=(0, 255, 0))
+                           width=1, color=(0, 255, 0))
 
         pygame.Surface.unlock(canvas)
 
         if self._render_callback is not None and (self.render_mode == "human" or self.render_mode == "rgb_array"):
-            self._render_callback(canvas, self._transform, self._coord_transformer)
+            self._render_callback(canvas, self._transform,
+                                  self._coord_transformer)
 
         canvas = pygame.transform.flip(canvas, False, True)
 
