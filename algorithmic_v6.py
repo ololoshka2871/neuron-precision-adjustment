@@ -29,7 +29,9 @@ def _get_video_size(env, zoom: Optional[float] = None) -> Tuple[int, int]:
 
 
 def display_main() -> None:
-    env = gym.make("gym_quarz/QuartzEnv-v6", render_mode='rgb_array')
+    env = gym.make("gym_quarz/QuartzEnv-v6", 
+                   render_mode='rgb_array',
+                   laser_power_relative=0.2)
 
     obs, info = env.reset(
     #    options={
@@ -40,7 +42,8 @@ def display_main() -> None:
     ctrl = Controller(
         angle_change_step=info['horisontal_angle_step'], 
         angle_limit=info['max_angle'],
-        freq_minimal_change_cooling=0.020
+        freq_minimal_change_cooling=0.020,
+        fast_forward_steps=5
     )
     
     env.set_render_callback(ctrl.render_callback)  # type: ignore

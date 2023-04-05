@@ -31,8 +31,11 @@ class States(Enum):
     # Угол предыдущего шага и есть примерно равный угру наклона резонатора
     ROTATE_LEFT_FIND_REACTION = 5
 
+    # быстрый спуск вниз до зоны настройки
+    FAST_FORWARD_TARGET_ZONE = 6
+
     # Наклон резонатора найден, производим обработку до получения требуемого результата
-    WORK_STEPS = 6
+    WORK_STEPS = 7
 
     # pause
     PAUSE = 90
@@ -79,6 +82,7 @@ class AlgorithmicController:
                  freq_minimal_change: float = 0.1,
                  freq_minimal_change_cooling: Optional[float] = None,
                  retreat_steps: int = 2,
+                 fast_forward_steps: Optional[int] = None,
                  work_steps_hor_per1_vert: int = 1):
         """
         :param angle_change_step: шаг изменения угла в градусах мделью
@@ -97,6 +101,7 @@ class AlgorithmicController:
         self._retreat_steps = retreat_steps
         self._work_steps_hor_per1_vert = work_steps_hor_per1_vert
         self._acuracy_hz = acuracy_hz
+        self._fast_forward_steps = fast_forward_steps if fast_forward_steps is not None else retreat_steps
 
         AlgorithmicController.reset(self)
 
@@ -112,6 +117,8 @@ class AlgorithmicController:
 
         self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_HORISONTAL
         self._rotate_left_find_reaction_wait_count = 0
+
+        self._fast_forward_step = 0
 
         self._work_steps_op = WorkStepsOp.MOVE_DOWN
         self._work_steps_wait_count = 0
@@ -136,6 +143,8 @@ class AlgorithmicController:
                 return self._move_right_side_one_left(prev_observation, observation)
             case States.ROTATE_LEFT_FIND_REACTION:
                 return self._rotate_left_find_reaction(prev_observation, observation)
+            case States.FAST_FORWARD_TARGET_ZONE:
+                return self._fast_forward_target_zone(prev_observation, observation)
             case States.WORK_STEPS:
                 return self._work_steps(prev_observation, observation)
             case States.PAUSE:
@@ -261,7 +270,7 @@ class AlgorithmicController:
                 else:
                     self._rezonator_pos = {
                         'angle': observation[4], 'offset': observation[0]}
-                    self._state = States.WORK_STEPS
+                    self._state = States.FAST_FORWARD_TARGET_ZONE
                     return ActionSpace.DO_NOTHING.value
             case RLFindReactionOp.MOVE_WAIT:
                 detected, updated = self._detect_touch(
@@ -277,13 +286,13 @@ class AlgorithmicController:
                         # was zero, and found - end
                         self._rezonator_pos = {
                             'angle': observation[4], 'offset': observation[0]}
-                        self._state = States.WORK_STEPS
+                        self._state = States.FAST_FORWARD_TARGET_ZONE
                 else:
                     if self._right_side['angle'] != 0.0:
                         # not found but was not zero - end
                         self._rezonator_pos = {
                             'angle': observation[4], 'offset': observation[0]}
-                        self._state = States.WORK_STEPS
+                        self._state = States.FAST_FORWARD_TARGET_ZONE
                     else:
                         # not found and was zero - continue
                         self._rotate_left_find_reaction_wait_count += 1
@@ -294,6 +303,16 @@ class AlgorithmicController:
             case RLFindReactionOp.ROTATE:
                 self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_HORISONTAL
                 return ActionSpace.INCRESE_ANGLE.value
+            
+    def _fast_forward_target_zone(self, prev_observation, observation):
+        self._fast_forward_step += 1
+        if self._fast_forward_step == self._fast_forward_steps:
+            self._state = States.WORK_STEPS
+            self._finde_side_op = FindSideOp.ROTATE
+            self._find_side_wait_count = 0
+            return ActionSpace.DO_NOTHING.value
+        else:
+            return ActionSpace.MOVE_DOWN.value
 
     def _work_steps(self, prev_observation, observation):
         match self._work_steps_op:
