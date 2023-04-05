@@ -495,15 +495,16 @@ class QuartzEnv6(gym.Env):
             case MoveAction.MOVE_HORIZONTAL:
                 # Прямая проходящая через точки (0, self._horisontal_y_offset) под углом self._horisontal_angle
                 # y = kx + b
-                k = math.tan(math.radians(self._horisontal_angle))
+                k = math.atan(math.radians(self._horisontal_angle))
                 b = self._horisontal_y_offset  # - k * 0.0
 
                 # точка назначения поучается
+                current_x = self._current_position[0]
                 dest_wz = WorkzoneRelativeCoordinates(
-                    self._current_position[0] * -1.0,  k * self._current_position[0] * -1.0 + b)
+                    -current_x, k * -current_x + b)
                 # исходная точка получается
                 src_point = WorkzoneRelativeCoordinates(
-                    self._current_position[0],  k * self._current_position[0] + b)
+                    current_x,  k * current_x + b)
             case MoveAction.MOVE_DOWN:
                 src_point = self._current_position
                 dest_wz = WorkzoneRelativeCoordinates(

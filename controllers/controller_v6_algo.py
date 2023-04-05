@@ -199,10 +199,10 @@ class AlgorithmicController:
         #if self._corner_level is not None:
         #    draw_line({'k': 0, 'b': self._corner_level}, (0, 0, 255, 100))
 
-        if self._left_side is not None:
-            draw_line(self._left_side, (0, 255, 32))
-
         if self._right_side is not None:
             draw_line(self._right_side, (0, 255, 32))
+
+        if self._left_side is not None:
+            draw_line(self._left_side, (0, 255, 32))
 
         pygame.Surface.unlock(canvas)
