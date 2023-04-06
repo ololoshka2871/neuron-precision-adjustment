@@ -22,6 +22,7 @@ def sim_main() -> dict:
         freq_minimal_change_cooling=FREQ_MINIMAL_CHANGE_COOLING,
         fast_forward_steps=FAST_FORWARD_STEPS,
         work_steps_hor_per_1_vert=WORK_STEPS_HOR_PER_1_VERT,
+        acuracy_hz=ACURACY_HZ,
     )
 
     prev_obs, done = deepcopy(obs), False
