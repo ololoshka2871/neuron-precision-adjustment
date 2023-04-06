@@ -31,11 +31,17 @@ class States(Enum):
     # Угол предыдущего шага и есть примерно равный угру наклона резонатора
     ROTATE_LEFT_FIND_REACTION = 5
 
+    # Вычисление позиции резонатора по пробным точкам
+    CALC_REZONATOR_POS = 6
+
+    # Поворот к найденному углу положения резонатора
+    ROTATE_TO_REZONATOR_ANGLE = 7
+
     # быстрый спуск вниз до зоны настройки
-    FAST_FORWARD_TARGET_ZONE = 6
+    FAST_FORWARD_TARGET_ZONE = 8
 
     # Наклон резонатора найден, производим обработку до получения требуемого результата
-    WORK_STEPS = 7
+    WORK_STEPS = 9
 
     # pause
     PAUSE = 90
@@ -143,6 +149,10 @@ class AlgorithmicController:
                 return self._move_right_side_one_left(prev_observation, observation)
             case States.ROTATE_LEFT_FIND_REACTION:
                 return self._rotate_left_find_reaction(prev_observation, observation)
+            case States.CALC_REZONATOR_POS:
+                return self._calc_rezonator_pos(prev_observation, observation)
+            case States.ROTATE_TO_REZONATOR_ANGLE:
+                return self._rotate_to_rezonator_angle(prev_observation, observation)
             case States.FAST_FORWARD_TARGET_ZONE:
                 return self._fast_forward_target_zone(prev_observation, observation)
             case States.WORK_STEPS:
@@ -221,7 +231,7 @@ class AlgorithmicController:
                     return ActionSpace.DO_NOTHING.value
                 if detected:
                     side_data = {
-                        'angle': observation[4], 'offset': observation[0]}
+                        'angle': observation[4], 'offset': observation[0], 'final': False}
                     if angle > 0.0:
                         # left side
                         self._left_side = side_data
@@ -238,7 +248,7 @@ class AlgorithmicController:
                     if self._find_side_wait_count > self._wait_count_betwen_measurements:
                         # not found
                         zero_side_data = {'angle': 0.0,
-                                          'offset': observation[0]}
+                                          'offset': observation[0], 'final': True}
                         if angle > 0.0:
                             self._left_side = zero_side_data
                             self._state = States.DETECT_RIGHT_SIDE
@@ -268,9 +278,9 @@ class AlgorithmicController:
                     self._rotate_left_find_reaction_wait_count = 0
                     return ActionSpace.MOVE_HORIZONTAL.value
                 else:
-                    self._rezonator_pos = {
-                        'angle': observation[4], 'offset': observation[0]}
-                    self._state = States.FAST_FORWARD_TARGET_ZONE
+                    self._left_side = {
+                        'angle': observation[4], 'offset': observation[0], 'final': True}
+                    self._state = States.CALC_REZONATOR_POS
                     return ActionSpace.DO_NOTHING.value
             case RLFindReactionOp.MOVE_WAIT:
                 detected, updated = self._detect_touch(
@@ -279,22 +289,26 @@ class AlgorithmicController:
                     return ActionSpace.DO_NOTHING.value
                 if detected:
                     # found
-                    if self._right_side['angle'] != 0.0:
-                        # still found
+                    if self._right_side['angle'] != 0.0 and not self._right_side['final']:
+                        # реакция была и продолжается - обновить правый угол
+                        self._right_side['angle'] = observation[4]  # update angle
                         self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE  # next step
                     else:
-                        # was zero, and found - end
-                        self._rezonator_pos = {
-                            'angle': observation[4], 'offset': observation[0]}
-                        self._state = States.FAST_FORWARD_TARGET_ZONE
+                        # реакции не было и появилась - значит мы нашли левый угол
+                        self._left_side = {
+                            'angle': observation[4], 'offset': observation[0], 'final': True}
+                        self._state = States.CALC_REZONATOR_POS
                 else:
-                    if self._right_side['angle'] != 0.0:
-                        # not found but was not zero - end
-                        self._rezonator_pos = {
-                            'angle': observation[4], 'offset': observation[0]}
-                        self._state = States.FAST_FORWARD_TARGET_ZONE
+                    if not self._right_side['final']:
+                        # Реакция была и пропала - значит мы нашли правый угол
+                        self._right_side = {
+                            'angle': observation[4], 'offset': observation[0], 'final': True}
+                        if self._left_side['final']:  # а левый угол уже был найден?
+                            self._state = States.CALC_REZONATOR_POS
+                        else:
+                            self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE
                     else:
-                        # not found and was zero - continue
+                        # not found and was final - continue
                         self._rotate_left_find_reaction_wait_count += 1
                         if self._rotate_left_find_reaction_wait_count > self._wait_count_betwen_measurements:
                             # not found, next step
@@ -303,7 +317,40 @@ class AlgorithmicController:
             case RLFindReactionOp.ROTATE:
                 self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_HORISONTAL
                 return ActionSpace.INCRESE_ANGLE.value
-            
+
+    def _calc_rezonator_pos(self, prev_observation, observation):
+        assert self._left_side is not None
+        assert self._right_side is not None
+
+        if self._left_side['angle'] != 0 and self._right_side['angle'] != 0:
+            self._rezonator_pos = {'angle': (self._left_side['angle'] + self._right_side['angle']) / 2.0,
+                                'offset': (self._left_side['offset'] + self._right_side['offset']) / 2.0,
+                                'final': True}
+        elif self._left_side['angle'] == 0:
+            self._rezonator_pos = self._right_side
+        else:
+            self._rezonator_pos = self._left_side
+
+        # Округлить угол до ближайшего кратного angle_change_step
+        self._rezonator_pos['angle'] = round(
+            self._rezonator_pos['angle'] / self._angle_change_step) * self._angle_change_step
+
+        self._left_side = None
+        self._right_side = None
+        self._state = States.ROTATE_TO_REZONATOR_ANGLE
+        return ActionSpace.DO_NOTHING.value
+
+    def _rotate_to_rezonator_angle(self, prev_observation, observation):
+        assert self._rezonator_pos is not None
+
+        if abs(observation[4] - self._rezonator_pos['angle']) < 0.1:
+            self._state = States.FAST_FORWARD_TARGET_ZONE
+            return ActionSpace.DO_NOTHING.value
+        elif observation[4] < self._rezonator_pos['angle']:
+            return ActionSpace.INCRESE_ANGLE.value
+        else:
+            return ActionSpace.DECREASE_ANGLE.value
+
     def _fast_forward_target_zone(self, prev_observation, observation):
         self._fast_forward_step += 1
         if self._fast_forward_step == self._fast_forward_steps:
@@ -358,9 +405,10 @@ class AlgorithmicController:
                 return ActionSpace.DO_NOTHING.value
 
     def render_callback(self, canvas, world_transform: Affine2D, ct: CoordinateTransformer):
-        def draw_line(linedata, color):
-            k, b = math.atan(math.radians(
-                linedata['angle'])), linedata['offset']
+        def draw_line(linedata, color=None):
+            k, b, final = math.atan(math.radians(
+                linedata['angle'])), linedata['offset'], linedata['final']
+            color = color if color is not None else ((0, 255, 0) if final else (0, 0, 255))
             start_pos = world_transform.transform(
                 ct.wrap_from_workzone_relative_to_model(WorkzoneRelativeCoordinates(-1.0, k * -1.0 + b)).tuple())
             end_pos = world_transform.transform(
@@ -371,10 +419,10 @@ class AlgorithmicController:
         pygame.Surface.lock(canvas)
 
         if self._right_side is not None:
-            draw_line(self._right_side, (0, 255, 32))
+            draw_line(self._right_side)
 
         if self._left_side is not None:
-            draw_line(self._left_side, (0, 255, 32))
+            draw_line(self._left_side)
 
         if self._rezonator_pos is not None:
             draw_line(self._rezonator_pos, (150, 128, 0))
