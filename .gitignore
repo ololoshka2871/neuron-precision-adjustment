@@ -165,3 +165,6 @@ profile.*
 *.ckl
 *.h5
 *.ljson
+
+.~lock*
+*.csv

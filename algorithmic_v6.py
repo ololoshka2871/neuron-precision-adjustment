@@ -14,6 +14,8 @@ import gym_quarz
 from controllers.controller_v6_algo import AlgorithmicController as Controller
 from misc.MyPlayPlot_v5 import MyPlayPlot_v5
 
+from constants_v6 import *
+
 
 def _get_video_size(env, zoom: Optional[float] = None) -> Tuple[int, int]:
     rendered = env.render()
@@ -31,7 +33,7 @@ def _get_video_size(env, zoom: Optional[float] = None) -> Tuple[int, int]:
 def display_main() -> None:
     env = gym.make("gym_quarz/QuartzEnv-v6", 
                    render_mode='rgb_array',
-                   laser_power_relative=0.2)
+                   laser_power_relative=LASER_POWER_RELATIVE)
 
     obs, info = env.reset(
     #    options={
@@ -42,8 +44,8 @@ def display_main() -> None:
     ctrl = Controller(
         angle_change_step=info['horisontal_angle_step'], 
         angle_limit=info['max_angle'],
-        freq_minimal_change_cooling=0.03,
-        fast_forward_steps=5,
+        freq_minimal_change_cooling=FREQ_MINIMAL_CHANGE_COOLING,
+        fast_forward_steps=FAST_FORWARD_STEPS,
     )
     
     env.set_render_callback(ctrl.render_callback)  # type: ignore
