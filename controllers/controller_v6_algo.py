@@ -15,30 +15,30 @@ class States(Enum):
     # Ждем после заждого прохода чтобы произошло измерение
     FIND_CORNER = 0
 
-    # отступаем от уголка, чтобы не было перекрытия сигналов
-    RETREAT = 1
-
-    # определяем касание левой стороны (положительный угол)
-    DETECT_LEFT_SIDE = 2
-
-    # определяем касание правой стороны (отрицательный угол)
-    DETECT_RIGHT_SIDE = 3
-
-    # поворот на угол на 1 шаг больший чем правая сторона
-    MOVE_RIGHT_SIDE_ONE_LEFT = 4
-
-    # постепенно вращаем траекторию влево пока не будет обнаружена реакция
-    # Угол предыдущего шага и есть примерно равный угру наклона резонатора
-    ROTATE_LEFT_FIND_REACTION = 5
-
-    # Вычисление позиции резонатора по пробным точкам
-    CALC_REZONATOR_POS = 6
-
-    # Поворот к найденному углу положения резонатора
-    ROTATE_TO_REZONATOR_ANGLE = 7
-
-    # быстрый спуск вниз до зоны настройки
-    FAST_FORWARD_TARGET_ZONE = 8
+    ## отступаем от уголка, чтобы не было перекрытия сигналов
+    #RETREAT = 1
+    #
+    ## определяем касание левой стороны (положительный угол)
+    #DETECT_LEFT_SIDE = 2
+    #
+    ## определяем касание правой стороны (отрицательный угол)
+    #DETECT_RIGHT_SIDE = 3
+    #
+    ## поворот на угол на 1 шаг больший чем правая сторона
+    #MOVE_RIGHT_SIDE_ONE_LEFT = 4
+    #
+    ## постепенно вращаем траекторию влево пока не будет обнаружена реакция
+    ## Угол предыдущего шага и есть примерно равный угру наклона резонатора
+    #ROTATE_LEFT_FIND_REACTION = 5
+    #
+    ## Вычисление позиции резонатора по пробным точкам
+    #CALC_REZONATOR_POS = 6
+    #
+    ## Поворот к найденному углу положения резонатора
+    #ROTATE_TO_REZONATOR_ANGLE = 7
+    #
+    ## быстрый спуск вниз до зоны настройки
+    #FAST_FORWARD_TARGET_ZONE = 8
 
     # Наклон резонатора найден, производим обработку до получения требуемого результата
     WORK_STEPS = 9
@@ -89,7 +89,7 @@ class AlgorithmicController:
                  freq_minimal_change_cooling: Optional[float] = None,
                  retreat_steps: int = 2,
                  fast_forward_steps: Optional[int] = None,
-                 work_steps_hor_per1_vert: int = 1):
+                 work_steps_hor_per_1_vert: int = 1):
         """
         :param angle_change_step: шаг изменения угла в градусах мделью
         :param angle_limit: максимальный угол в градусах наклона оси реза
@@ -97,7 +97,7 @@ class AlgorithmicController:
         :param wait_count_betwen_measurements: количество шагов ожидания чтобы получить новое измерение
         :param freq_minimal_change: минимальное изменение частоты считаемое за изменеие
         :param retreat_steps: количество шагов отступа вверх после обнаружения уголка
-        :param work_steps_hor_per1_vert: количество шагов в горизонтальном направлении на 1 шаг в вертикальном при обработке
+        :param work_steps_hor_per_1_vert: количество шагов в горизонтальном направлении на 1 шаг в вертикальном при обработке
         """
         self._wait_count_betwen_measurements = wait_count_betwen_measurements
         self._freq_minimal_change = freq_minimal_change
@@ -105,7 +105,7 @@ class AlgorithmicController:
         self._freq_minimal_change_cooling = freq_minimal_change_cooling if freq_minimal_change_cooling is not None else freq_minimal_change
         self._angle_limit = angle_limit
         self._retreat_steps = retreat_steps
-        self._work_steps_hor_per1_vert = work_steps_hor_per1_vert
+        self._work_steps_hor_per1_vert = work_steps_hor_per_1_vert
         self._acuracy_hz = acuracy_hz
         self._fast_forward_steps = fast_forward_steps if fast_forward_steps is not None else retreat_steps
 
@@ -139,22 +139,22 @@ class AlgorithmicController:
         match self._state:
             case States.FIND_CORNER:
                 return self._find_cornet_step(prev_observation, observation)
-            case States.RETREAT:
-                return self._retreat_step(prev_observation, observation)
-            case States.DETECT_LEFT_SIDE:
-                return self._detect_side(prev_observation, observation, angle=self._angle_limit)
-            case States.DETECT_RIGHT_SIDE:
-                return self._detect_side(prev_observation, observation, angle=-self._angle_limit)
-            case States.MOVE_RIGHT_SIDE_ONE_LEFT:
-                return self._move_right_side_one_left(prev_observation, observation)
-            case States.ROTATE_LEFT_FIND_REACTION:
-                return self._rotate_left_find_reaction(prev_observation, observation)
-            case States.CALC_REZONATOR_POS:
-                return self._calc_rezonator_pos(prev_observation, observation)
-            case States.ROTATE_TO_REZONATOR_ANGLE:
-                return self._rotate_to_rezonator_angle(prev_observation, observation)
-            case States.FAST_FORWARD_TARGET_ZONE:
-                return self._fast_forward_target_zone(prev_observation, observation)
+            #case States.RETREAT:
+            #    return self._retreat_step(prev_observation, observation)
+            #case States.DETECT_LEFT_SIDE:
+            #    return self._detect_side(prev_observation, observation, angle=self._angle_limit)
+            #case States.DETECT_RIGHT_SIDE:
+            #    return self._detect_side(prev_observation, observation, angle=-self._angle_limit)
+            #case States.MOVE_RIGHT_SIDE_ONE_LEFT:
+            #    return self._move_right_side_one_left(prev_observation, observation)
+            #case States.ROTATE_LEFT_FIND_REACTION:
+            #    return self._rotate_left_find_reaction(prev_observation, observation)
+            #case States.CALC_REZONATOR_POS:
+            #    return self._calc_rezonator_pos(prev_observation, observation)
+            #case States.ROTATE_TO_REZONATOR_ANGLE:
+            #    return self._rotate_to_rezonator_angle(prev_observation, observation)
+            #case States.FAST_FORWARD_TARGET_ZONE:
+            #    return self._fast_forward_target_zone(prev_observation, observation)
             case States.WORK_STEPS:
                 return self._work_steps(prev_observation, observation)
             case States.PAUSE:
@@ -178,7 +178,8 @@ class AlgorithmicController:
             return ActionSpace.DO_NOTHING.value
 
         if detected:
-            self._state = States.RETREAT
+            #self._state = States.RETREAT
+            self._state = States.WORK_STEPS
             self._corner_level = observation[0]
             return ActionSpace.DO_NOTHING.value
 
@@ -196,171 +197,171 @@ class AlgorithmicController:
                 self._find_corner_op = FindCornerOp.MOVE_HORISONTAL
                 return ActionSpace.MOVE_DOWN.value
 
-    def _retreat_step(self, prev_observation, observation):
-        self._retreat_step_num += 1
-        if self._retreat_step_num == self._retreat_steps:
-            self._state = States.DETECT_LEFT_SIDE
-            self._finde_side_op = FindSideOp.ROTATE
-            self._find_side_wait_count = 0
+    #def _retreat_step(self, prev_observation, observation):
+    #    self._retreat_step_num += 1
+    #    if self._retreat_step_num == self._retreat_steps:
+    #        self._state = States.DETECT_LEFT_SIDE
+    #        self._finde_side_op = FindSideOp.ROTATE
+    #        self._find_side_wait_count = 0
+    #
+    #    return ActionSpace.MOVE_UP.value
 
-        return ActionSpace.MOVE_UP.value
+    #def _detect_side(self, prev_observation, observation, angle: float):
+    #    match self._finde_side_op:
+    #        case FindSideOp.ROTATE:
+    #            if angle > 0.0:
+    #                if observation[4] < angle:
+    #                    return ActionSpace.INCRESE_ANGLE.value
+    #                else:
+    #                    pass  # drop down
+    #            else:
+    #                if observation[4] > angle:
+    #                    return ActionSpace.DECREASE_ANGLE.value
+    #                else:
+    #                    pass  # drop down
+    #            self._finde_side_op = FindSideOp.MOVE_HORISONTAL
+    #            self._find_side_wait_count = 0
+    #            return ActionSpace.DO_NOTHING.value
+    #        case FindSideOp.MOVE_HORISONTAL:
+    #            self._finde_side_op = FindSideOp.MOVE_WAIT
+    #            return ActionSpace.MOVE_HORIZONTAL.value
+    #        case FindSideOp.MOVE_WAIT:
+    #            detected, updated = self._detect_touch(
+    #                prev_observation, observation)
+    #            if not updated:
+    #                return ActionSpace.DO_NOTHING.value
+    #            if detected:
+    #                side_data = {
+    #                    'angle': observation[4], 'offset': observation[0], 'final': False}
+    #                if angle > 0.0:
+    #                    # left side
+    #                    self._left_side = side_data
+    #                    self._state = States.DETECT_RIGHT_SIDE
+    #                    self._finde_side_op = FindSideOp.ROTATE
+    #                    return ActionSpace.DO_NOTHING.value
+    #                else:
+    #                    # right side
+    #                    self._right_side = side_data
+    #                    self._state = States.MOVE_RIGHT_SIDE_ONE_LEFT
+    #                    return ActionSpace.DO_NOTHING.value
+    #            else:
+    #                self._find_side_wait_count += 1
+    #                if self._find_side_wait_count > self._wait_count_betwen_measurements:
+    #                    # not found
+    #                    zero_side_data = {'angle': 0.0,
+    #                                      'offset': observation[0], 'final': True}
+    #                    if angle > 0.0:
+    #                        self._left_side = zero_side_data
+    #                        self._state = States.DETECT_RIGHT_SIDE
+    #                        self._finde_side_op = FindSideOp.ROTATE
+    #                    else:
+    #                        self._right_side = zero_side_data
+    #                        self._state = States.MOVE_RIGHT_SIDE_ONE_LEFT
+    #                return ActionSpace.DO_NOTHING.value
 
-    def _detect_side(self, prev_observation, observation, angle: float):
-        match self._finde_side_op:
-            case FindSideOp.ROTATE:
-                if angle > 0.0:
-                    if observation[4] < angle:
-                        return ActionSpace.INCRESE_ANGLE.value
-                    else:
-                        pass  # drop down
-                else:
-                    if observation[4] > angle:
-                        return ActionSpace.DECREASE_ANGLE.value
-                    else:
-                        pass  # drop down
-                self._finde_side_op = FindSideOp.MOVE_HORISONTAL
-                self._find_side_wait_count = 0
-                return ActionSpace.DO_NOTHING.value
-            case FindSideOp.MOVE_HORISONTAL:
-                self._finde_side_op = FindSideOp.MOVE_WAIT
-                return ActionSpace.MOVE_HORIZONTAL.value
-            case FindSideOp.MOVE_WAIT:
-                detected, updated = self._detect_touch(
-                    prev_observation, observation)
-                if not updated:
-                    return ActionSpace.DO_NOTHING.value
-                if detected:
-                    side_data = {
-                        'angle': observation[4], 'offset': observation[0], 'final': False}
-                    if angle > 0.0:
-                        # left side
-                        self._left_side = side_data
-                        self._state = States.DETECT_RIGHT_SIDE
-                        self._finde_side_op = FindSideOp.ROTATE
-                        return ActionSpace.DO_NOTHING.value
-                    else:
-                        # right side
-                        self._right_side = side_data
-                        self._state = States.MOVE_RIGHT_SIDE_ONE_LEFT
-                        return ActionSpace.DO_NOTHING.value
-                else:
-                    self._find_side_wait_count += 1
-                    if self._find_side_wait_count > self._wait_count_betwen_measurements:
-                        # not found
-                        zero_side_data = {'angle': 0.0,
-                                          'offset': observation[0], 'final': True}
-                        if angle > 0.0:
-                            self._left_side = zero_side_data
-                            self._state = States.DETECT_RIGHT_SIDE
-                            self._finde_side_op = FindSideOp.ROTATE
-                        else:
-                            self._right_side = zero_side_data
-                            self._state = States.MOVE_RIGHT_SIDE_ONE_LEFT
-                    return ActionSpace.DO_NOTHING.value
+    #def _move_right_side_one_left(self, prev_observation, observation):
+    #    assert self._right_side is not None
+    #
+    #    if observation[4] < self._right_side['angle'] + self._angle_change_step:
+    #        return ActionSpace.INCRESE_ANGLE.value
+    #    else:
+    #        self._state = States.ROTATE_LEFT_FIND_REACTION
+    #        return ActionSpace.DO_NOTHING.value
 
-    def _move_right_side_one_left(self, prev_observation, observation):
-        assert self._right_side is not None
+    #def _rotate_left_find_reaction(self, prev_observation, observation):
+    #    assert self._left_side is not None
+    #    assert self._right_side is not None
+    #
+    #    match self._rotate_left_find_reaction_op:
+    #        case RLFindReactionOp.MOVE_HORISONTAL:
+    #            if observation[4] < self._left_side['angle']:
+    #                self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_WAIT
+    #                self._rotate_left_find_reaction_wait_count = 0
+    #                return ActionSpace.MOVE_HORIZONTAL.value
+    #            else:
+    #                self._left_side = {
+    #                    'angle': observation[4], 'offset': observation[0], 'final': True}
+    #                self._state = States.CALC_REZONATOR_POS
+    #                return ActionSpace.DO_NOTHING.value
+    #        case RLFindReactionOp.MOVE_WAIT:
+    #            detected, updated = self._detect_touch(
+    #                prev_observation, observation)
+    #            if not updated:
+    #                return ActionSpace.DO_NOTHING.value
+    #            if detected:
+    #                # found
+    #                if self._right_side['angle'] != 0.0 and not self._right_side['final']:
+    #                    # реакция была и продолжается - обновить правый угол
+    #                    self._right_side['angle'] = observation[4]  # update angle
+    #                    self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE  # next step
+    #                else:
+    #                    # реакции не было и появилась - значит мы нашли левый угол
+    #                    self._left_side = {
+    #                        'angle': observation[4], 'offset': observation[0], 'final': True}
+    #                    self._state = States.CALC_REZONATOR_POS
+    #            else:
+    #                if not self._right_side['final']:
+    #                    # Реакция была и пропала - значит мы нашли правый угол
+    #                    self._right_side = {
+    #                        'angle': observation[4], 'offset': observation[0], 'final': True}
+    #                    if self._left_side['final']:  # а левый угол уже был найден?
+    #                        self._state = States.CALC_REZONATOR_POS
+    #                    else:
+    #                        self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE
+    #                else:
+    #                    # not found and was final - continue
+    #                    self._rotate_left_find_reaction_wait_count += 1
+    #                    if self._rotate_left_find_reaction_wait_count > self._wait_count_betwen_measurements:
+    #                        # not found, next step
+    #                        self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE
+    #            return ActionSpace.DO_NOTHING.value
+    #        case RLFindReactionOp.ROTATE:
+    #            self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_HORISONTAL
+    #            return ActionSpace.INCRESE_ANGLE.value
 
-        if observation[4] < self._right_side['angle'] + self._angle_change_step:
-            return ActionSpace.INCRESE_ANGLE.value
-        else:
-            self._state = States.ROTATE_LEFT_FIND_REACTION
-            return ActionSpace.DO_NOTHING.value
+    #def _calc_rezonator_pos(self, prev_observation, observation):
+    #    assert self._left_side is not None
+    #    assert self._right_side is not None
+    #
+    #    # Заглушка
+    #    if True or (self._left_side['angle'] != 0 and self._right_side['angle'] != 0):
+    #        self._rezonator_pos = {'angle': (self._left_side['angle'] + self._right_side['angle']) / 2.0,
+    #                            'offset': (self._left_side['offset'] + self._right_side['offset']) / 2.0,
+    #                            'final': True}
+    #    elif self._left_side['angle'] == 0:
+    #        self._rezonator_pos = self._right_side
+    #    else:
+    #        self._rezonator_pos = self._left_side
+    #
+    #    # Округлить угол до ближайшего кратного angle_change_step
+    #    self._rezonator_pos['angle'] = round(
+    #        self._rezonator_pos['angle'] / self._angle_change_step) * self._angle_change_step
+    #
+    #    self._left_side = None
+    #    self._right_side = None
+    #    self._state = States.ROTATE_TO_REZONATOR_ANGLE
+    #    return ActionSpace.DO_NOTHING.value
 
-    def _rotate_left_find_reaction(self, prev_observation, observation):
-        assert self._left_side is not None
-        assert self._right_side is not None
+    #def _rotate_to_rezonator_angle(self, prev_observation, observation):
+    #    assert self._rezonator_pos is not None
+    #
+    #    if abs(observation[4] - self._rezonator_pos['angle']) < 0.1:
+    #        self._state = States.FAST_FORWARD_TARGET_ZONE
+    #        return ActionSpace.DO_NOTHING.value
+    #    elif observation[4] < self._rezonator_pos['angle']:
+    #        return ActionSpace.INCRESE_ANGLE.value
+    #    else:
+    #        return ActionSpace.DECREASE_ANGLE.value
 
-        match self._rotate_left_find_reaction_op:
-            case RLFindReactionOp.MOVE_HORISONTAL:
-                if observation[4] < self._left_side['angle']:
-                    self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_WAIT
-                    self._rotate_left_find_reaction_wait_count = 0
-                    return ActionSpace.MOVE_HORIZONTAL.value
-                else:
-                    self._left_side = {
-                        'angle': observation[4], 'offset': observation[0], 'final': True}
-                    self._state = States.CALC_REZONATOR_POS
-                    return ActionSpace.DO_NOTHING.value
-            case RLFindReactionOp.MOVE_WAIT:
-                detected, updated = self._detect_touch(
-                    prev_observation, observation)
-                if not updated:
-                    return ActionSpace.DO_NOTHING.value
-                if detected:
-                    # found
-                    if self._right_side['angle'] != 0.0 and not self._right_side['final']:
-                        # реакция была и продолжается - обновить правый угол
-                        self._right_side['angle'] = observation[4]  # update angle
-                        self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE  # next step
-                    else:
-                        # реакции не было и появилась - значит мы нашли левый угол
-                        self._left_side = {
-                            'angle': observation[4], 'offset': observation[0], 'final': True}
-                        self._state = States.CALC_REZONATOR_POS
-                else:
-                    if not self._right_side['final']:
-                        # Реакция была и пропала - значит мы нашли правый угол
-                        self._right_side = {
-                            'angle': observation[4], 'offset': observation[0], 'final': True}
-                        if self._left_side['final']:  # а левый угол уже был найден?
-                            self._state = States.CALC_REZONATOR_POS
-                        else:
-                            self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE
-                    else:
-                        # not found and was final - continue
-                        self._rotate_left_find_reaction_wait_count += 1
-                        if self._rotate_left_find_reaction_wait_count > self._wait_count_betwen_measurements:
-                            # not found, next step
-                            self._rotate_left_find_reaction_op = RLFindReactionOp.ROTATE
-                return ActionSpace.DO_NOTHING.value
-            case RLFindReactionOp.ROTATE:
-                self._rotate_left_find_reaction_op = RLFindReactionOp.MOVE_HORISONTAL
-                return ActionSpace.INCRESE_ANGLE.value
-
-    def _calc_rezonator_pos(self, prev_observation, observation):
-        assert self._left_side is not None
-        assert self._right_side is not None
-
-        # Заглушка
-        if True or (self._left_side['angle'] != 0 and self._right_side['angle'] != 0):
-            self._rezonator_pos = {'angle': (self._left_side['angle'] + self._right_side['angle']) / 2.0,
-                                'offset': (self._left_side['offset'] + self._right_side['offset']) / 2.0,
-                                'final': True}
-        elif self._left_side['angle'] == 0:
-            self._rezonator_pos = self._right_side
-        else:
-            self._rezonator_pos = self._left_side
-
-        # Округлить угол до ближайшего кратного angle_change_step
-        self._rezonator_pos['angle'] = round(
-            self._rezonator_pos['angle'] / self._angle_change_step) * self._angle_change_step
-
-        self._left_side = None
-        self._right_side = None
-        self._state = States.ROTATE_TO_REZONATOR_ANGLE
-        return ActionSpace.DO_NOTHING.value
-
-    def _rotate_to_rezonator_angle(self, prev_observation, observation):
-        assert self._rezonator_pos is not None
-
-        if abs(observation[4] - self._rezonator_pos['angle']) < 0.1:
-            self._state = States.FAST_FORWARD_TARGET_ZONE
-            return ActionSpace.DO_NOTHING.value
-        elif observation[4] < self._rezonator_pos['angle']:
-            return ActionSpace.INCRESE_ANGLE.value
-        else:
-            return ActionSpace.DECREASE_ANGLE.value
-
-    def _fast_forward_target_zone(self, prev_observation, observation):
-        self._fast_forward_step += 1
-        if self._fast_forward_step == self._fast_forward_steps:
-            self._state = States.WORK_STEPS
-            self._finde_side_op = FindSideOp.ROTATE
-            self._find_side_wait_count = 0
-            return ActionSpace.DO_NOTHING.value
-        else:
-            return ActionSpace.MOVE_DOWN.value
+    #def _fast_forward_target_zone(self, prev_observation, observation):
+    #    self._fast_forward_step += 1
+    #    if self._fast_forward_step == self._fast_forward_steps:
+    #        self._state = States.WORK_STEPS
+    #        self._finde_side_op = FindSideOp.ROTATE
+    #        self._find_side_wait_count = 0
+    #        return ActionSpace.DO_NOTHING.value
+    #    else:
+    #        return ActionSpace.MOVE_DOWN.value
 
     def _work_steps(self, prev_observation, observation):
         def detect_overrun() -> bool:
@@ -384,6 +385,8 @@ class AlgorithmicController:
                 if detect_overrun():
                     self._state = States.DONE
                     return ActionSpace.DO_NOTHING.value
+                elif observation[2] - observation[1] < 1.0:
+                    return ActionSpace.MOVE_HORIZONTAL_PRECISION.value
                 else:
                     return ActionSpace.MOVE_HORIZONTAL.value
             case WorkStepsOp.MOVE_WAIT:
@@ -449,5 +452,5 @@ class AlgorithmicController:
         pygame.Surface.unlock(canvas)
 
     @property
-    def rezonator_angle(self):
-        return self._rezonator_pos['angle'] if self._rezonator_pos is not None else None
+    def rezonator_angle(self) -> float:
+        return self._rezonator_pos['angle'] if self._rezonator_pos is not None else 0.0

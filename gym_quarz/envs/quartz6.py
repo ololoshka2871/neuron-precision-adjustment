@@ -24,6 +24,7 @@ class MoveAction(Enum):
     MOVE_DOWN = 1
     MOVE_UP = 2
     MOVE_HORIZONTAL = 3
+    MOVE_HORIZONTAL_PRECISION = 4
 
 
 class ActionSpace(Enum):
@@ -41,12 +42,13 @@ class ActionSpace(Enum):
     MOVE_DOWN = 1
     MOVE_UP = 2
     MOVE_HORIZONTAL = 3
+    MOVE_HORIZONTAL_PRECISION = 4
 
-    INCRESE_ANGLE = 4
-    DECREASE_ANGLE = 5
+    INCRESE_ANGLE = 5
+    DECREASE_ANGLE = 6
 
-    END_EPISODE = 6
-    COUNT = 7
+    END_EPISODE = 7
+    COUNT = 8
 
 
 class QuartzEnv6(gym.Env):
@@ -56,7 +58,7 @@ class QuartzEnv6(gym.Env):
                  render_mode=None,
                  speed: float = 1.0,
                  vertical_steps: int = 33,
-                 laser_power_relative: float = 0.25,
+                 laser_power_relative: float = 0.5,
                  time_limit: float = math.inf,
                  rezonator_thickness: float = 0.23,
                  heat_dissipation_rate: float = 0.9,
@@ -289,6 +291,8 @@ class QuartzEnv6(gym.Env):
                 reward, terminated = self._sim_step(MoveAction.MOVE_UP)
             case ActionSpace.MOVE_HORIZONTAL.value:
                 reward, terminated = self._sim_step(MoveAction.MOVE_HORIZONTAL)
+            case ActionSpace.MOVE_HORIZONTAL_PRECISION.value:
+                reward, terminated = self._sim_step(MoveAction.MOVE_HORIZONTAL_PRECISION)
             case ActionSpace.INCRESE_ANGLE.value:
                 self._horisontal_angle = np.clip(
                     self._horisontal_angle +
@@ -502,7 +506,7 @@ class QuartzEnv6(gym.Env):
         assert self._prev_freq is not None
 
         match act:
-            case MoveAction.MOVE_HORIZONTAL:
+            case MoveAction.MOVE_HORIZONTAL | MoveAction.MOVE_HORIZONTAL_PRECISION:
                 # Прямая проходящая через точки (0, self._horisontal_y_offset) под углом self._horisontal_angle
                 # y = kx + b
                 k = math.atan(math.radians(self._horisontal_angle))
@@ -554,7 +558,9 @@ class QuartzEnv6(gym.Env):
                 model_pos = self._coord_transformer.wrap_from_real_to_model(
                     RealCoordinates(pos_x, pos_y)).tuple()
 
-                laser_power = self._laser_power * self._power  # мощность лазера в Вт
+                # для точного прохода используем четверть мощности
+                lp = self._power if act == MoveAction.MOVE_HORIZONTAL else self._power / 4.0
+                laser_power = self._laser_power * lp  # мощность лазера в Вт
 
                 zone = ModelView.detect_zone(model_pos, last_zone)
                 match zone:
