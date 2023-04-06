@@ -84,7 +84,7 @@ class AlgorithmicController:
                  angle_change_step: float,
                  angle_limit: float,
                  acuracy_hz: float = 0.1,
-                 wait_count_betwen_measurements: int = 4,
+                 wait_count_betwen_measurements: int = 2,
                  freq_minimal_change: float = 0.1,
                  freq_minimal_change_cooling: Optional[float] = None,
                  retreat_steps: int = 2,
@@ -322,7 +322,8 @@ class AlgorithmicController:
         assert self._left_side is not None
         assert self._right_side is not None
 
-        if self._left_side['angle'] != 0 and self._right_side['angle'] != 0:
+        # Заглушка
+        if True or (self._left_side['angle'] != 0 and self._right_side['angle'] != 0):
             self._rezonator_pos = {'angle': (self._left_side['angle'] + self._right_side['angle']) / 2.0,
                                 'offset': (self._left_side['offset'] + self._right_side['offset']) / 2.0,
                                 'final': True}
@@ -362,16 +363,29 @@ class AlgorithmicController:
             return ActionSpace.MOVE_DOWN.value
 
     def _work_steps(self, prev_observation, observation):
+        def detect_overrun() -> bool:
+            current_freq_change = observation[1]
+            target = observation[2]
+            return current_freq_change > target
+
         match self._work_steps_op:
             case WorkStepsOp.MOVE_DOWN:
                 self._work_steps_op = WorkStepsOp.MOVE_HORISONTAL
                 self._work_steps_hor_steps = 0
-                return ActionSpace.MOVE_DOWN.value
+                if detect_overrun():
+                    self._state = States.DONE
+                    return ActionSpace.DO_NOTHING.value
+                else:
+                    return ActionSpace.MOVE_DOWN.value
             case WorkStepsOp.MOVE_HORISONTAL:
                 self._work_steps_op = WorkStepsOp.MOVE_WAIT
                 self._work_steps_wait_count = 0
                 self._work_steps_hor_steps += 1
-                return ActionSpace.MOVE_HORIZONTAL.value
+                if detect_overrun():
+                    self._state = States.DONE
+                    return ActionSpace.DO_NOTHING.value
+                else:
+                    return ActionSpace.MOVE_HORIZONTAL.value
             case WorkStepsOp.MOVE_WAIT:
                 detected, updated = self._detect_touch(
                     prev_observation, observation)
@@ -388,6 +402,11 @@ class AlgorithmicController:
                         self._work_steps_op = WorkStepsOp.MOVE_DOWN
                 return ActionSpace.DO_NOTHING.value
             case WorkStepsOp.COOLING:
+                detected, updated = self._detect_touch(
+                    prev_observation, observation)
+                if not updated:
+                    return ActionSpace.DO_NOTHING.value
+                
                 current_freq_change = observation[1]
                 freq_change_change = current_freq_change - prev_observation[1]
                 target = observation[2]

@@ -1,3 +1,4 @@
+from collections import deque
 from enum import Enum
 import math
 
@@ -70,7 +71,9 @@ class QuartzEnv6(gym.Env):
                  wait_multiplier: float = 1.0,
                  wait_penalty_multiplier: float = 0.5,
                  hit_reward: float = 0.25,
-                 max_angle: float = 25.0,):
+                 max_angle: float = 25.0,
+                 freq_history_len: int = 32,
+                 nozise_sigma: float = 0.005,):
         self.window_size = 1024  # The size of the PyGame window
 
         """
@@ -119,6 +122,7 @@ class QuartzEnv6(gym.Env):
         self._vertical_step = 1.0 / vertical_steps
         self._hit_reward = hit_reward
         self._max_angle = max_angle
+        self._nozise_sigma = nozise_sigma
 
         self._time_limit = time_limit
         self._wait_penalty_multiplier = wait_penalty_multiplier
@@ -145,6 +149,7 @@ class QuartzEnv6(gym.Env):
         self._power = laser_power_relative
         self._speed = speed
         self._next_mesure_after = 0.0
+        self._freq_change_history = deque(maxlen=freq_history_len)
 
     def set_render_callback(self, cb):
         self._render_callback = cb
@@ -157,14 +162,13 @@ class QuartzEnv6(gym.Env):
             raise RuntimeError(
                 "Rezonator is not initialized, call reset() first!")
 
-        rm = self._rezonator_model.get_metrics()
         if self._time_limit < math.inf:
             elapsed = self._time_elapsed / self._time_limit
         else:
             elapsed = self._time_elapsed
         return np.array([
             self._horisontal_y_offset,
-            rm['freq_change'] + self._add_niose(),
+            self._freq_change_history[-1],
             self._params['adjust_target'],
             elapsed,
             self._horisontal_angle], dtype=np.float32)
@@ -189,10 +193,11 @@ class QuartzEnv6(gym.Env):
             "max_angle": self._max_angle,
             "horisontal_y_offset": self._horisontal_y_offset,
             "actual_rezonator_angle": self._params['angle'],
+            "freq_history": list(self._freq_change_history),
         }
     
     def _add_niose(self):
-        return self.np_random.normal(0, 0.005)
+        return self.np_random.normal(0, self._nozise_sigma)
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         # We need the following line to seed self.np_random
@@ -248,8 +253,10 @@ class QuartzEnv6(gym.Env):
 
         self._lastact = DefaultDict(float)
         self._transform = None
-
+        
         self._prev_freq = self._rezonator_model.get_metrics()['freq_change']
+        for _ in range(self._freq_change_history.maxlen or 0):
+            self._freq_change_history.append(self._prev_freq)
 
         observation = self._get_obs()
         info = self._get_info()
@@ -583,6 +590,10 @@ class QuartzEnv6(gym.Env):
 
         m = self._rezonator_model.get_metrics()
         current_freq_change = m['freq_change']
+
+        # add masure to history
+        self._freq_change_history.append(current_freq_change + self._add_niose())
+
         if current_freq_change > self._params['adjust_target']:
             return self._params['adjust_target'] - current_freq_change
         else:

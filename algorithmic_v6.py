@@ -42,8 +42,8 @@ def display_main() -> None:
     ctrl = Controller(
         angle_change_step=info['horisontal_angle_step'], 
         angle_limit=info['max_angle'],
-        freq_minimal_change_cooling=0.020,
-        fast_forward_steps=5
+        freq_minimal_change_cooling=0.03,
+        fast_forward_steps=5,
     )
     
     env.set_render_callback(ctrl.render_callback)  # type: ignore
